@@ -18,15 +18,60 @@ interface VibeResult {
 }
 
 const VIBE_DIMENSIONS = [
-  { key: 'social', label: 'Social scene', emoji: '🎉' },
-  { key: 'athletics', label: 'Athletics & school spirit', emoji: '🏈' },
-  { key: 'arts', label: 'Arts, music & creativity', emoji: '🎨' },
-  { key: 'political', label: 'Political & activist culture', emoji: '✊' },
-  { key: 'greekLife', label: 'Greek life', emoji: '🏛️' },
-  { key: 'diversity', label: 'Diversity & inclusion', emoji: '🌍' },
-  { key: 'outdoor', label: 'Outdoor & nature access', emoji: '🏔️' },
-  { key: 'academic', label: 'Academic intensity', emoji: '📚' },
-  { key: 'community', label: 'Local community atmosphere', emoji: '🏘️' },
+  {
+    key: 'social',
+    label: 'Social scene',
+    emoji: '🎉',
+    description: 'How active is the social life? Think parties, hangouts, events, and how easy it is to meet people outside the classroom.',
+  },
+  {
+    key: 'athletics',
+    label: 'Athletics & school spirit',
+    emoji: '🏈',
+    description: 'How much do sports and school pride define campus energy? Covers both big-time athletics and recreational/intramural culture.',
+  },
+  {
+    key: 'arts',
+    label: 'Arts, music & creativity',
+    emoji: '🎨',
+    description: 'Is there a strong creative community? Looks at music scenes, art programs, film culture, theater, and maker spaces.',
+  },
+  {
+    key: 'political',
+    label: 'Political & activist culture',
+    emoji: '✊',
+    description: 'How politically engaged is the campus? Covers activism, student organizing, protest culture, and civic involvement.',
+  },
+  {
+    key: 'greekLife',
+    label: 'Greek life',
+    emoji: '🏛️',
+    description: 'How central are fraternities and sororities to social life? High scores mean Greek life dominates the social scene.',
+  },
+  {
+    key: 'diversity',
+    label: 'Diversity & inclusion',
+    emoji: '🌍',
+    description: 'How diverse and welcoming is the campus community? Covers racial, cultural, socioeconomic, and identity-based diversity.',
+  },
+  {
+    key: 'outdoor',
+    label: 'Outdoor & nature access',
+    emoji: '🏔️',
+    description: 'How easy is it to get outside? Covers proximity to nature, hiking, outdoor recreation, and campus green space.',
+  },
+  {
+    key: 'academic',
+    label: 'Academic intensity',
+    emoji: '📚',
+    description: 'How competitive and rigorous is the academic culture day-to-day? High scores mean students study hard and academics dominate campus life.',
+  },
+  {
+    key: 'community',
+    label: 'Local community atmosphere',
+    emoji: '🏘️',
+    description: 'What\'s the relationship between campus and the surrounding town or city? Covers off-campus life, local culture, and town-gown dynamics.',
+  },
 ]
 
 function ScoreBar({ score, color }: { score: number; color: string }) {
@@ -77,10 +122,114 @@ function DimensionCard({ dim, color }: { dim: VibeDimension; color: string }) {
   )
 }
 
+function DimensionSelector({
+  selected,
+  onToggle,
+  onSelectAll,
+}: {
+  selected: Set<string>
+  onToggle: (key: string) => void
+  onSelectAll: () => void
+}) {
+  const allSelected = selected.size === VIBE_DIMENSIONS.length
+
+  return (
+    <div>
+      {/* Select all */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '14px',
+      }}>
+        <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          {selected.size} of {VIBE_DIMENSIONS.length} selected
+        </div>
+        <button
+          onClick={onSelectAll}
+          style={{
+            fontSize: '12px', color: '#6366F1',
+            background: 'none', border: 'none',
+            cursor: 'pointer', padding: 0, fontWeight: 500,
+          }}
+        >
+          {allSelected ? 'Deselect all' : 'Select all'}
+        </button>
+      </div>
+
+      {/* Dimension cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {VIBE_DIMENSIONS.map(dim => {
+          const isSelected = selected.has(dim.key)
+          return (
+            <div
+              key={dim.key}
+              onClick={() => onToggle(dim.key)}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                padding: '14px 16px',
+                borderRadius: '12px',
+                border: isSelected
+                  ? '1.5px solid #6366F1'
+                  : '0.5px solid var(--color-border-tertiary)',
+                background: isSelected ? '#EEF2FF' : 'var(--color-background-primary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {/* Checkbox */}
+              <div style={{
+                width: '18px', height: '18px',
+                borderRadius: '5px',
+                border: isSelected ? 'none' : '1.5px solid var(--color-border-secondary)',
+                background: isSelected ? '#6366F1' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, marginTop: '1px',
+              }}>
+                {isSelected && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+
+              {/* Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '3px' }}>
+                  <span style={{ fontSize: '15px' }}>{dim.emoji}</span>
+                  <span style={{
+                    fontSize: '13px', fontWeight: 500,
+                    color: isSelected ? '#3730A3' : 'var(--color-text-primary)',
+                  }}>
+                    {dim.label}
+                  </span>
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: isSelected ? '#4338CA' : 'var(--color-text-secondary)',
+                  lineHeight: 1.6,
+                }}>
+                  {dim.description}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function VibeCheck() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { profile } = useProfile()
+
+  const [selected, setSelected] = useState<Set<string>>(
+    new Set(VIBE_DIMENSIONS.map(d => d.key))
+  )
   const [result, setResult] = useState<VibeResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,39 +252,56 @@ export default function VibeCheck() {
     )
   }
 
-  const accentColor = '#6366F1'
+  function toggleDimension(key: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === VIBE_DIMENSIONS.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(VIBE_DIMENSIONS.map(d => d.key)))
+    }
+  }
 
   async function runVibeCheck() {
+    if (selected.size === 0) return
     setLoading(true)
     setError(null)
+    setResult(null)
 
-    const systemPrompt = `You are Admyt's Vibe Check feature. You analyze the social scene, campus culture, and student life at a college and return a structured JSON vibe analysis.
+    const selectedDims = VIBE_DIMENSIONS.filter(d => selected.has(d.key))
+
+    const systemPrompt = `You are Admyt's Vibe Check feature. Analyze the social scene, campus culture, and student life at a college for a specific set of dimensions chosen by the student.
 
 You must respond with ONLY valid JSON — no preamble, no explanation, no markdown. The JSON must match this exact structure:
 {
   "dimensions": [
-    { "key": "social", "label": "Social scene", "emoji": "🎉", "score": 7, "summary": "One sentence about this dimension at this school." },
-    { "key": "athletics", "label": "Athletics & school spirit", "emoji": "🏈", "score": 8, "summary": "..." },
-    { "key": "arts", "label": "Arts, music & creativity", "emoji": "🎨", "score": 6, "summary": "..." },
-    { "key": "political", "label": "Political & activist culture", "emoji": "✊", "score": 7, "summary": "..." },
-    { "key": "greekLife", "label": "Greek life", "emoji": "🏛️", "score": 5, "summary": "..." },
-    { "key": "diversity", "label": "Diversity & inclusion", "emoji": "🌍", "score": 8, "summary": "..." },
-    { "key": "outdoor", "label": "Outdoor & nature access", "emoji": "🏔️", "score": 4, "summary": "..." },
-    { "key": "academic", "label": "Academic intensity", "emoji": "📚", "score": 9, "summary": "..." },
-    { "key": "community", "label": "Local community atmosphere", "emoji": "🏘️", "score": 6, "summary": "..." }
+    { "key": "social", "label": "Social scene", "emoji": "🎉", "score": 7, "summary": "One honest sentence about this dimension at this specific school." }
   ],
-  "overallSummary": "2-3 sentence summary of the overall vibe of this school and whether it fits this student.",
+  "overallSummary": "2-3 sentence honest summary of the overall vibe and whether it fits this student.",
   "fitScore": 75
 }
 
-Scores are 1-10. fitScore is 1-100. Be honest, specific, and avoid generic talking points. Base your analysis on real knowledge of the school.`
+Only include the dimensions the student selected. Scores are 1-10. fitScore is 1-100. Be honest, specific, and avoid generic talking points. Base your analysis on real knowledge of the school.`
 
     const userMessage = `College: ${college.name} in ${college.location}
 Student interests: ${profile?.careerGoals?.join(', ') || 'not specified'}
 Student location preference: ${profile?.preferredLocations?.join(', ') || 'not specified'}
 Intended major: ${profile?.intendedMajor || 'not specified'}
 
-Please generate a vibe check for this student at this school.`
+Dimensions to analyze:
+${selectedDims.map(d => `- ${d.key}: ${d.label} — ${d.description}`).join('\n')}
+
+Please generate a vibe check for only these dimensions.`
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -157,13 +323,14 @@ Please generate a vibe check for this student at this school.`
       const parsed: VibeResult = JSON.parse(clean)
       setResult(parsed)
     } catch (err) {
-      setError('Something went wrong. Try again.')
+      setError('Something went wrong generating the vibe check. Try again.')
       console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
+  const accentColor = '#6366F1'
   const fitColor = result
     ? result.fitScore >= 80 ? '#059669'
     : result.fitScore >= 60 ? '#6366F1'
@@ -208,51 +375,66 @@ Please generate a vibe check for this student at this school.`
           {college.name}
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', margin: 0 }}>
-          Does this school's culture actually fit you?
+          Choose the dimensions that matter to you, then run your analysis.
         </p>
       </div>
 
-      {/* Pre-run state */}
+      {/* Selector — hide once results are showing */}
       {!result && !loading && (
-        <div style={{
-          background: '#0F172A',
-          borderRadius: '16px',
-          padding: '2.5rem 2rem',
-          textAlign: 'center',
-          marginBottom: '1.5rem',
-        }}>
-          <div style={{ fontSize: '40px', marginBottom: '16px' }}>✨</div>
-          <div style={{ fontSize: '16px', fontWeight: 500, color: '#FFFFFF', marginBottom: '8px' }}>
-            Ready to check the vibe?
+        <>
+          <DimensionSelector
+            selected={selected}
+            onToggle={toggleDimension}
+            onSelectAll={toggleSelectAll}
+          />
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              background: '#FEF2F2', border: '0.5px solid #FECACA',
+              borderRadius: '10px', padding: '12px 16px',
+              fontSize: '13px', color: '#DC2626',
+              marginTop: '16px',
+            }}>
+              {error}
+            </div>
+          )}
+
+          {/* Run button */}
+          <div style={{ marginTop: '24px' }}>
+            <button
+              onClick={runVibeCheck}
+              disabled={selected.size === 0}
+              style={{
+                width: '100%',
+                background: selected.size === 0 ? 'var(--color-background-secondary)' : '#6366F1',
+                color: selected.size === 0 ? 'var(--color-text-tertiary)' : 'white',
+                border: 'none', borderRadius: '10px',
+                padding: '13px', fontSize: '14px',
+                fontWeight: 500,
+                cursor: selected.size === 0 ? 'default' : 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {selected.size === 0
+                ? 'Select at least one dimension'
+                : `Run Vibe Check — ${selected.size} dimension${selected.size !== 1 ? 's' : ''}`}
+            </button>
           </div>
-          <div style={{ fontSize: '13px', color: '#64748B', marginBottom: '24px', lineHeight: 1.6 }}>
-            We'll analyze {college.name}'s social scene, culture, and campus life across 9 dimensions and match it to your profile.
-          </div>
-          <button
-            onClick={runVibeCheck}
-            style={{
-              background: '#6366F1', color: 'white',
-              border: 'none', borderRadius: '10px',
-              padding: '12px 28px', fontSize: '14px',
-              fontWeight: 500, cursor: 'pointer',
-            }}
-          >
-            Run Vibe Check
-          </button>
-        </div>
+        </>
       )}
 
-      {/* Loading state */}
+      {/* Loading */}
       {loading && (
         <div style={{
           background: '#0F172A',
           borderRadius: '16px',
           padding: '2.5rem 2rem',
           textAlign: 'center',
-          marginBottom: '1.5rem',
+          marginTop: '1rem',
         }}>
           <div style={{ fontSize: '13px', color: '#64748B', marginBottom: '16px' }}>
-            Analyzing {college.name}'s vibe...
+            Analyzing {college.name}'s vibe across {selected.size} dimensions...
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
             {[0, 1, 2].map(i => (
@@ -263,25 +445,6 @@ Please generate a vibe check for this student at this school.`
               }} />
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Error state */}
-      {error && (
-        <div style={{
-          background: '#FEF2F2', border: '0.5px solid #FECACA',
-          borderRadius: '10px', padding: '14px 16px',
-          fontSize: '13px', color: '#DC2626',
-          marginBottom: '1.5rem',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
-          {error}
-          <button onClick={runVibeCheck} style={{
-            fontSize: '12px', color: '#DC2626',
-            background: 'none', border: 'none', cursor: 'pointer',
-          }}>
-            Try again
-          </button>
         </div>
       )}
 
@@ -300,10 +463,17 @@ Please generate a vibe check for this student at this school.`
             gap: '16px',
           }}>
             <div>
-              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{
+                fontSize: '12px', color: '#64748B',
+                marginBottom: '6px',
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+              }}>
                 Overall vibe fit
               </div>
-              <div style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6, maxWidth: '380px' }}>
+              <div style={{
+                fontSize: '13px', color: '#94A3B8',
+                lineHeight: 1.6, maxWidth: '380px',
+              }}>
                 {result.overallSummary}
               </div>
             </div>
@@ -315,23 +485,43 @@ Please generate a vibe check for this student at this school.`
             </div>
           </div>
 
-          {/* Dimension cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1.5rem' }}>
+          {/* Dimension results */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '10px',
+            marginBottom: '1.5rem',
+          }}>
             {result.dimensions.map(dim => (
               <DimensionCard key={dim.key} dim={dim} color={accentColor} />
             ))}
           </div>
 
-          {/* Re-run button */}
-          <div style={{ textAlign: 'center' }}>
+          {/* Re-run / adjust */}
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              onClick={runVibeCheck}
+              onClick={() => { setResult(null); setError(null) }}
               style={{
-                fontSize: '13px', color: 'var(--color-text-secondary)',
+                flex: 1, fontSize: '13px',
+                color: 'var(--color-text-secondary)',
                 background: 'none',
                 border: '0.5px solid var(--color-border-secondary)',
                 borderRadius: '8px',
-                padding: '8px 16px', cursor: 'pointer',
+                padding: '10px', cursor: 'pointer',
+              }}
+            >
+              Adjust dimensions
+            </button>
+            <button
+              onClick={runVibeCheck}
+              style={{
+                flex: 1, fontSize: '13px',
+                color: '#6366F1',
+                background: '#EEF2FF',
+                border: '0.5px solid #C7D2FE',
+                borderRadius: '8px',
+                padding: '10px', cursor: 'pointer',
+                fontWeight: 500,
               }}
             >
               Re-run analysis
