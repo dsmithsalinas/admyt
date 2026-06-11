@@ -2,6 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { sampleColleges } from '@/data/sampleColleges'
 import { useProfile } from '@/context/ProfileContext'
+import { useAuth } from '@/context/AuthContext'
+import AuthModal from '@/components/ui/AuthModal'
 
 interface VibeDimension {
   key: string
@@ -227,6 +229,8 @@ export default function VibeCheck() {
   const navigate = useNavigate()
   const { profile } = useProfile()
 
+  const { user } = useAuth()
+  const [showAuthModal, setShowAuthModal] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(
     new Set(VIBE_DIMENSIONS.map(d => d.key))
   )
@@ -528,6 +532,49 @@ Please generate a vibe check for only these dimensions.`
             </button>
           </div>
         </>
+      )}
+
+      {result && !user && (
+        <div style={{
+          marginTop: '16px',
+          background: '#EEF2FF',
+          border: '0.5px solid #C7D2FE',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+        }}>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 500, color: '#3730A3', marginBottom: '3px' }}>
+              Save your Vibe Check
+            </div>
+            <div style={{ fontSize: '12px', color: '#4338CA' }}>
+              Create a free account to save these results and your college list.
+            </div>
+          </div>
+          <button
+            onClick={() => setShowAuthModal(true)}
+            style={{
+              background: '#6366F1', color: 'white',
+              border: 'none', borderRadius: '8px',
+              padding: '8px 16px', fontSize: '13px',
+              fontWeight: 500, cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Save results
+          </button>
+        </div>
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          trigger="vibecheck"
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={() => setShowAuthModal(false)}
+        />
       )}
 
       <style>{`
