@@ -74,16 +74,16 @@ export default function OnboardingChat({ onComplete, onSkip }: OnboardingChatPro
     if (started) setMessages(updated)
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 300,
           system: SYSTEM_PROMPT,
-          messages: updated.length > 0
-            ? updated
-            : [{ role: 'user', content: 'start' }],
+          messages: updated.length > 0 ? updated : [{ role: 'user', content: 'start' }],
         }),
       })
 

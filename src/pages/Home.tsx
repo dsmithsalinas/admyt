@@ -1,16 +1,11 @@
 import { useState } from 'react'
+import { useProfile } from '@/context/ProfileContext'
 import OnboardingChat from '@/components/features/onboarding/OnboardingChat'
-
-interface StudentProfile {
-  preferredLocations: string[]
-  careerGoals: string[]
-  intendedMajor?: string
-  complete: boolean
-}
+import type { StudentProfile } from '@/context/ProfileContext'
 
 export default function Home() {
+  const { profile, setProfile } = useProfile()
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [profile, setProfile] = useState<StudentProfile | null>(null)
 
   function handleComplete(extracted: StudentProfile) {
     setProfile(extracted)

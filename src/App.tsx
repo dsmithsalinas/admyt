@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { ProfileProvider } from '@/context/ProfileContext'
 import Layout from '@/components/layout/Layout'
 import Home from '@/pages/Home'
 import Search from '@/pages/Search'
@@ -8,6 +9,7 @@ import VibeCheck from '@/pages/VibeCheck'
 
 export default function App() {
   return (
+    <ProfileProvider>
     <Routes>
       <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<Layout />}>
@@ -17,5 +19,6 @@ export default function App() {
         <Route path="/college/:id/vibe" element={<VibeCheck />} />
       </Route>
     </Routes>
+    </ProfileProvider>
   )
 }

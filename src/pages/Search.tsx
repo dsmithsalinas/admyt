@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import { sampleColleges } from '@/data/sampleColleges'
+import { useProfile } from '@/context/ProfileContext'
+import { scoreCollege } from '@/lib/matchScore'
 import type { College } from '@/types'
 
 const US_STATES = [
@@ -16,13 +18,6 @@ const US_STATES = [
 const ALL_MAJORS = Array.from(
   new Set(sampleColleges.flatMap(c => c.majors))
 ).sort()
-
-function matchScore(college: College): number {
-  // Deterministic pseudo-score based on college id for now
-  // Will be replaced by Claude API scoring once profile exists
-  const base = ((parseInt(college.id) * 37) % 40) + 60
-  return Math.min(base, 99)
-}
 
 function MatchBadge({ score }: { score: number }) {
   const color = score >= 85 ? '#059669' : score >= 70 ? '#6366F1' : '#94A3B8'
@@ -44,8 +39,8 @@ function MatchBadge({ score }: { score: number }) {
   )
 }
 
-function CollegeCard({ college }: { college: College }) {
-  const score = matchScore(college)
+function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
+  const score = scoreCollege(college, profile)
   return (
     <div style={{
       background: 'var(--color-background-primary)',
@@ -119,6 +114,7 @@ function CollegeCard({ college }: { college: College }) {
 }
 
 export default function Search() {
+  const { profile } = useProfile()
   const [query, setQuery] = useState('')
   const [selectedState, setSelectedState] = useState('')
   const [selectedSize, setSelectedSize] = useState('')
@@ -138,8 +134,8 @@ export default function Search() {
         if (selectedMajor && !c.majors.includes(selectedMajor)) return false
         return true
       })
-      .sort((a, b) => matchScore(b) - matchScore(a))
-  }, [query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor])
+      .sort((a, b) => scoreCollege(b, profile) - scoreCollege(a, profile))
+  }, [query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor, profile])
 
   const activeFilters = [selectedState, selectedSize, selectedType, selectedMajor]
     .filter(Boolean).length + (maxTuition < 70000 ? 1 : 0)
@@ -289,7 +285,7 @@ export default function Search() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
             {filtered.map(college => (
-              <CollegeCard key={college.id} college={college} />
+              <CollegeCard key={college.id} college={college} profile={profile} />
             ))}
           </div>
         )}
