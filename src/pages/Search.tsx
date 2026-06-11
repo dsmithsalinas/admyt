@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { sampleColleges } from '@/data/sampleColleges'
 import { useProfile } from '@/context/ProfileContext'
 import { scoreCollege } from '@/lib/matchScore'
@@ -41,8 +42,9 @@ function MatchBadge({ score }: { score: number }) {
 
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
   const score = scoreCollege(college, profile)
+  const navigate = useNavigate()
   return (
-    <div style={{
+    <div onClick={() => navigate(`/college/${college.id}`)} style={{
       background: 'var(--color-background-primary)',
       border: '0.5px solid var(--color-border-tertiary)',
       borderRadius: '12px',
