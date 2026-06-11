@@ -78,7 +78,7 @@ export default function CollegeDetail() {
 
       {/* Back button */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/search')}
         style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           fontSize: '13px', color: 'var(--color-text-secondary)',
