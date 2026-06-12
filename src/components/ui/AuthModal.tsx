@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/shadcn'
 
 interface AuthModalProps {
   onClose: () => void
@@ -41,85 +42,31 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
     if (e.key === 'Enter') handleEmailSubmit()
   }
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    border: '0.5px solid var(--color-border-secondary)',
-    background: 'var(--color-background-primary)',
-    color: 'var(--color-text-primary)',
-    outline: 'none',
-    boxSizing: 'border-box' as const,
-  }
-
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 1000, padding: '1rem',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: 'var(--color-background-primary)',
-          borderRadius: '16px',
-          padding: '28px 24px',
-          width: '100%',
-          maxWidth: '400px',
-          position: 'relative',
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute', top: '16px', right: '16px',
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '18px', color: 'var(--color-text-tertiary)',
-            lineHeight: 1,
-          }}
-        >
-          ✕
-        </button>
-
-        <div style={{ marginBottom: '24px' }}>
+    <Dialog open onOpenChange={open => { if (!open) onClose() }}>
+      <DialogContent style={{ maxWidth: '400px', padding: '28px 24px' }}>
+        <DialogHeader style={{ marginBottom: '24px' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             background: '#EEF2FF', border: '0.5px solid #C7D2FE',
             borderRadius: '20px', padding: '3px 10px',
             fontSize: '12px', fontWeight: 500, color: '#4338CA',
-            marginBottom: '10px',
+            marginBottom: '10px', width: 'fit-content',
           }}>
             ✨ Free account
           </div>
-          <h2 style={{
-            fontSize: '20px', fontWeight: 500,
-            color: 'var(--color-text-primary)',
-            marginBottom: '6px', letterSpacing: '-0.3px',
-          }}>
+          <DialogTitle style={{ fontSize: '20px', fontWeight: 500, letterSpacing: '-0.3px' }}>
             {headline}
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+          </DialogTitle>
+          <DialogDescription style={{ fontSize: '13px', lineHeight: 1.6, marginTop: '4px' }}>
             {subline}
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
-        <button
+        <Button
+          variant="outline"
           onClick={signInWithGoogle}
-          style={{
-            width: '100%', padding: '11px',
-            borderRadius: '8px', fontSize: '14px',
-            border: '0.5px solid var(--color-border-secondary)',
-            background: 'var(--color-background-primary)',
-            color: 'var(--color-text-primary)',
-            cursor: 'pointer', fontWeight: 500,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            marginBottom: '16px',
-          }}
+          style={{ width: '100%', justifyContent: 'center', gap: '8px', marginBottom: '16px', height: '42px' }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -128,33 +75,30 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
             <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
           </svg>
           Continue with Google
-        </button>
+        </Button>
 
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '12px',
-          marginBottom: '16px',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
           <div style={{ flex: 1, height: '0.5px', background: 'var(--color-border-tertiary)' }} />
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>or</span>
           <div style={{ flex: 1, height: '0.5px', background: 'var(--color-border-tertiary)' }} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-          <input
+          <Input
             type="email"
             placeholder="Email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             onKeyDown={handleKey}
-            style={inputStyle}
+            style={{ height: '42px', fontSize: '14px' }}
           />
-          <input
+          <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             onKeyDown={handleKey}
-            style={inputStyle}
+            style={{ height: '42px', fontSize: '14px' }}
           />
         </div>
 
@@ -162,54 +106,41 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
           <div style={{
             fontSize: '12px', color: '#DC2626',
             background: '#FEF2F2', border: '0.5px solid #FECACA',
-            borderRadius: '6px', padding: '8px 12px',
-            marginBottom: '12px',
+            borderRadius: '6px', padding: '8px 12px', marginBottom: '12px',
           }}>
             {error}
           </div>
         )}
 
-        <button
+        <Button
           onClick={handleEmailSubmit}
           disabled={loading || !email || !password}
-          style={{
-            width: '100%', padding: '11px',
-            borderRadius: '8px', fontSize: '14px',
-            background: email && password ? '#6366F1' : 'var(--color-background-secondary)',
-            color: email && password ? 'white' : 'var(--color-text-tertiary)',
-            border: 'none', cursor: email && password ? 'pointer' : 'default',
-            fontWeight: 500, marginBottom: '16px',
-          }}
+          style={{ width: '100%', height: '42px', marginBottom: '16px' }}
         >
           {loading ? 'Please wait...' : mode === 'signup' ? 'Create free account' : 'Sign in'}
-        </button>
+        </Button>
 
         <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
           {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-          <button
+          <Button
+            variant="link"
             onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError(null) }}
-            style={{
-              color: '#6366F1', background: 'none',
-              border: 'none', cursor: 'pointer',
-              fontSize: '13px', fontWeight: 500, padding: 0,
-            }}
+            style={{ fontSize: '13px', height: 'auto', padding: 0 }}
           >
             {mode === 'signup' ? 'Sign in' : 'Sign up'}
-          </button>
+          </Button>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '12px' }}>
-          <button
+          <Button
+            variant="ghost"
             onClick={onClose}
-            style={{
-              fontSize: '12px', color: 'var(--color-text-tertiary)',
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}
+            style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', height: 'auto', padding: '4px 8px' }}
           >
             Continue as guest
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

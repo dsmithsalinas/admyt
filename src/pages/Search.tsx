@@ -5,7 +5,7 @@ import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
 import type { College } from '@/lib/colleges'
-import { Button, Badge, Card, CardContent } from '@/components/ui/shadcn'
+import { Button, Badge, Card, CardContent, Input } from '@/components/ui/shadcn'
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' },
@@ -273,16 +273,11 @@ export default function Search() {
       {/* Results */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <input
-            value={query} onChange={e => setQuery(e.target.value)}
+          <Input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Search by school name or city..."
-            style={{
-              flex: 1, padding: '10px 14px',
-              borderRadius: '8px', fontSize: '14px',
-              border: '0.5px solid var(--color-border-secondary)',
-              background: 'var(--color-background-primary)',
-              color: 'var(--color-text-primary)', outline: 'none',
-            }}
+            style={{ flex: 1, fontSize: '14px', height: '40px' }}
           />
           <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap' }}>
             {loading ? '...' : `${filtered.length} school${filtered.length !== 1 ? 's' : ''}`}

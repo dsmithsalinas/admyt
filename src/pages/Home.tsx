@@ -229,10 +229,10 @@ export default function Home() {
         <div style={{ maxWidth: '680px', margin: '0 auto' }}>
           <div style={{
             display: 'flex', gap: '8px', alignItems: 'flex-end',
-            background: '#F8FAFC', borderRadius: '14px',
-            border: '0.5px solid #E2E8F0',
+            background: 'white', borderRadius: '12px',
+            border: '1px solid #E2E8F0',
             padding: '8px 8px 8px 14px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
           }}>
             <textarea
               ref={textareaRef}

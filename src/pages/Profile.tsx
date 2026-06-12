@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
 import { supabase } from '@/lib/supabase'
 import AuthModal from '@/components/ui/AuthModal'
-import { Button } from '@/components/ui/shadcn'
+import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/shadcn'
 
 interface SavedVibe {
   id: string
@@ -243,57 +243,25 @@ function PreferencesModal({
   )
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 1000, padding: '1rem',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: 'var(--color-background-primary)',
-          borderRadius: '16px',
-          padding: '24px',
-          width: '100%',
-          maxWidth: '480px',
-          maxHeight: '85vh',
-          overflowY: 'auto',
-          position: 'relative',
-        }}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute top-3 right-3 h-8 w-8 text-slate-400"
-        >✕</Button>
-
-        <h2 style={{ fontSize: '18px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '20px', letterSpacing: '-0.3px' }}>
-          My preferences
-        </h2>
+    <Dialog open onOpenChange={open => { if (!open) onClose() }}>
+      <DialogContent style={{ maxWidth: '480px', padding: '24px', maxHeight: '85vh', overflowY: 'auto' }}>
+        <DialogHeader style={{ marginBottom: '20px' }}>
+          <DialogTitle style={{ fontSize: '18px', fontWeight: 500, letterSpacing: '-0.3px' }}>
+            My preferences
+          </DialogTitle>
+        </DialogHeader>
 
         {/* Intended major */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
             Intended major
           </label>
-          <input
+          <Input
             type="text"
             value={major}
             onChange={e => setMajor(e.target.value)}
             placeholder="e.g. Computer Science"
-            style={{
-              width: '100%', padding: '10px 14px',
-              borderRadius: '8px', fontSize: '14px',
-              border: '0.5px solid var(--color-border-secondary)',
-              background: 'var(--color-background-primary)',
-              color: 'var(--color-text-primary)',
-              outline: 'none', boxSizing: 'border-box',
-            }}
+            style={{ fontSize: '14px', height: '40px' }}
           />
         </div>
 
@@ -341,20 +309,12 @@ function PreferencesModal({
             </div>
           )}
 
-          <input
+          <Input
             type="text"
             value={stateSearch}
             onChange={e => setStateSearch(e.target.value)}
             placeholder="Search states..."
-            style={{
-              width: '100%', padding: '8px 12px',
-              borderRadius: '8px', fontSize: '13px',
-              border: '0.5px solid var(--color-border-secondary)',
-              background: 'var(--color-background-secondary)',
-              color: 'var(--color-text-primary)',
-              outline: 'none', boxSizing: 'border-box',
-              marginBottom: '8px',
-            }}
+            style={{ fontSize: '13px', height: '36px', marginBottom: '8px' }}
           />
 
           <div style={{
@@ -368,8 +328,7 @@ function PreferencesModal({
                 onClick={() => toggleState(s.abbr)}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '10px 14px',
-                  cursor: 'pointer',
+                  padding: '10px 14px', cursor: 'pointer',
                   background: states.includes(s.abbr) ? '#EEF2FF' : 'transparent',
                   borderBottom: i < filteredStates.length - 1 ? '0.5px solid var(--color-border-tertiary)' : 'none',
                   transition: 'background 0.1s',
@@ -391,7 +350,7 @@ function PreferencesModal({
         </div>
 
         <Button
-          className="w-full"
+          style={{ width: '100%' }}
           onClick={() => onSave({
             preferred_states: states,
             max_tuition: maxTuition,
@@ -400,8 +359,8 @@ function PreferencesModal({
         >
           Save preferences
         </Button>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
