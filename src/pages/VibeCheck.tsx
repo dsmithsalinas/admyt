@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { sampleColleges } from '@/data/sampleColleges'
+import { getCollege } from '@/lib/colleges'
+import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useAuth } from '@/context/AuthContext'
 import AuthModal from '@/components/ui/AuthModal'
@@ -241,8 +242,17 @@ export default function VibeCheck() {
   const [saved, setSaved] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [college, setCollege] = useState<College | null>(null)
+  const [collegeLoading, setCollegeLoading] = useState(true)
 
-  const college = sampleColleges.find(c => c.id === id)
+  useEffect(() => {
+    if (!id) return
+    setCollegeLoading(true)
+    getCollege(id).then(data => {
+      setCollege(data)
+      setCollegeLoading(false)
+    })
+  }, [id])
 
   useEffect(() => {
     if (!user || !result || !college) return
@@ -250,6 +260,14 @@ export default function VibeCheck() {
       if (existing) setSaved(true)
     })
   }, [user, result, college])
+
+  if (collegeLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+        Loading...
+      </div>
+    )
+  }
 
   if (!college) {
     return (
@@ -330,6 +348,7 @@ You must respond with ONLY valid JSON — no preamble, no explanation, no markdo
 
 Only include the dimensions the student selected. Scores are 1-10. fitScore is 1-100. Be honest, specific, and avoid generic talking points. Base your analysis on real knowledge of the school.`
 
+    if (!college) return
     const userMessage = `College: ${college.name} in ${college.location}
 Student interests: ${profile?.careerGoals?.join(', ') || 'not specified'}
 Student location preference: ${profile?.preferredLocations?.join(', ') || 'not specified'}

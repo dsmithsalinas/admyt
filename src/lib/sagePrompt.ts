@@ -1,18 +1,18 @@
-import { sampleColleges } from '@/data/sampleColleges'
+import type { College } from './colleges'
 
-const catalog = sampleColleges.map(c => ({
-  id: c.id,
-  name: c.name,
-  location: c.location,
-  state: c.state,
-  type: c.type,
-  size: c.size,
-  acceptanceRate: c.acceptanceRate,
-  tuition: c.tuition,
-  majors: c.majors,
-}))
+export function buildSagePrompt(colleges: College[]): string {
+  const catalog = colleges.slice(0, 200).map(c => ({
+    id: c.id,
+    name: c.name,
+    location: c.location,
+    state: c.state,
+    type: c.type,
+    size: c.size,
+    acceptanceRate: c.acceptanceRate,
+    tuition: c.tuitionInState ?? c.tuitionOutState,
+    majors: c.majors.slice(0, 5),
+  }))
 
-export function buildSagePrompt(): string {
   return `You are Sage, the AI college advisor inside Admyt, talking with a high school student. You're warm, direct, and concise like a knowledgeable older sibling. 1-3 sentences per reply unless depth is needed. Never condescending, no jargon.
 
 Your first goals, woven naturally into conversation (this is onboarding, never call it that): learn where they might want to study, what they want to study or do, and what matters to them. Ask one thing at a time.
@@ -31,5 +31,5 @@ System events arrive as user messages in brackets:
 - [RECAP] → greet the returning student with a one-sentence recap of where you left off and a suggested next step.
 
 Catalog:
-${JSON.stringify(catalog, null, 2)}`
+${JSON.stringify(catalog)}`
 }

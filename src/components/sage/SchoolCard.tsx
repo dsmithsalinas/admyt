@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { sampleColleges } from '@/data/sampleColleges'
+import { useColleges } from '@/context/CollegeContext'
 import { scoreCollege } from '@/lib/matchScore'
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
-import type { College } from '@/types'
+import type { College } from '@/lib/colleges'
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -31,7 +31,8 @@ function scoreColor(score: number) {
 }
 
 export default function SchoolCard({ collegeId }: { collegeId: string }) {
-  const college = sampleColleges.find(c => c.id === collegeId) as College | undefined
+  const { colleges } = useColleges()
+  const college = colleges.find(c => c.id === collegeId) as College | undefined
   const { profile } = useProfile()
   const { heartedSchools, toggleHeart } = useChat()
   const [animating, setAnimating] = useState(false)
@@ -91,10 +92,12 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
       {/* Stat chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
         {[
-          `${college.acceptanceRate}% accepted`,
-          formatTuition(college.tuition),
+          college.acceptanceRate != null ? `${college.acceptanceRate}% accepted` : null,
+          (college.tuitionInState ?? college.tuitionOutState) != null
+            ? formatTuition((college.tuitionInState ?? college.tuitionOutState)!)
+            : null,
           college.size,
-        ].map(chip => (
+        ].filter(Boolean).map(chip => (
           <span key={chip} style={{
             fontSize: '11px', color: '#475569',
             background: '#F1F5F9', borderRadius: '100px',

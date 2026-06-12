@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { sampleColleges } from '@/data/sampleColleges'
+import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
 import { scoreCollege } from '@/lib/matchScore'
-import type { College } from '@/types'
+import type { College } from '@/lib/colleges'
 
 const US_STATES = [
   'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
@@ -15,10 +15,6 @@ const US_STATES = [
   'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont',
   'Virginia','Washington','West Virginia','Wisconsin','Wyoming',
 ]
-
-const ALL_MAJORS = Array.from(
-  new Set(sampleColleges.flatMap(c => c.majors))
-).sort()
 
 function MatchBadge({ score }: { score: number }) {
   const color = score >= 85 ? '#059669' : score >= 70 ? '#6366F1' : '#94A3B8'
@@ -43,18 +39,22 @@ function MatchBadge({ score }: { score: number }) {
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
   const score = scoreCollege(college, profile)
   const navigate = useNavigate()
+  const tuition = college.tuitionInState ?? college.tuitionOutState
+  const typeLabel = college.type === 'public' ? 'Public' : 'Private'
+  const sizeLabel = college.size.charAt(0).toUpperCase() + college.size.slice(1)
+
   return (
-    <div onClick={() => navigate(`/college/${college.id}`)} style={{
-      background: 'var(--color-background-primary)',
-      border: '0.5px solid var(--color-border-tertiary)',
-      borderRadius: '12px',
-      padding: '18px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '10px',
-      transition: 'border-color 0.15s',
-      cursor: 'pointer',
-    }}
+    <div
+      onClick={() => navigate(`/college/${college.id}`)}
+      style={{
+        background: 'var(--color-background-primary)',
+        border: '0.5px solid var(--color-border-tertiary)',
+        borderRadius: '12px',
+        padding: '18px',
+        display: 'flex', flexDirection: 'column', gap: '10px',
+        transition: 'border-color 0.15s',
+        cursor: 'pointer',
+      }}
       onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-secondary)')}
       onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border-tertiary)')}
     >
@@ -70,20 +70,21 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
         <MatchBadge score={score} />
       </div>
 
-      <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
-        {college.description}
-      </p>
+      {college.description && (
+        <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+          {college.description}
+        </p>
+      )}
 
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
         {[
-          college.type === 'public' ? 'Public' : 'Private',
-          college.size.charAt(0).toUpperCase() + college.size.slice(1),
-          `${college.acceptanceRate}% admit rate`,
-          `$${college.tuition.toLocaleString()}/yr`,
-        ].map(tag => (
-          <span key={tag} style={{
-            fontSize: '11px', padding: '2px 8px',
-            borderRadius: '20px',
+          typeLabel,
+          sizeLabel,
+          college.acceptanceRate != null ? `${college.acceptanceRate}% admit rate` : null,
+          tuition != null ? `$${tuition.toLocaleString()}/yr` : null,
+        ].filter(Boolean).map(tag => (
+          <span key={tag!} style={{
+            fontSize: '11px', padding: '2px 8px', borderRadius: '20px',
             background: 'var(--color-background-secondary)',
             color: 'var(--color-text-secondary)',
             border: '0.5px solid var(--color-border-tertiary)',
@@ -93,30 +94,40 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {college.majors.slice(0, 3).map(major => (
-          <span key={major} style={{
-            fontSize: '11px', padding: '2px 8px',
-            borderRadius: '20px',
-            background: '#EEF2FF',
-            color: '#4338CA',
-            border: '0.5px solid #C7D2FE',
-          }}>
-            {major}
-          </span>
-        ))}
-        {college.majors.length > 3 && (
-          <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', padding: '2px 4px' }}>
-            +{college.majors.length - 3} more
-          </span>
-        )}
-      </div>
+      {college.majors.length > 0 && (
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {college.majors.slice(0, 3).map(major => (
+            <span key={major} style={{
+              fontSize: '11px', padding: '2px 8px', borderRadius: '20px',
+              background: '#EEF2FF', color: '#4338CA', border: '0.5px solid #C7D2FE',
+            }}>
+              {major}
+            </span>
+          ))}
+          {college.majors.length > 3 && (
+            <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', padding: '2px 4px' }}>
+              +{college.majors.length - 3} more
+            </span>
+          )}
+        </div>
+      )}
     </div>
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <div style={{
+      height: '180px', borderRadius: '12px',
+      background: 'var(--color-background-secondary)',
+      animation: 'skeletonPulse 1.5s ease-in-out infinite',
+    }} />
   )
 }
 
 export default function Search() {
   const { profile } = useProfile()
+  const { colleges, loading } = useColleges()
   const [query, setQuery] = useState('')
   const [selectedState, setSelectedState] = useState('')
   const [selectedSize, setSelectedSize] = useState('')
@@ -124,20 +135,26 @@ export default function Search() {
   const [maxTuition, setMaxTuition] = useState(70000)
   const [selectedMajor, setSelectedMajor] = useState('')
 
+  const allMajors = useMemo(
+    () => Array.from(new Set(colleges.flatMap(c => c.majors))).sort(),
+    [colleges],
+  )
+
   const filtered = useMemo(() => {
-    return sampleColleges
+    return colleges
       .filter(c => {
         if (query && !c.name.toLowerCase().includes(query.toLowerCase()) &&
           !c.location.toLowerCase().includes(query.toLowerCase())) return false
         if (selectedState && c.state !== selectedState) return false
         if (selectedSize && c.size !== selectedSize) return false
         if (selectedType && c.type !== selectedType) return false
-        if (c.tuition > maxTuition) return false
+        const tuition = c.tuitionInState ?? c.tuitionOutState
+        if (tuition != null && tuition > maxTuition) return false
         if (selectedMajor && !c.majors.includes(selectedMajor)) return false
         return true
       })
       .sort((a, b) => scoreCollege(b, profile) - scoreCollege(a, profile))
-  }, [query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor, profile])
+  }, [colleges, query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor, profile])
 
   const activeFilters = [selectedState, selectedSize, selectedType, selectedMajor]
     .filter(Boolean).length + (maxTuition < 70000 ? 1 : 0)
@@ -155,9 +172,7 @@ export default function Search() {
     fontSize: '11px', fontWeight: 500 as const,
     color: 'var(--color-text-tertiary)',
     textTransform: 'uppercase' as const,
-    letterSpacing: '0.05em',
-    marginBottom: '6px',
-    display: 'block',
+    letterSpacing: '0.05em', marginBottom: '6px', display: 'block',
   }
 
   const selectStyle = {
@@ -166,8 +181,7 @@ export default function Search() {
     border: '0.5px solid var(--color-border-secondary)',
     background: 'var(--color-background-primary)',
     color: 'var(--color-text-primary)',
-    outline: 'none',
-    cursor: 'pointer',
+    outline: 'none', cursor: 'pointer',
   }
 
   return (
@@ -175,18 +189,12 @@ export default function Search() {
 
       {/* Filters sidebar */}
       <div style={{
-        width: '220px',
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-        position: 'sticky',
-        top: '24px',
+        width: '220px', flexShrink: 0,
+        display: 'flex', flexDirection: 'column', gap: '20px',
+        position: 'sticky', top: '24px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-            Filters
-          </span>
+          <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Filters</span>
           {activeFilters > 0 && (
             <button onClick={clearFilters} style={{
               fontSize: '12px', color: '#6366F1',
@@ -225,21 +233,14 @@ export default function Search() {
         </div>
 
         <div>
-          <label style={labelStyle}>
-            Max tuition — ${maxTuition.toLocaleString()}/yr
-          </label>
+          <label style={labelStyle}>Max tuition — ${maxTuition.toLocaleString()}/yr</label>
           <input
-            type="range"
-            min={5000}
-            max={70000}
-            step={1000}
-            value={maxTuition}
-            onChange={e => setMaxTuition(Number(e.target.value))}
+            type="range" min={5000} max={70000} step={1000}
+            value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))}
             style={{ width: '100%', accentColor: '#6366F1' }}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-            <span>$5k</span>
-            <span>$70k</span>
+            <span>$5k</span><span>$70k</span>
           </div>
         </div>
 
@@ -247,7 +248,7 @@ export default function Search() {
           <label style={labelStyle}>Major</label>
           <select value={selectedMajor} onChange={e => setSelectedMajor(e.target.value)} style={selectStyle}>
             <option value="">Any major</option>
-            {ALL_MAJORS.map(m => <option key={m} value={m}>{m}</option>)}
+            {allMajors.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
       </div>
@@ -256,24 +257,26 @@ export default function Search() {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
+            value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Search by school name or city..."
             style={{
               flex: 1, padding: '10px 14px',
               borderRadius: '8px', fontSize: '14px',
               border: '0.5px solid var(--color-border-secondary)',
               background: 'var(--color-background-primary)',
-              color: 'var(--color-text-primary)',
-              outline: 'none',
+              color: 'var(--color-text-primary)', outline: 'none',
             }}
           />
           <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap' }}>
-            {filtered.length} school{filtered.length !== 1 ? 's' : ''}
+            {loading ? '...' : `${filtered.length} school${filtered.length !== 1 ? 's' : ''}`}
           </span>
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-secondary)' }}>
             <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎓</div>
             <div style={{ fontSize: '14px' }}>No schools match those filters.</div>
@@ -292,6 +295,13 @@ export default function Search() {
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes skeletonPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -1,9 +1,8 @@
-import type { College } from '@/types'
+import type { College } from './colleges'
 import type { StudentProfile } from '@/context/ProfileContext'
 
 export function scoreCollege(college: College, profile: StudentProfile | null): number {
   if (!profile) {
-    // Fallback deterministic score when no profile exists
     return Math.min(((parseInt(college.id) * 37) % 40) + 60, 99)
   }
 
@@ -34,10 +33,12 @@ export function scoreCollege(college: College, profile: StudentProfile | null): 
   if (locationMatch) score += 20
 
   // Career goal keyword match in description — up to 10 points
-  const descMatch = goals.some(g => college.description.toLowerCase().includes(g))
-  if (descMatch) score += 10
+  if (college.description) {
+    const descMatch = goals.some(g => college.description!.toLowerCase().includes(g))
+    if (descMatch) score += 10
+  }
 
-  // Slight randomization per college so scores feel varied (not pure algorithm)
+  // Slight per-college jitter so scores feel varied
   const jitter = ((parseInt(college.id) * 13) % 7) - 3
   score += jitter
 
