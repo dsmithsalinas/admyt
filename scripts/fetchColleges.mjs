@@ -8,7 +8,7 @@ dotenv.config({ path: join(__dirname, '../.env.local') })
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 const API_KEY = process.env.COLLEGE_SCORECARD_API_KEY

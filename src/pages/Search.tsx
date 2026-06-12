@@ -6,14 +6,57 @@ import { scoreCollege } from '@/lib/matchScore'
 import type { College } from '@/lib/colleges'
 
 const US_STATES = [
-  'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
-  'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
-  'Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan',
-  'Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
-  'New Hampshire','New Jersey','New Mexico','New York','North Carolina',
-  'North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island',
-  'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont',
-  'Virginia','Washington','West Virginia','Wisconsin','Wyoming',
+  { abbr: 'AK', name: 'Alaska' },
+  { abbr: 'AL', name: 'Alabama' },
+  { abbr: 'AR', name: 'Arkansas' },
+  { abbr: 'AZ', name: 'Arizona' },
+  { abbr: 'CA', name: 'California' },
+  { abbr: 'CO', name: 'Colorado' },
+  { abbr: 'CT', name: 'Connecticut' },
+  { abbr: 'DC', name: 'Washington D.C.' },
+  { abbr: 'DE', name: 'Delaware' },
+  { abbr: 'FL', name: 'Florida' },
+  { abbr: 'GA', name: 'Georgia' },
+  { abbr: 'HI', name: 'Hawaii' },
+  { abbr: 'IA', name: 'Iowa' },
+  { abbr: 'ID', name: 'Idaho' },
+  { abbr: 'IL', name: 'Illinois' },
+  { abbr: 'IN', name: 'Indiana' },
+  { abbr: 'KS', name: 'Kansas' },
+  { abbr: 'KY', name: 'Kentucky' },
+  { abbr: 'LA', name: 'Louisiana' },
+  { abbr: 'MA', name: 'Massachusetts' },
+  { abbr: 'MD', name: 'Maryland' },
+  { abbr: 'ME', name: 'Maine' },
+  { abbr: 'MI', name: 'Michigan' },
+  { abbr: 'MN', name: 'Minnesota' },
+  { abbr: 'MO', name: 'Missouri' },
+  { abbr: 'MS', name: 'Mississippi' },
+  { abbr: 'MT', name: 'Montana' },
+  { abbr: 'NC', name: 'North Carolina' },
+  { abbr: 'ND', name: 'North Dakota' },
+  { abbr: 'NE', name: 'Nebraska' },
+  { abbr: 'NH', name: 'New Hampshire' },
+  { abbr: 'NJ', name: 'New Jersey' },
+  { abbr: 'NM', name: 'New Mexico' },
+  { abbr: 'NV', name: 'Nevada' },
+  { abbr: 'NY', name: 'New York' },
+  { abbr: 'OH', name: 'Ohio' },
+  { abbr: 'OK', name: 'Oklahoma' },
+  { abbr: 'OR', name: 'Oregon' },
+  { abbr: 'PA', name: 'Pennsylvania' },
+  { abbr: 'RI', name: 'Rhode Island' },
+  { abbr: 'SC', name: 'South Carolina' },
+  { abbr: 'SD', name: 'South Dakota' },
+  { abbr: 'TN', name: 'Tennessee' },
+  { abbr: 'TX', name: 'Texas' },
+  { abbr: 'UT', name: 'Utah' },
+  { abbr: 'VA', name: 'Virginia' },
+  { abbr: 'VT', name: 'Vermont' },
+  { abbr: 'WA', name: 'Washington' },
+  { abbr: 'WI', name: 'Wisconsin' },
+  { abbr: 'WV', name: 'West Virginia' },
+  { abbr: 'WY', name: 'Wyoming' },
 ]
 
 function MatchBadge({ score }: { score: number }) {
@@ -209,7 +252,7 @@ export default function Search() {
           <label style={labelStyle}>State</label>
           <select value={selectedState} onChange={e => setSelectedState(e.target.value)} style={selectStyle}>
             <option value="">Any state</option>
-            {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            {US_STATES.map(s => <option key={s.abbr} value={s.abbr}>{s.name}</option>)}
           </select>
         </div>
 
