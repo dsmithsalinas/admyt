@@ -104,7 +104,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         .select('preferred_states,max_tuition,preferred_majors')
         .eq('user_id', user.id)
         .maybeSingle()
-      console.log('[Sage profile] user_preferences fetch:', { data, error })
       if (data) {
         up = data
         setUserPrefs(data)
@@ -120,7 +119,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       maxTuition: up?.max_tuition,
       preferredMajors: up?.preferred_majors,
     }
-    console.log('[Sage profile] snapshot sent to prompt:', snapshot)
     return snapshot
   }
 

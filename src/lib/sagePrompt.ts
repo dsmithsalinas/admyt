@@ -1,5 +1,23 @@
 import type { College } from './colleges'
 
+const STATE_NAMES: Record<string, string> = {
+  AK: 'Alaska', AL: 'Alabama', AR: 'Arkansas', AZ: 'Arizona', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DC: 'Washington D.C.', DE: 'Delaware',
+  FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', IA: 'Iowa', ID: 'Idaho',
+  IL: 'Illinois', IN: 'Indiana', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
+  MA: 'Massachusetts', MD: 'Maryland', ME: 'Maine', MI: 'Michigan', MN: 'Minnesota',
+  MO: 'Missouri', MS: 'Mississippi', MT: 'Montana', NC: 'North Carolina',
+  ND: 'North Dakota', NE: 'Nebraska', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NV: 'Nevada', NY: 'New York', OH: 'Ohio', OK: 'Oklahoma',
+  OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VA: 'Virginia',
+  VT: 'Vermont', WA: 'Washington', WI: 'Wisconsin', WV: 'West Virginia', WY: 'Wyoming',
+}
+
+function expandState(abbr: string): string {
+  return STATE_NAMES[abbr] ?? abbr
+}
+
 export interface SageProfile {
   preferredLocations?: string[]
   careerGoals?: string[]
@@ -23,9 +41,10 @@ export function buildSagePrompt(colleges: College[], profile?: SageProfile): str
   }))
 
   // Build known-profile section from both preference sources
+  const stateNames = (profile?.preferredStates ?? []).map(expandState)
   const locations = [
     ...(profile?.preferredLocations ?? []),
-    ...(profile?.preferredStates ?? []),
+    ...stateNames,
   ].filter((v, i, a) => a.indexOf(v) === i)
   const major = profile?.intendedMajor || profile?.preferredMajors?.[0]
   const goals = profile?.careerGoals ?? []
