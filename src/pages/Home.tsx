@@ -141,8 +141,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* Message thread */}
-          {messages.map((msg) => (
+          {/* Message thread — hidden system events (e.g. [HEARTED]) are excluded */}
+          {messages.filter(m => !m.metadata?.hidden).map((msg) => (
             <div key={msg.id} style={{ marginBottom: '18px', animation: 'sageFadeUp 0.3s ease' }}>
               {msg.role === 'user' ? (
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

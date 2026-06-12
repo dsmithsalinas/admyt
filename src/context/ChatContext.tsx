@@ -9,7 +9,7 @@ export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
-  metadata?: { schoolIds?: string[] }
+  metadata?: { schoolIds?: string[]; hidden?: boolean }
 }
 
 // Shown as static UI in the empty state and seeded into API context on first call
@@ -202,7 +202,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Sends a system event message (e.g. [HEARTED]) — bypasses the loading guard
   // so it can fire after a heart tap even if Sage was just typing.
   async function sendSystemEvent(text: string) {
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: text }
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(), role: 'user', content: text,
+      metadata: { hidden: true },
+    }
     const snapshot = messagesRef.current
     const nextMessages = [...snapshot, userMsg]
     setMessages(nextMessages)
