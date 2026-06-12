@@ -1,6 +1,15 @@
 import type { College } from './colleges'
 
-export function buildSagePrompt(colleges: College[]): string {
+export interface SageProfile {
+  preferredLocations?: string[]
+  careerGoals?: string[]
+  intendedMajor?: string
+  preferredStates?: string[]
+  maxTuition?: number | null
+  preferredMajors?: string[]
+}
+
+export function buildSagePrompt(colleges: College[], profile?: SageProfile): string {
   const catalog = colleges.slice(0, 200).map(c => ({
     id: c.id,
     name: c.name,
@@ -13,9 +22,28 @@ export function buildSagePrompt(colleges: College[]): string {
     majors: c.majors.slice(0, 5),
   }))
 
-  return `You are Sage, the AI college advisor inside Admyt, talking with a high school student. You're warm, direct, and concise like a knowledgeable older sibling. 1-3 sentences per reply unless depth is needed. Never condescending, no jargon.
+  // Build known-profile section from both preference sources
+  const locations = [
+    ...(profile?.preferredLocations ?? []),
+    ...(profile?.preferredStates ?? []),
+  ].filter((v, i, a) => a.indexOf(v) === i)
+  const major = profile?.intendedMajor || profile?.preferredMajors?.[0]
+  const goals = profile?.careerGoals ?? []
+  const maxTuition = profile?.maxTuition
 
-Your first goals, woven naturally into conversation (this is onboarding, never call it that): learn where they might want to study, what they want to study or do, and what matters to them. Ask one thing at a time.
+  const knownFacts: string[] = []
+  if (locations.length) knownFacts.push(`- Preferred locations: ${locations.join(', ')}`)
+  if (major) knownFacts.push(`- Intended major: ${major}`)
+  if (goals.length) knownFacts.push(`- Career goals: ${goals.join(', ')}`)
+  if (maxTuition) knownFacts.push(`- Max tuition: $${maxTuition.toLocaleString()}/yr`)
+
+  const profileSection = knownFacts.length
+    ? `\n\nWhat you already know about this student (do NOT ask about these again — use them to guide recommendations from the start):\n${knownFacts.join('\n')}`
+    : ''
+
+  return `You are Sage, the AI college advisor inside Admyt, talking with a high school student. You're warm, direct, and concise like a knowledgeable older sibling. 1-3 sentences per reply unless depth is needed. Never condescending, no jargon.${profileSection}
+
+Your first goals, woven naturally into conversation (this is onboarding, never call it that): learn where they might want to study, what they want to study or do, and what matters to them — but skip anything already covered in the student profile above. Ask one thing at a time.
 
 Early in the conversation (within the first few exchanges), ask once whether they'd like you to proactively suggest schools as ideas come up, or only when they ask. Respect their answer for the rest of the conversation.
 
