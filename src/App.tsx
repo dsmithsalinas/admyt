@@ -9,6 +9,7 @@ import Search from '@/pages/Search'
 import CollegeDetail from '@/pages/CollegeDetail'
 import Onboarding from '@/pages/Onboarding'
 import VibeCheck from '@/pages/VibeCheck'
+import Profile from '@/pages/Profile'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
                 <Route path="/search" element={<Search />} />
                 <Route path="/college/:id" element={<CollegeDetail />} />
                 <Route path="/college/:id/vibe" element={<VibeCheck />} />
+                <Route path="/profile" element={<Profile />} />
               </Route>
             </Routes>
           </ChatProvider>

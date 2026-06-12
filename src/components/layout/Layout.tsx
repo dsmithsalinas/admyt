@@ -171,7 +171,7 @@ export default function Layout() {
           {/* Profile tab */}
           <button
             onClick={() => {
-              if (user) setShowMobileProfile(p => !p)
+              if (user) navigate('/profile')
               else setShowAuthModal(true)
             }}
             style={{

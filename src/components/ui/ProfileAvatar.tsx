@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import AuthModal from './AuthModal'
 
 export default function ProfileAvatar() {
   const { user, signOut } = useAuth()
+  const navigate = useNavigate()
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -86,6 +88,21 @@ export default function ProfileAvatar() {
               {user.email}
             </div>
           </div>
+          <button
+            onClick={() => { navigate('/profile'); setShowDropdown(false) }}
+            style={{
+              width: '100%', textAlign: 'left',
+              padding: '8px 10px',
+              fontSize: '13px', color: '#E2E8F0',
+              background: 'none', border: 'none',
+              cursor: 'pointer', borderRadius: '6px',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            View profile
+          </button>
           <button
             onClick={() => { signOut(); setShowDropdown(false) }}
             style={{
