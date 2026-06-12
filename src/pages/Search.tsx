@@ -5,6 +5,7 @@ import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
 import type { College } from '@/lib/colleges'
+import { Button } from '@/components/ui/shadcn'
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' },
@@ -115,18 +116,14 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <MatchBadge score={score} />
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={e => { e.stopPropagation(); toggleHeart(college) }}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '18px', padding: '4px',
-              color: isHearted ? '#F0ABFC' : '#CBD5E1',
-              transition: 'color 0.15s, transform 0.1s',
-              transform: isHearted ? 'scale(1.2)' : 'scale(1)',
-            }}
+            className={`text-lg ${isHearted ? 'text-fuchsia-300 scale-110' : 'text-slate-300'} transition-all`}
           >
             {isHearted ? '♥' : '♡'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -256,12 +253,9 @@ export default function Search() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Filters</span>
           {activeFilters > 0 && (
-            <button onClick={clearFilters} style={{
-              fontSize: '12px', color: '#6366F1',
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            }}>
+            <Button variant="link" size="sm" onClick={clearFilters} className="h-auto p-0 text-xs">
               Clear {activeFilters}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -340,12 +334,9 @@ export default function Search() {
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-secondary)' }}>
             <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎓</div>
             <div style={{ fontSize: '14px' }}>No schools match those filters.</div>
-            <button onClick={clearFilters} style={{
-              marginTop: '12px', fontSize: '13px', color: '#6366F1',
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}>
+            <Button variant="link" size="sm" onClick={clearFilters} className="mt-3">
               Clear filters
-            </button>
+            </Button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>

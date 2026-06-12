@@ -4,6 +4,7 @@ import SageAvatar from '@/components/sage/SageAvatar'
 import SchoolCard from '@/components/sage/SchoolCard'
 import AuthModal from '@/components/ui/AuthModal'
 import { useAuth } from '@/context/AuthContext'
+import { Button } from '@/components/ui/shadcn'
 
 const PLACEHOLDERS = [
   'Ask about schools...',
@@ -108,27 +109,15 @@ export default function Home() {
 
               <div style={{ paddingLeft: '46px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {SUGGESTION_CHIPS.map(chip => (
-                  <button
+                  <Button
                     key={chip}
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleChip(chip)}
-                    style={{
-                      background: 'white', border: '0.5px solid #E2E8F0',
-                      borderRadius: '100px', padding: '8px 15px',
-                      fontSize: '13px', color: '#475569', fontWeight: 500,
-                      cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = '#6366F1'
-                      e.currentTarget.style.color = '#6366F1'
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = '#E2E8F0'
-                      e.currentTarget.style.color = '#475569'
-                    }}
+                    className="rounded-full text-slate-500 hover:text-indigo-600 hover:border-indigo-400 shadow-sm"
                   >
                     {chip}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -231,16 +220,9 @@ export default function Home() {
             <span style={{ fontSize: '12px', color: '#4338CA' }}>
               Sign in to save this conversation
             </span>
-            <button
-              onClick={() => setShowAuthModal(true)}
-              style={{
-                background: '#6366F1', color: 'white', border: 'none',
-                borderRadius: '6px', padding: '5px 12px',
-                fontSize: '12px', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
+            <Button size="sm" onClick={() => setShowAuthModal(true)} className="text-xs h-7 px-3 shrink-0">
               Sign in
-            </button>
+            </Button>
           </div>
         )}
 
@@ -268,27 +250,21 @@ export default function Home() {
                 fontFamily: 'inherit',
               }}
             />
-            <button
+            <Button
+              size="icon"
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              style={{
-                width: '36px', height: '36px',
-                borderRadius: '10px', border: 'none',
-                background: input.trim() && !loading ? '#6366F1' : '#E2E8F0',
-                cursor: input.trim() && !loading ? 'pointer' : 'default',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, transition: 'background 0.15s',
-              }}
               aria-label="Send message"
+              className="shrink-0 rounded-[10px] w-9 h-9"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M2 8H14M8 2L14 8L8 14"
-                  stroke={input.trim() && !loading ? 'white' : '#94A3B8'}
+                  stroke="white"
                   strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
                 />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

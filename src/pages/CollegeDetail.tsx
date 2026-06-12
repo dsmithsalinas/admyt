@@ -5,6 +5,7 @@ import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
+import { Button } from '@/components/ui/shadcn'
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -83,12 +84,9 @@ export default function CollegeDetail() {
       <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-secondary)' }}>
         <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎓</div>
         <div style={{ fontSize: '14px', marginBottom: '16px' }}>School not found.</div>
-        <button onClick={() => navigate('/search')} style={{
-          fontSize: '13px', color: '#6366F1',
-          background: 'none', border: 'none', cursor: 'pointer',
-        }}>
+        <Button variant="link" size="sm" onClick={() => navigate('/search')}>
           Back to search
-        </button>
+        </Button>
       </div>
     )
   }
@@ -101,20 +99,17 @@ export default function CollegeDetail() {
     <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 0' }}>
 
       {/* Back */}
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => navigate('/search')}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          fontSize: '13px', color: 'var(--color-text-secondary)',
-          background: 'none', border: 'none', cursor: 'pointer',
-          padding: 0, marginBottom: '1.5rem',
-        }}
+        className="mb-6 -ml-2 text-slate-500"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         Back to results
-      </button>
+      </Button>
 
       {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -141,26 +136,15 @@ export default function CollegeDetail() {
           }}>
             {college.name}
           </h1>
-          <button
+          <Button
+            variant={isHearted ? 'vibe' : 'outline'}
+            size="sm"
             onClick={() => toggleHeart(college)}
-            style={{
-              background: isHearted ? '#FDF4FF' : 'var(--color-background-secondary)',
-              border: `0.5px solid ${isHearted ? '#F0ABFC' : 'var(--color-border-tertiary)'}`,
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              padding: '8px 12px',
-              display: 'flex', alignItems: 'center', gap: '6px',
-              color: isHearted ? '#C026D3' : 'var(--color-text-secondary)',
-              transition: 'all 0.15s',
-              flexShrink: 0,
-            }}
+            className="shrink-0"
           >
             {isHearted ? '♥' : '♡'}
-            <span style={{ fontSize: '12px', fontWeight: 500 }}>
-              {isHearted ? 'Saved' : 'Save school'}
-            </span>
-          </button>
+            {isHearted ? 'Saved' : 'Save school'}
+          </Button>
         </div>
         <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
           {college.location}
@@ -247,16 +231,9 @@ export default function CollegeDetail() {
             See if {college.name.split(' ')[0]}'s culture actually fits you
           </div>
         </div>
-        <button
-          onClick={() => navigate(`/college/${college!.id}/vibe`)}
-          style={{
-            background: '#6366F1', color: 'white', border: 'none',
-            borderRadius: '8px', padding: '10px 18px', fontSize: '13px',
-            fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
-          }}
-        >
+        <Button onClick={() => navigate(`/college/${college!.id}/vibe`)} className="shrink-0">
           Check the vibe
-        </button>
+        </Button>
       </div>
     </div>
   )

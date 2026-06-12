@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
 import { supabase } from '@/lib/supabase'
 import AuthModal from '@/components/ui/AuthModal'
+import { Button } from '@/components/ui/shadcn'
 
 interface SavedVibe {
   id: string
@@ -145,16 +146,9 @@ function GuestPreview({ onSignUp }: { onSignUp: () => void }) {
             Save your schools, track vibe checks, and let Sage remember everything about you.
           </div>
         </div>
-        <button
-          onClick={onSignUp}
-          style={{
-            background: '#6366F1', color: 'white', border: 'none',
-            borderRadius: '8px', padding: '10px 18px', fontSize: '13px',
-            fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
-          }}
-        >
+        <Button onClick={onSignUp} className="shrink-0">
           Sign up free
-        </button>
+        </Button>
       </div>
 
       <CompletenessBar score={72} nudge="Tell Sage your GPA to improve match scores." />
@@ -271,11 +265,12 @@ function PreferencesModal({
           position: 'relative',
         }}
       >
-        <button onClick={onClose} style={{
-          position: 'absolute', top: '16px', right: '16px',
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontSize: '18px', color: 'var(--color-text-tertiary)',
-        }}>✕</button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="absolute top-3 right-3 h-8 w-8 text-slate-400"
+        >✕</Button>
 
         <h2 style={{ fontSize: '18px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '20px', letterSpacing: '-0.3px' }}>
           My preferences
@@ -395,21 +390,16 @@ function PreferencesModal({
           </div>
         </div>
 
-        <button
+        <Button
+          className="w-full"
           onClick={() => onSave({
             preferred_states: states,
             max_tuition: maxTuition,
             preferred_majors: major ? [major] : [],
           })}
-          style={{
-            width: '100%', padding: '12px',
-            borderRadius: '8px', fontSize: '14px',
-            background: '#6366F1', color: 'white',
-            border: 'none', cursor: 'pointer', fontWeight: 500,
-          }}
         >
           Save preferences
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -598,17 +588,15 @@ export default function Profile() {
                   <a href={`/college/${h.college_id}`} style={{ fontSize: '12px', color: '#6366F1', textDecoration: 'none' }}>
                     View →
                   </a>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleUnheart(h.college_id)}
-                    style={{
-                      fontSize: '12px', color: 'var(--color-text-tertiary)',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      padding: '4px 8px', borderRadius: '6px',
-                    }}
+                    className="text-slate-400 text-xs h-7 px-2"
                     title="Remove from saved"
                   >
                     Remove
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -678,12 +666,9 @@ export default function Profile() {
         <SectionHeader
           title="My preferences"
           action={
-            <button
-              onClick={() => setShowPrefsModal(true)}
-              style={{ fontSize: '12px', color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
+            <Button variant="link" size="sm" onClick={() => setShowPrefsModal(true)} className="h-auto p-0 text-xs">
               Edit
-            </button>
+            </Button>
           }
         />
         {loading ? (
@@ -693,17 +678,9 @@ export default function Profile() {
             emoji="⚙️"
             message="Set standing preferences to help Sage and the search page work better for you."
             action={
-              <button
-                onClick={() => setShowPrefsModal(true)}
-                style={{
-                  fontSize: '13px', color: '#6366F1',
-                  background: '#EEF2FF', border: '0.5px solid #C7D2FE',
-                  borderRadius: '8px', padding: '7px 14px',
-                  cursor: 'pointer', fontWeight: 500,
-                }}
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowPrefsModal(true)} className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
                 Set preferences
-              </button>
+              </Button>
             }
           />
         ) : (
