@@ -91,9 +91,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     loadUserData(user.id)
   }, [user, authLoading])
 
-  function buildSageProfileSnapshot(): SageProfile {
-    const up = userPrefsRef.current
+  // Fetches a fresh copy of user_preferences from Supabase (if signed in) and
+  // merges with the chat-learned profile. Called before every Claude API call so
+  // the system prompt always reflects the latest saved preferences.
+  async function getLatestProfile(): Promise<SageProfile> {
     const sp = sageProfileRef.current
+    let up = userPrefsRef.current
+
+    if (user) {
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('preferred_states,max_tuition,preferred_majors')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (data) {
+        up = data
+        setUserPrefs(data)
+        userPrefsRef.current = data
+      }
+    }
+
     return {
       preferredLocations: sp?.preferredLocations,
       careerGoals: sp?.careerGoals,
@@ -107,11 +124,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   async function loadUserData(userId: string) {
     setInitializing(true)
     try {
-      const [msgRes, heartRes, prefsRes, userPrefsRes] = await Promise.all([
+      const [msgRes, heartRes, prefsRes] = await Promise.all([
         supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
         supabase.from('hearted_schools').select('college_id').eq('user_id', userId),
         supabase.from('user_prefs').select('heart_action_count').eq('user_id', userId).single(),
-        supabase.from('user_preferences').select('preferred_states,max_tuition,preferred_majors').eq('user_id', userId).single(),
       ])
 
       if (heartRes.data) {
@@ -119,9 +135,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
       if (prefsRes.data) {
         setHeartActionCount(prefsRes.data.heart_action_count ?? 0)
-      }
-      if (userPrefsRes.data) {
-        setUserPrefs(userPrefsRes.data)
       }
       if (msgRes.data && msgRes.data.length > 0) {
         const loaded: ChatMessage[] = msgRes.data.map((m: {
@@ -145,7 +158,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         ...history.map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: '[RECAP]' },
       ]
-      const raw = await callEdge(apiMsgs, colleges, buildSageProfileSnapshot())
+      const profile = await getLatestProfile()
+      const raw = await callEdge(apiMsgs, colleges, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
       const msg: ChatMessage = {
         id: crypto.randomUUID(), role: 'assistant', content,
@@ -203,7 +217,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         apiMsgs = [{ role: 'assistant', content: SAGE_GREETING }, ...apiMsgs]
       }
 
-      const raw = await callEdge(apiMsgs, colleges, buildSageProfileSnapshot())
+      const profile = await getLatestProfile()
+      const raw = await callEdge(apiMsgs, colleges, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
 
       const assistantMsg: ChatMessage = {
@@ -237,7 +252,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true)
     try {
-      const raw = await callEdge(nextMessages.map(m => ({ role: m.role, content: m.content })), colleges, buildSageProfileSnapshot())
+      const profile = await getLatestProfile()
+      const raw = await callEdge(nextMessages.map(m => ({ role: m.role, content: m.content })), colleges, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(), role: 'assistant', content,
