@@ -86,3 +86,32 @@ export async function getCollege(id: string): Promise<College | null> {
 export function clearCollegeCache() {
   cachedColleges = null
 }
+
+export function getShortName(name: string): string {
+  let s = name
+
+  // Specific multi-word prefixes first
+  s = s.replace(/^The University of /, 'U of ')
+  s = s.replace(/^University of /, 'U of ')
+  s = s.replace(/^California State Polytechnic University[- ]/, 'Cal Poly ')
+  s = s.replace(/^California State University[- ]/, 'Cal State ')
+
+  // "X University at Y" → "X Y" (e.g. "State University of New York at Albany" already handled above)
+  const atMatch = s.match(/^(.+?) University at (.+)$/)
+  if (atMatch) s = `${atMatch[1]} ${atMatch[2]}`
+
+  // Strip trailing ", The"
+  s = s.replace(/, The$/, '')
+
+  // Truncate at first comma or hyphen if still long
+  const commaIdx = s.indexOf(',')
+  if (commaIdx > 0) s = s.slice(0, commaIdx)
+
+  const hyphenIdx = s.indexOf('-')
+  if (hyphenIdx > 4) s = s.slice(0, hyphenIdx)
+
+  // Hard cap at 24 chars with ellipsis
+  if (s.length > 24) s = s.slice(0, 22) + '…'
+
+  return s.trim()
+}

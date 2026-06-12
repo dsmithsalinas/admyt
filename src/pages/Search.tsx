@@ -49,6 +49,21 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
     tuition != null ? `$${(tuition / 1000).toFixed(0)}k/yr` : null,
   ].filter(Boolean) as string[]
 
+  const keywords = [
+    ...(profile?.careerGoals ?? []),
+    ...(profile?.intendedMajor ? [profile.intendedMajor] : []),
+  ].map(k => k.toLowerCase())
+
+  const sortedMajors = [...college.majors].sort((a, b) => {
+    const aMatch = keywords.some(k => a.toLowerCase().includes(k) || k.includes(a.toLowerCase()))
+    const bMatch = keywords.some(k => b.toLowerCase().includes(k) || k.includes(b.toLowerCase()))
+    return (bMatch ? 1 : 0) - (aMatch ? 1 : 0)
+  })
+
+  const majorChips = sortedMajors.slice(0, 2).map(m =>
+    m.length > 28 ? m.slice(0, 27) + '…' : m
+  )
+
   return (
     <div
       onClick={() => navigate(`/college/${college.id}`)}
@@ -86,16 +101,13 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
         ))}
       </div>
 
-      {college.majors.length > 0 && (
+      {majorChips.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-          {college.majors.slice(0, 3).map(major => (
+          {majorChips.map(major => (
             <span key={major} style={{ fontSize: '10.5px', fontWeight: 500, color: '#8B5CF6', background: '#F4F3FE', borderRadius: '20px', padding: '3px 9px' }}>
               {major}
             </span>
           ))}
-          {college.majors.length > 3 && (
-            <span style={{ fontSize: '11px', color: '#A8A8BC', alignSelf: 'center' }}>+{college.majors.length - 3}</span>
-          )}
         </div>
       )}
 

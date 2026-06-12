@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getCollege } from '@/lib/colleges'
+import { getCollege, getShortName } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
@@ -177,7 +177,7 @@ export default function CollegeDetail() {
             ✨ Run a Vibe Check
           </div>
           <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>
-            See if {college.name.split(' ')[0]}'s culture actually fits you
+            See if {getShortName(college.name)}'s culture actually fits you
           </div>
         </div>
         <button

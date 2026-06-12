@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getCollege } from '@/lib/colleges'
+import { getCollege, getShortName } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useAuth } from '@/context/AuthContext'
@@ -184,7 +184,7 @@ export default function VibeCheck() {
   }
 
   const fitColor = result ? (result.fitScore >= 80 ? '#6366F1' : result.fitScore >= 60 ? '#8B5CF6' : '#A8A8BC') : '#6366F1'
-  const schoolFirst = college.name.split(' ')[0]
+  const schoolFirst = getShortName(college.name)
 
   return (
     <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 0' }}>

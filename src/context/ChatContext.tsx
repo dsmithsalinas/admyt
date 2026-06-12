@@ -142,8 +142,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           id: string; role: 'user' | 'assistant'; content: string; metadata?: { schoolIds?: string[] }
         }) => ({ id: m.id, role: m.role, content: m.content, metadata: m.metadata ?? undefined }))
         setMessages(loaded)
-        if (!recapSentRef.current) {
+        const sessionKey = `sage_recap_sent_${userId}`
+        if (!recapSentRef.current && !sessionStorage.getItem(sessionKey)) {
           recapSentRef.current = true
+          sessionStorage.setItem(sessionKey, '1')
           sendRecap(loaded, userId)
         }
       }

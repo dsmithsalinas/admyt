@@ -47,6 +47,21 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
     college.size,
   ].filter(Boolean) as string[]
 
+  const keywords = [
+    ...(profile?.careerGoals ?? []),
+    ...(profile?.intendedMajor ? [profile.intendedMajor] : []),
+  ].map(k => k.toLowerCase())
+
+  const sortedMajors = [...college.majors].sort((a, b) => {
+    const aMatch = keywords.some(k => a.toLowerCase().includes(k) || k.includes(a.toLowerCase()))
+    const bMatch = keywords.some(k => b.toLowerCase().includes(k) || k.includes(b.toLowerCase()))
+    return (bMatch ? 1 : 0) - (aMatch ? 1 : 0)
+  })
+
+  const majorChips = sortedMajors.slice(0, 2).map(m =>
+    m.length > 28 ? m.slice(0, 27) + '…' : m
+  )
+
   return (
     <div style={{
       background: 'white',
@@ -93,7 +108,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
               {chip}
             </span>
           ))}
-          {college.majors.slice(0, 2).map(major => (
+          {majorChips.map(major => (
             <span key={major} style={{
               fontSize: '10.5px', fontWeight: 500, color: '#8B5CF6',
               background: '#F4F3FE', borderRadius: '20px',
