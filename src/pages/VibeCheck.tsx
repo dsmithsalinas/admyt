@@ -242,14 +242,14 @@ export default function VibeCheck() {
   const [saveLoading, setSaveLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  const college = sampleColleges.find(c => c.id === id)
+
   useEffect(() => {
     if (!user || !result || !college) return
     getSavedVibe(user.id, college.id).then(existing => {
       if (existing) setSaved(true)
     })
   }, [user, result, college])
-
-  const college = sampleColleges.find(c => c.id === id)
 
   if (!college) {
     return (
