@@ -226,7 +226,9 @@ function GuestPreview({ onSignUp }: { onSignUp: () => void }) {
 }
 
 function PreferencesModal({
-  prefs, onSave, onClose,
+  prefs,
+  onSave,
+  onClose,
 }: {
   prefs: UserPreferences
   onSave: (p: UserPreferences) => void
@@ -235,10 +237,16 @@ function PreferencesModal({
   const [states, setStates] = useState<string[]>(prefs.preferred_states)
   const [maxTuition, setMaxTuition] = useState(prefs.max_tuition ?? 70000)
   const [major, setMajor] = useState(prefs.preferred_majors[0] ?? '')
+  const [stateSearch, setStateSearch] = useState('')
 
   function toggleState(abbr: string) {
     setStates(prev => prev.includes(abbr) ? prev.filter(s => s !== abbr) : [...prev, abbr])
   }
+
+  const filteredStates = US_STATES.filter(s =>
+    s.name.toLowerCase().includes(stateSearch.toLowerCase()) ||
+    s.abbr.toLowerCase().includes(stateSearch.toLowerCase())
+  )
 
   return (
     <div
@@ -254,9 +262,12 @@ function PreferencesModal({
         onClick={e => e.stopPropagation()}
         style={{
           background: 'var(--color-background-primary)',
-          borderRadius: '16px', padding: '24px',
-          width: '100%', maxWidth: '480px',
-          maxHeight: '80vh', overflowY: 'auto',
+          borderRadius: '16px',
+          padding: '24px',
+          width: '100%',
+          maxWidth: '480px',
+          maxHeight: '85vh',
+          overflowY: 'auto',
           position: 'relative',
         }}
       >
@@ -270,50 +281,15 @@ function PreferencesModal({
           My preferences
         </h2>
 
+        {/* Intended major */}
         <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
-            Preferred states
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {US_STATES.map(s => (
-              <button
-                key={s.abbr}
-                onClick={() => toggleState(s.abbr)}
-                style={{
-                  fontSize: '12px', padding: '4px 10px',
-                  borderRadius: '20px', cursor: 'pointer',
-                  border: states.includes(s.abbr) ? 'none' : '0.5px solid var(--color-border-secondary)',
-                  background: states.includes(s.abbr) ? '#6366F1' : 'transparent',
-                  color: states.includes(s.abbr) ? 'white' : 'var(--color-text-secondary)',
-                  fontWeight: states.includes(s.abbr) ? 500 : 400,
-                }}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
-            Max tuition — ${maxTuition.toLocaleString()}/yr
-          </div>
-          <input
-            type="range" min={5000} max={75000} step={1000}
-            value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))}
-            style={{ width: '100%', accentColor: '#6366F1' }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-            <span>$5k</span><span>$75k</span>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
             Intended major
-          </div>
+          </label>
           <input
-            type="text" value={major} onChange={e => setMajor(e.target.value)}
+            type="text"
+            value={major}
+            onChange={e => setMajor(e.target.value)}
             placeholder="e.g. Computer Science"
             style={{
               width: '100%', padding: '10px 14px',
@@ -326,6 +302,99 @@ function PreferencesModal({
           />
         </div>
 
+        {/* Max tuition */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+            Max tuition — ${maxTuition.toLocaleString()}/yr
+          </label>
+          <input
+            type="range" min={5000} max={75000} step={1000}
+            value={maxTuition}
+            onChange={e => setMaxTuition(Number(e.target.value))}
+            style={{ width: '100%', accentColor: '#6366F1' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
+            <span>$5k</span><span>$75k+</span>
+          </div>
+        </div>
+
+        {/* States — searchable */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+            Preferred states {states.length > 0 && `— ${states.length} selected`}
+          </label>
+
+          {states.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+              {states.map(abbr => {
+                const s = US_STATES.find(s => s.abbr === abbr)
+                return (
+                  <span
+                    key={abbr}
+                    onClick={() => toggleState(abbr)}
+                    style={{
+                      fontSize: '12px', padding: '4px 10px',
+                      borderRadius: '20px', cursor: 'pointer',
+                      background: '#6366F1', color: 'white',
+                      fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px',
+                    }}
+                  >
+                    {s?.name} <span style={{ opacity: 0.8 }}>✕</span>
+                  </span>
+                )
+              })}
+            </div>
+          )}
+
+          <input
+            type="text"
+            value={stateSearch}
+            onChange={e => setStateSearch(e.target.value)}
+            placeholder="Search states..."
+            style={{
+              width: '100%', padding: '8px 12px',
+              borderRadius: '8px', fontSize: '13px',
+              border: '0.5px solid var(--color-border-secondary)',
+              background: 'var(--color-background-secondary)',
+              color: 'var(--color-text-primary)',
+              outline: 'none', boxSizing: 'border-box',
+              marginBottom: '8px',
+            }}
+          />
+
+          <div style={{
+            maxHeight: '180px', overflowY: 'auto',
+            border: '0.5px solid var(--color-border-tertiary)',
+            borderRadius: '8px',
+          }}>
+            {filteredStates.map((s, i) => (
+              <div
+                key={s.abbr}
+                onClick={() => toggleState(s.abbr)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  background: states.includes(s.abbr) ? '#EEF2FF' : 'transparent',
+                  borderBottom: i < filteredStates.length - 1 ? '0.5px solid var(--color-border-tertiary)' : 'none',
+                  transition: 'background 0.1s',
+                }}
+              >
+                <span style={{
+                  fontSize: '13px',
+                  color: states.includes(s.abbr) ? '#4338CA' : 'var(--color-text-primary)',
+                  fontWeight: states.includes(s.abbr) ? 500 : 400,
+                }}>
+                  {s.name}
+                </span>
+                {states.includes(s.abbr) && (
+                  <span style={{ color: '#6366F1', fontSize: '14px' }}>✓</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button
           onClick={() => onSave({
             preferred_states: states,
@@ -333,8 +402,9 @@ function PreferencesModal({
             preferred_majors: major ? [major] : [],
           })}
           style={{
-            width: '100%', padding: '11px', borderRadius: '8px',
-            fontSize: '14px', background: '#6366F1', color: 'white',
+            width: '100%', padding: '12px',
+            borderRadius: '8px', fontSize: '14px',
+            background: '#6366F1', color: 'white',
             border: 'none', cursor: 'pointer', fontWeight: 500,
           }}
         >

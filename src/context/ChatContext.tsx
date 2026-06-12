@@ -244,7 +244,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (isHearted) {
         await supabase.from('hearted_schools').delete().eq('user_id', user.id).eq('college_id', college.id)
       } else {
-        await supabase.from('hearted_schools').upsert({ user_id: user.id, college_id: college.id })
+        await supabase.from('hearted_schools').insert({ user_id: user.id, college_id: college.id, college_name: college.name })
       }
     }
 
@@ -276,3 +276,5 @@ export function useChat() {
   if (!ctx) throw new Error('useChat must be used inside ChatProvider')
   return ctx
 }
+
+export const useChatContext = useChat

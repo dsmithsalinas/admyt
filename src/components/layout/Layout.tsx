@@ -2,7 +2,6 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import ProfileAvatar from '@/components/ui/ProfileAvatar'
 import SageAvatar from '@/components/sage/SageAvatar'
-import AuthModal from '@/components/ui/AuthModal'
 import { useAuth } from '@/context/AuthContext'
 
 function useIsMobile() {
@@ -21,7 +20,6 @@ export default function Layout() {
   const isMobile = useIsMobile()
   const { user, signOut } = useAuth()
   const isHome = location.pathname === '/'
-  const [showAuthModal, setShowAuthModal] = useState(false)
   const [showMobileProfile, setShowMobileProfile] = useState(false)
 
   const activeTabColor = '#6366F1'
@@ -170,10 +168,7 @@ export default function Layout() {
 
           {/* Profile tab */}
           <button
-            onClick={() => {
-              if (user) navigate('/profile')
-              else setShowAuthModal(true)
-            }}
+            onClick={() => navigate('/profile')}
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
@@ -237,13 +232,6 @@ export default function Layout() {
         </>
       )}
 
-      {showAuthModal && (
-        <AuthModal
-          trigger="general"
-          onClose={() => setShowAuthModal(false)}
-          onSuccess={() => setShowAuthModal(false)}
-        />
-      )}
     </div>
   )
 }

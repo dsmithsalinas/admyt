@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
+import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
 import type { College } from '@/lib/colleges'
 
@@ -82,6 +83,8 @@ function MatchBadge({ score }: { score: number }) {
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
   const score = scoreCollege(college, profile)
   const navigate = useNavigate()
+  const { heartedSchools, toggleHeart } = useChatContext()
+  const isHearted = heartedSchools.has(college.id)
   const tuition = college.tuitionInState ?? college.tuitionOutState
   const typeLabel = college.type === 'public' ? 'Public' : 'Private'
   const sizeLabel = college.size.charAt(0).toUpperCase() + college.size.slice(1)
@@ -110,7 +113,21 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
             {college.location}
           </div>
         </div>
-        <MatchBadge score={score} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <MatchBadge score={score} />
+          <button
+            onClick={e => { e.stopPropagation(); toggleHeart(college) }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '18px', padding: '4px',
+              color: isHearted ? '#F0ABFC' : '#CBD5E1',
+              transition: 'color 0.15s, transform 0.1s',
+              transform: isHearted ? 'scale(1.2)' : 'scale(1)',
+            }}
+          >
+            {isHearted ? '♥' : '♡'}
+          </button>
+        </div>
       </div>
 
       {college.description && (

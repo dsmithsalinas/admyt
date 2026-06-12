@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { getCollege } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
+import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -48,6 +49,7 @@ export default function CollegeDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { profile } = useProfile()
+  const { heartedSchools, toggleHeart } = useChatContext()
   const [college, setCollege] = useState<College | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -93,6 +95,7 @@ export default function CollegeDetail() {
 
   const score = scoreCollege(college, profile)
   const tuition = college.tuitionInState ?? college.tuitionOutState
+  const isHearted = heartedSchools.has(college.id)
 
   return (
     <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 0' }}>
@@ -131,12 +134,34 @@ export default function CollegeDetail() {
             </span>
           ))}
         </div>
-        <h1 style={{
-          fontSize: '28px', fontWeight: 500, color: 'var(--color-text-primary)',
-          letterSpacing: '-0.3px', marginBottom: '4px',
-        }}>
-          {college.name}
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+          <h1 style={{
+            fontSize: '28px', fontWeight: 500, color: 'var(--color-text-primary)',
+            letterSpacing: '-0.3px', marginBottom: '4px',
+          }}>
+            {college.name}
+          </h1>
+          <button
+            onClick={() => toggleHeart(college)}
+            style={{
+              background: isHearted ? '#FDF4FF' : 'var(--color-background-secondary)',
+              border: `0.5px solid ${isHearted ? '#F0ABFC' : 'var(--color-border-tertiary)'}`,
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: '8px 12px',
+              display: 'flex', alignItems: 'center', gap: '6px',
+              color: isHearted ? '#C026D3' : 'var(--color-text-secondary)',
+              transition: 'all 0.15s',
+              flexShrink: 0,
+            }}
+          >
+            {isHearted ? '♥' : '♡'}
+            <span style={{ fontSize: '12px', fontWeight: 500 }}>
+              {isHearted ? 'Saved' : 'Save school'}
+            </span>
+          </button>
+        </div>
         <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
           {college.location}
         </div>
