@@ -99,11 +99,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     let up = userPrefsRef.current
 
     if (user) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_preferences')
         .select('preferred_states,max_tuition,preferred_majors')
         .eq('user_id', user.id)
         .maybeSingle()
+      console.log('[Sage profile] user_preferences fetch:', { data, error })
       if (data) {
         up = data
         setUserPrefs(data)
@@ -111,7 +112,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    return {
+    const snapshot: SageProfile = {
       preferredLocations: sp?.preferredLocations,
       careerGoals: sp?.careerGoals,
       intendedMajor: sp?.intendedMajor,
@@ -119,6 +120,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       maxTuition: up?.max_tuition,
       preferredMajors: up?.preferred_majors,
     }
+    console.log('[Sage profile] snapshot sent to prompt:', snapshot)
+    return snapshot
   }
 
   async function loadUserData(userId: string) {
