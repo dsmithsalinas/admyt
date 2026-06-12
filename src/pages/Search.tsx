@@ -79,22 +79,24 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
   return (
     <Card
       onClick={() => navigate(`/college/${college.id}`)}
-      className="cursor-pointer hover:border-slate-300 transition-colors flex flex-col gap-0"
+      style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}
     >
-      <CardContent className="pt-5 flex flex-col gap-3">
+      <CardContent style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {/* Name + actions */}
-        <div className="flex justify-between items-start gap-2">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
           <div>
-            <div className="text-[15px] font-medium text-slate-900 mb-0.5">{college.name}</div>
-            <div className="text-xs text-slate-500">{college.location}</div>
+            <div style={{ fontSize: '15px', fontWeight: 500, color: '#0F172A', marginBottom: '2px' }}>{college.name}</div>
+            <div style={{ fontSize: '12px', color: '#64748B' }}>{college.location}</div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <Badge variant={matchVariant(score)}>⭐ {score}%</Badge>
             <Button
               variant="ghost"
               size="icon"
               onClick={e => { e.stopPropagation(); toggleHeart(college) }}
-              className={`text-lg h-8 w-8 ${isHearted ? 'text-fuchsia-300' : 'text-slate-300'} transition-colors`}
+              style={{ fontSize: '18px', color: isHearted ? '#F0ABFC' : '#CBD5E1', width: '32px', height: '32px' }}
             >
               {isHearted ? '♥' : '♡'}
             </Button>
@@ -102,11 +104,11 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
         </div>
 
         {college.description && (
-          <p className="text-[13px] text-slate-500 leading-relaxed">{college.description}</p>
+          <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.6, margin: 0 }}>{college.description}</p>
         )}
 
         {/* Stat chips */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {[
             typeLabel,
             sizeLabel,
@@ -119,12 +121,12 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
 
         {/* Major pills */}
         {college.majors.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap">
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {college.majors.slice(0, 3).map(major => (
               <Badge key={major} variant="indigo">{major}</Badge>
             ))}
             {college.majors.length > 3 && (
-              <span className="text-[11px] text-slate-400 self-center">+{college.majors.length - 3}</span>
+              <span style={{ fontSize: '11px', color: '#94A3B8', alignSelf: 'center' }}>+{college.majors.length - 3}</span>
             )}
           </div>
         )}

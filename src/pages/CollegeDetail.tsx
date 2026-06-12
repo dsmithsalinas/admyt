@@ -113,7 +113,7 @@ export default function CollegeDetail() {
 
       {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <div className="flex gap-1.5 flex-wrap mb-2">
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
           {[
             college.type === 'public' ? 'Public' : 'Private',
             college.size.charAt(0).toUpperCase() + college.size.slice(1),
@@ -198,9 +198,9 @@ export default function CollegeDetail() {
           <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '12px' }}>
             Popular majors
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {college.majors.map(major => (
-              <Badge key={major} variant="indigo" className="text-[13px] px-3 py-1">{major}</Badge>
+              <Badge key={major} variant="indigo" style={{ fontSize: '13px', padding: '5px 12px' }}>{major}</Badge>
             ))}
           </div>
         </div>

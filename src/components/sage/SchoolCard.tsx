@@ -50,25 +50,28 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
   const matchVariant = score >= 80 ? 'match' as const : score >= 60 ? 'indigo' as const : 'secondary' as const
 
   return (
-    <Card className="w-full">
-      <CardContent className="pt-4 flex flex-col gap-3">
+    <Card style={{ width: '100%' }}>
+      <CardContent style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {/* Header row */}
-        <div className="flex justify-between items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <Link
-              to={`/college/${college.id}`}
-              className="text-[15px] font-semibold text-slate-900 no-underline block mb-0.5 hover:text-indigo-600 transition-colors"
-            >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Link to={`/college/${college.id}`} style={{
+              fontSize: '15px', fontWeight: 600, color: '#1E293B',
+              textDecoration: 'none', display: 'block', marginBottom: '2px',
+            }}>
               {college.name}
             </Link>
-            <div className="text-xs text-slate-500">{college.location}</div>
+            <div style={{ fontSize: '12px', color: '#64748B' }}>{college.location}</div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <Badge variant={matchVariant}>{score} match</Badge>
             <button
               onClick={handleHeart}
-              className="p-1 bg-transparent border-0 cursor-pointer leading-none"
-              style={{ animation: animating ? 'heartPop 0.35s ease' : 'none' }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '4px', lineHeight: 0,
+                animation: animating ? 'heartPop 0.35s ease' : 'none',
+              }}
               aria-label={isHearted ? 'Remove from saved' : 'Save school'}
             >
               <HeartIcon filled={isHearted} />
@@ -77,7 +80,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
         </div>
 
         {/* Stat chips */}
-        <div className="flex flex-wrap gap-1.5">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {[
             college.acceptanceRate != null ? `${college.acceptanceRate}% accepted` : null,
             (college.tuitionInState ?? college.tuitionOutState) != null
@@ -90,16 +93,16 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
         </div>
 
         {/* Top 3 majors */}
-        <div className="flex flex-wrap gap-1.5">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {college.majors.slice(0, 3).map(major => (
             <Badge key={major} variant="indigo">{major}</Badge>
           ))}
         </div>
 
-        <Link
-          to={`/college/${college.id}`}
-          className="text-xs text-indigo-600 font-medium no-underline inline-flex items-center gap-1 hover:text-indigo-700 transition-colors"
-        >
+        <Link to={`/college/${college.id}`} style={{
+          fontSize: '12px', color: '#6366F1', fontWeight: 500,
+          textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px',
+        }}>
           See full details
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
             <path d="M3 8H13M8 3L13 8L8 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
