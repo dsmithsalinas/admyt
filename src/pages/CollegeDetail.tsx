@@ -5,7 +5,7 @@ import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
-import { Button } from '@/components/ui/shadcn'
+import { Button, Badge } from '@/components/ui/shadcn'
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -113,20 +113,13 @@ export default function CollegeDetail() {
 
       {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+        <div className="flex gap-1.5 flex-wrap mb-2">
           {[
             college.type === 'public' ? 'Public' : 'Private',
             college.size.charAt(0).toUpperCase() + college.size.slice(1),
             college.state,
           ].map(tag => (
-            <span key={tag} style={{
-              fontSize: '11px', padding: '2px 8px', borderRadius: '20px',
-              background: 'var(--color-background-secondary)',
-              color: 'var(--color-text-secondary)',
-              border: '0.5px solid var(--color-border-tertiary)',
-            }}>
-              {tag}
-            </span>
+            <Badge key={tag} variant="secondary">{tag}</Badge>
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
@@ -205,14 +198,9 @@ export default function CollegeDetail() {
           <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '12px' }}>
             Popular majors
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="flex gap-2 flex-wrap">
             {college.majors.map(major => (
-              <span key={major} style={{
-                fontSize: '13px', padding: '6px 12px', borderRadius: '20px',
-                background: '#EEF2FF', color: '#4338CA', border: '0.5px solid #C7D2FE',
-              }}>
-                {major}
-              </span>
+              <Badge key={major} variant="indigo" className="text-[13px] px-3 py-1">{major}</Badge>
             ))}
           </div>
         </div>

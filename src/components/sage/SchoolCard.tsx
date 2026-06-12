@@ -5,6 +5,7 @@ import { scoreCollege } from '@/lib/matchScore'
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
 import type { College } from '@/lib/colleges'
+import { Badge, Card, CardContent } from '@/components/ui/shadcn'
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -24,11 +25,6 @@ function formatTuition(n: number) {
   return `$${(n / 1000).toFixed(0)}k/yr`
 }
 
-function scoreColor(score: number) {
-  if (score >= 80) return '#059669'
-  if (score >= 60) return '#6366F1'
-  return '#94A3B8'
-}
 
 export default function SchoolCard({ collegeId }: { collegeId: string }) {
   const { colleges } = useColleges()
@@ -41,7 +37,6 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
 
   const score = scoreCollege(college, profile)
   const isHearted = heartedSchools.has(college.id)
-  const color = scoreColor(score)
 
   function handleHeart(e: React.MouseEvent) {
     e.preventDefault()
@@ -52,84 +47,65 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
     toggleHeart(college!)
   }
 
+  const matchVariant = score >= 80 ? 'match' as const : score >= 60 ? 'indigo' as const : 'secondary' as const
+
   return (
-    <div style={{
-      background: 'white',
-      border: '0.5px solid #E2E8F0',
-      borderRadius: '14px',
-      padding: '16px',
-    }}>
-      {/* Header row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-        <div style={{ flex: 1, minWidth: 0, marginRight: '12px' }}>
-          <Link to={`/college/${college.id}`} style={{
-            fontSize: '15px', fontWeight: 600, color: '#1E293B',
-            textDecoration: 'none', display: 'block', marginBottom: '2px',
-          }}>
-            {college.name}
-          </Link>
-          <div style={{ fontSize: '12px', color: '#64748B' }}>{college.location}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', fontWeight: 700, color, lineHeight: 1 }}>{score}</div>
-            <div style={{ fontSize: '10px', color: '#94A3B8', marginTop: '1px' }}>match</div>
+    <Card className="w-full">
+      <CardContent className="pt-4 flex flex-col gap-3">
+        {/* Header row */}
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <Link
+              to={`/college/${college.id}`}
+              className="text-[15px] font-semibold text-slate-900 no-underline block mb-0.5 hover:text-indigo-600 transition-colors"
+            >
+              {college.name}
+            </Link>
+            <div className="text-xs text-slate-500">{college.location}</div>
           </div>
-          <button
-            onClick={handleHeart}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '4px', lineHeight: 0,
-              animation: animating ? 'heartPop 0.35s ease' : 'none',
-            }}
-            aria-label={isHearted ? 'Remove from saved' : 'Save school'}
-          >
-            <HeartIcon filled={isHearted} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant={matchVariant}>{score} match</Badge>
+            <button
+              onClick={handleHeart}
+              className="p-1 bg-transparent border-0 cursor-pointer leading-none"
+              style={{ animation: animating ? 'heartPop 0.35s ease' : 'none' }}
+              aria-label={isHearted ? 'Remove from saved' : 'Save school'}
+            >
+              <HeartIcon filled={isHearted} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Stat chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-        {[
-          college.acceptanceRate != null ? `${college.acceptanceRate}% accepted` : null,
-          (college.tuitionInState ?? college.tuitionOutState) != null
-            ? formatTuition((college.tuitionInState ?? college.tuitionOutState)!)
-            : null,
-          college.size,
-        ].filter(Boolean).map(chip => (
-          <span key={chip} style={{
-            fontSize: '11px', color: '#475569',
-            background: '#F1F5F9', borderRadius: '100px',
-            padding: '3px 9px', fontWeight: 500,
-          }}>
-            {chip}
-          </span>
-        ))}
-      </div>
+        {/* Stat chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            college.acceptanceRate != null ? `${college.acceptanceRate}% accepted` : null,
+            (college.tuitionInState ?? college.tuitionOutState) != null
+              ? formatTuition((college.tuitionInState ?? college.tuitionOutState)!)
+              : null,
+            college.size,
+          ].filter(Boolean).map(chip => (
+            <Badge key={chip} variant="secondary">{chip}</Badge>
+          ))}
+        </div>
 
-      {/* Top 3 majors */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '14px' }}>
-        {college.majors.slice(0, 3).map(major => (
-          <span key={major} style={{
-            fontSize: '11px', color: '#6366F1',
-            background: '#EEF2FF', borderRadius: '100px',
-            padding: '3px 9px',
-          }}>
-            {major}
-          </span>
-        ))}
-      </div>
+        {/* Top 3 majors */}
+        <div className="flex flex-wrap gap-1.5">
+          {college.majors.slice(0, 3).map(major => (
+            <Badge key={major} variant="indigo">{major}</Badge>
+          ))}
+        </div>
 
-      <Link to={`/college/${college.id}`} style={{
-        fontSize: '12px', color: '#6366F1', fontWeight: 500,
-        textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px',
-      }}>
-        See full details
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-          <path d="M3 8H13M8 3L13 8L8 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </Link>
-    </div>
+        <Link
+          to={`/college/${college.id}`}
+          className="text-xs text-indigo-600 font-medium no-underline inline-flex items-center gap-1 hover:text-indigo-700 transition-colors"
+        >
+          See full details
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8H13M8 3L13 8L8 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </Link>
+      </CardContent>
+    </Card>
   )
 }

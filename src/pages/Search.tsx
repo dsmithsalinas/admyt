@@ -5,7 +5,7 @@ import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
 import type { College } from '@/lib/colleges'
-import { Button } from '@/components/ui/shadcn'
+import { Button, Badge, Card, CardContent } from '@/components/ui/shadcn'
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' },
@@ -61,24 +61,10 @@ const US_STATES = [
   { abbr: 'WY', name: 'Wyoming' },
 ]
 
-function MatchBadge({ score }: { score: number }) {
-  const color = score >= 85 ? '#059669' : score >= 70 ? '#6366F1' : '#94A3B8'
-  const bg = score >= 85 ? '#ECFDF5' : score >= 70 ? '#EEF2FF' : '#F8FAFC'
-  const border = score >= 85 ? '#A7F3D0' : score >= 70 ? '#C7D2FE' : '#E2E8F0'
-  return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: '5px',
-      background: bg, border: `0.5px solid ${border}`,
-      borderRadius: '20px', padding: '3px 10px',
-      fontSize: '12px', fontWeight: 500, color,
-    }}>
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-        <path d="M5 1L6.18 3.4L9 3.76L7 5.7L7.47 8.5L5 7.24L2.53 8.5L3 5.7L1 3.76L3.82 3.4L5 1Z"
-          fill={color} />
-      </svg>
-      {score}% match
-    </div>
-  )
+function matchVariant(score: number) {
+  if (score >= 85) return 'match' as const
+  if (score >= 70) return 'indigo' as const
+  return 'secondary' as const
 }
 
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
@@ -91,84 +77,59 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
   const sizeLabel = college.size.charAt(0).toUpperCase() + college.size.slice(1)
 
   return (
-    <div
+    <Card
       onClick={() => navigate(`/college/${college.id}`)}
-      style={{
-        background: 'var(--color-background-primary)',
-        border: '0.5px solid var(--color-border-tertiary)',
-        borderRadius: '12px',
-        padding: '18px',
-        display: 'flex', flexDirection: 'column', gap: '10px',
-        transition: 'border-color 0.15s',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-secondary)')}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border-tertiary)')}
+      className="cursor-pointer hover:border-slate-300 transition-colors flex flex-col gap-0"
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-        <div>
-          <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '2px' }}>
-            {college.name}
+      <CardContent className="pt-5 flex flex-col gap-3">
+        {/* Name + actions */}
+        <div className="flex justify-between items-start gap-2">
+          <div>
+            <div className="text-[15px] font-medium text-slate-900 mb-0.5">{college.name}</div>
+            <div className="text-xs text-slate-500">{college.location}</div>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            {college.location}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Badge variant={matchVariant(score)}>⭐ {score}%</Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={e => { e.stopPropagation(); toggleHeart(college) }}
+              className={`text-lg h-8 w-8 ${isHearted ? 'text-fuchsia-300' : 'text-slate-300'} transition-colors`}
+            >
+              {isHearted ? '♥' : '♡'}
+            </Button>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <MatchBadge score={score} />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={e => { e.stopPropagation(); toggleHeart(college) }}
-            className={`text-lg ${isHearted ? 'text-fuchsia-300 scale-110' : 'text-slate-300'} transition-all`}
-          >
-            {isHearted ? '♥' : '♡'}
-          </Button>
-        </div>
-      </div>
 
-      {college.description && (
-        <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
-          {college.description}
-        </p>
-      )}
+        {college.description && (
+          <p className="text-[13px] text-slate-500 leading-relaxed">{college.description}</p>
+        )}
 
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {[
-          typeLabel,
-          sizeLabel,
-          college.acceptanceRate != null ? `${college.acceptanceRate}% admit rate` : null,
-          tuition != null ? `$${tuition.toLocaleString()}/yr` : null,
-        ].filter(Boolean).map(tag => (
-          <span key={tag!} style={{
-            fontSize: '11px', padding: '2px 8px', borderRadius: '20px',
-            background: 'var(--color-background-secondary)',
-            color: 'var(--color-text-secondary)',
-            border: '0.5px solid var(--color-border-tertiary)',
-          }}>
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      {college.majors.length > 0 && (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {college.majors.slice(0, 3).map(major => (
-            <span key={major} style={{
-              fontSize: '11px', padding: '2px 8px', borderRadius: '20px',
-              background: '#EEF2FF', color: '#4338CA', border: '0.5px solid #C7D2FE',
-            }}>
-              {major}
-            </span>
+        {/* Stat chips */}
+        <div className="flex gap-1.5 flex-wrap">
+          {[
+            typeLabel,
+            sizeLabel,
+            college.acceptanceRate != null ? `${college.acceptanceRate}% admit` : null,
+            tuition != null ? `$${tuition.toLocaleString()}/yr` : null,
+          ].filter(Boolean).map(tag => (
+            <Badge key={tag!} variant="secondary">{tag}</Badge>
           ))}
-          {college.majors.length > 3 && (
-            <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', padding: '2px 4px' }}>
-              +{college.majors.length - 3} more
-            </span>
-          )}
         </div>
-      )}
-    </div>
+
+        {/* Major pills */}
+        {college.majors.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            {college.majors.slice(0, 3).map(major => (
+              <Badge key={major} variant="indigo">{major}</Badge>
+            ))}
+            {college.majors.length > 3 && (
+              <span className="text-[11px] text-slate-400 self-center">+{college.majors.length - 3}</span>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
