@@ -1,0 +1,38 @@
+:root {
+  /* Core gradient — Admyt's signature */
+  --grad-primary: linear-gradient(135deg, #6366F1, #8B5CF6);
+  --grad-primary-soft: linear-gradient(135deg, #6366F1, #8B5CF6 60%, #EC4899);
+  --grad-orb: radial-gradient(circle at 35% 30%, #A5B4FC, #6366F1 55%, #7C3AED);
+  --grad-vibe-soft: linear-gradient(135deg, #F4F3FE, #FCE7F3);
+  --grad-vibe-hero: linear-gradient(150deg, #6366F1, #8B5CF6 60%, #EC4899);
+  --grad-pink-pill: linear-gradient(135deg, #FCE7F3, #FBCFE8);
+  --grad-complete: linear-gradient(135deg, #F4F3FE, #FCE7F3);
+
+  /* Solid colors */
+  --c-indigo: #6366F1;
+  --c-purple: #8B5CF6;
+  --c-violet: #7C3AED;
+  --c-pink: #EC4899;
+  --c-pink-soft: #F9A8D4;
+  --c-ink: #15151C;
+  --c-slate: #3A3A4D;
+  --c-muted: #8B8B9E;
+  --c-faint: #A8A8BC;
+  --c-bg: #FCFCFF;
+  --c-card-border: #EEECFB;
+  --c-pill-bg: #F4F3FE;
+
+  /* Shadows — soft purple-tinted */
+  --shadow-card: 0 3px 16px rgba(99,102,241,0.06);
+  --shadow-soft: 0 2px 12px rgba(99,102,241,0.05);
+  --shadow-orb: 0 8px 32px rgba(99,102,241,0.35);
+  --shadow-float: 0 6px 20px rgba(99,102,241,0.25);
+  --shadow-input: 0 4px 20px rgba(99,102,241,0.06);
+
+  /* Radius */
+  --r-tile: 18px;
+  --r-card: 18px;
+  --r-bubble: 16px;
+  --r-pill: 24px;
+  --r-hero: 22px;
+}

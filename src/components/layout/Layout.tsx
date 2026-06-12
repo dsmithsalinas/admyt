@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import ProfileAvatar from '@/components/ui/ProfileAvatar'
-import SageAvatar from '@/components/sage/SageAvatar'
+import SageOrb from '@/components/sage/SageOrb'
 import { useAuth } from '@/context/AuthContext'
 
 function useIsMobile() {
@@ -26,29 +26,36 @@ export default function Layout() {
   const inactiveTabColor = '#94A3B8'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#F8FAFC' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#FCFCFF' }}>
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
       <nav style={{
-        background: '#0F172A', color: 'white',
+        background: 'white',
+        borderBottom: '1px solid #F0EEFB',
         padding: '0 24px', height: '54px',
         display: 'flex', alignItems: 'center',
         flexShrink: 0, zIndex: 10,
+        boxShadow: '0 1px 8px rgba(99,102,241,0.04)',
       }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <div style={{
-            width: '32px', height: '32px', background: '#6366F1',
-            borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '32px', height: '32px',
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 3px 10px rgba(99,102,241,0.3)',
           }}>
             <svg width="18" height="18" viewBox="0 0 30 30" fill="none">
               <path d="M15 5 L26 11 L15 17 L4 11 Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-              <path d="M8 14 L8 21 Q8 24 15 24 Q22 24 22 21 L22 14" stroke="#818CF8" strokeWidth="1.5" strokeLinecap="round"/>
-              <circle cx="26" cy="11" r="1.5" fill="#F0ABFC"/>
-              <path d="M26 11 L26 20" stroke="#F0ABFC" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/>
+              <path d="M8 14 L8 21 Q8 24 15 24 Q22 24 22 21 L22 14" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round"/>
+              <circle cx="26" cy="11" r="1.5" fill="#F9A8D4"/>
             </svg>
           </div>
-          <span style={{ fontSize: '17px', fontWeight: 500, color: 'white', letterSpacing: '-0.2px' }}>
-            adm<span style={{ color: '#818CF8' }}>y</span>t
+          <span style={{ fontSize: '17px', fontWeight: 500, color: '#15151C', letterSpacing: '-0.2px' }}>
+            adm<span style={{
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>y</span>t
           </span>
         </Link>
 
@@ -56,7 +63,7 @@ export default function Layout() {
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '28px' }}>
             <Link to="/" style={{
               fontSize: '14px', textDecoration: 'none',
-              color: isHome ? '#818CF8' : '#94A3B8',
+              color: isHome ? '#6366F1' : '#8B8B9E',
               fontWeight: isHome ? 500 : 400,
               transition: 'color 0.15s',
             }}>
@@ -64,7 +71,7 @@ export default function Layout() {
             </Link>
             <Link to="/search" style={{
               fontSize: '14px', textDecoration: 'none',
-              color: location.pathname === '/search' ? '#818CF8' : '#94A3B8',
+              color: location.pathname === '/search' ? '#6366F1' : '#8B8B9E',
               fontWeight: location.pathname === '/search' ? 500 : 400,
               transition: 'color 0.15s',
             }}>
@@ -102,19 +109,19 @@ export default function Layout() {
             right: '20px',
             display: 'flex', alignItems: 'center', gap: '8px',
             background: 'white',
-            border: '0.5px solid #E2E8F0',
+            border: '1px solid #EEECFB',
             borderRadius: '100px',
             padding: '7px 14px 7px 7px',
             cursor: 'pointer',
-            boxShadow: '0 2px 16px rgba(0,0,0,0.10)',
+            boxShadow: '0 4px 20px rgba(99,102,241,0.15)',
             zIndex: 50,
-            fontSize: '13px', fontWeight: 500, color: '#334155',
+            fontSize: '13px', fontWeight: 500, color: '#4338CA',
             transition: 'box-shadow 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)')}
-          onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 2px 16px rgba(0,0,0,0.10)')}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 28px rgba(99,102,241,0.25)')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.15)')}
         >
-          <SageAvatar size={26} />
+          <SageOrb size={28} />
           Back to Sage
         </button>
       )}
@@ -125,10 +132,10 @@ export default function Layout() {
           position: 'fixed', bottom: 0, left: 0, right: 0,
           height: '60px',
           background: 'white',
-          borderTop: '0.5px solid #E2E8F0',
+          borderTop: '1px solid #F0EEFB',
           display: 'flex',
           zIndex: 100,
-          boxShadow: '0 -1px 8px rgba(0,0,0,0.06)',
+          boxShadow: '0 -2px 12px rgba(99,102,241,0.06)',
         }}>
           {/* Chat tab */}
           <Link
@@ -173,13 +180,16 @@ export default function Layout() {
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
               background: 'none', border: 'none', cursor: 'pointer',
-              color: inactiveTabColor,
+              color: location.pathname === '/profile' ? activeTabColor : inactiveTabColor,
             }}
           >
             <div style={{
               width: '24px', height: '24px', borderRadius: '50%',
-              background: user ? '#6366F1' : '#E2E8F0',
+              background: user
+                ? 'linear-gradient(135deg, #6366F1, #8B5CF6)'
+                : '#F4F3FE',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: location.pathname === '/profile' && user ? '2px solid #6366F1' : 'none',
             }}>
               {user ? (
                 <span style={{ fontSize: '11px', color: 'white', fontWeight: 700 }}>
@@ -187,8 +197,8 @@ export default function Layout() {
                 </span>
               ) : (
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="8" r="4" stroke="#94A3B8" strokeWidth="1.5"/>
-                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="12" cy="8" r="4" stroke="#A8A8BC" strokeWidth="1.5"/>
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#A8A8BC" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               )}
             </div>
@@ -206,13 +216,13 @@ export default function Layout() {
           />
           <div style={{
             position: 'fixed', bottom: '68px', right: '12px',
-            background: 'white', border: '0.5px solid #E2E8F0',
-            borderRadius: '12px', padding: '14px',
+            background: 'white', border: '1px solid #EEECFB',
+            borderRadius: '14px', padding: '14px',
             minWidth: '200px', zIndex: 99,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+            boxShadow: '0 8px 32px rgba(99,102,241,0.15)',
           }}>
-            <div style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>Signed in as</div>
-            <div style={{ fontSize: '13px', color: '#1E293B', fontWeight: 500, marginBottom: '12px' }}>
+            <div style={{ fontSize: '11px', color: '#A8A8BC', marginBottom: '4px' }}>Signed in as</div>
+            <div style={{ fontSize: '13px', color: '#15151C', fontWeight: 500, marginBottom: '12px' }}>
               {user.email}
             </div>
             <button
@@ -220,10 +230,10 @@ export default function Layout() {
               style={{
                 width: '100%', textAlign: 'left',
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '13px', color: '#64748B', padding: '6px 8px',
-                borderRadius: '6px', transition: 'background 0.15s',
+                fontSize: '13px', color: '#8B8B9E', padding: '6px 8px',
+                borderRadius: '8px', transition: 'background 0.15s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+              onMouseEnter={e => (e.currentTarget.style.background = '#F4F3FE')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
               Sign out

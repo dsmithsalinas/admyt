@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
 import { supabase } from '@/lib/supabase'
 import AuthModal from '@/components/ui/AuthModal'
-import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/shadcn'
+import { Input, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/shadcn'
 
 interface SavedVibe {
   id: string
@@ -59,7 +59,7 @@ const US_STATES = [
 function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-      <h2 style={{ fontSize: '15px', fontWeight: 500, color: 'var(--color-text-primary)', margin: 0 }}>{title}</h2>
+      <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#15151C', margin: 0 }}>{title}</h2>
       {action}
     </div>
   )
@@ -67,12 +67,9 @@ function SectionHeader({ title, action }: { title: string; action?: React.ReactN
 
 function EmptyState({ emoji, message, action }: { emoji: string; message: string; action?: React.ReactNode }) {
   return (
-    <div style={{
-      background: 'var(--color-background-secondary)',
-      borderRadius: '12px', padding: '24px', textAlign: 'center',
-    }}>
+    <div style={{ background: '#F4F3FE', borderRadius: '14px', padding: '24px', textAlign: 'center' }}>
       <div style={{ fontSize: '24px', marginBottom: '8px' }}>{emoji}</div>
-      <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: action ? '12px' : 0 }}>{message}</div>
+      <div style={{ fontSize: '13px', color: '#8B8B9E', marginBottom: action ? '12px' : 0 }}>{message}</div>
       {action}
     </div>
   )
@@ -80,30 +77,30 @@ function EmptyState({ emoji, message, action }: { emoji: string; message: string
 
 function Skeleton({ height = 80 }: { height?: number }) {
   return (
-    <div style={{
-      height, borderRadius: '12px',
-      background: 'var(--color-background-secondary)',
-      animation: 'profilePulse 1.5s ease-in-out infinite',
-    }} />
+    <div style={{ height, borderRadius: '12px', background: '#F4F3FE', animation: 'profilePulse 1.5s ease-in-out infinite' }} />
   )
 }
 
 function CompletenessBar({ score, nudge }: { score: number; nudge: string }) {
-  const color = score >= 80 ? '#059669' : score >= 50 ? '#6366F1' : '#EF9F27'
   return (
     <div style={{
-      background: 'var(--color-background-secondary)',
-      borderRadius: '12px', padding: '14px 16px', marginBottom: '1.5rem',
+      background: 'linear-gradient(135deg, #F4F3FE, #FCE7F3)',
+      border: '1px solid #EEECFB',
+      borderRadius: '14px', padding: '14px 18px', marginBottom: '1.5rem',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Profile completeness</div>
-        <div style={{ fontSize: '13px', fontWeight: 500, color }}>{score}%</div>
+        <div style={{ fontSize: '13px', fontWeight: 500, color: '#4338CA' }}>Profile completeness</div>
+        <div style={{
+          fontSize: '13px', fontWeight: 500,
+          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>{score}%</div>
       </div>
-      <div style={{ height: '6px', background: 'var(--color-border-tertiary)', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
-        <div style={{ height: '100%', width: `${score}%`, background: color, borderRadius: '3px', transition: 'width 0.6s ease' }} />
+      <div style={{ height: '6px', background: '#DDD9F8', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
+        <div style={{ height: '100%', width: `${score}%`, background: 'linear-gradient(90deg, #6366F1, #8B5CF6)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
       </div>
       {score < 100 && (
-        <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>💡 {nudge}</div>
+        <div style={{ fontSize: '12px', color: '#6366F1' }}>💡 {nudge}</div>
       )}
     </div>
   )
@@ -120,21 +117,23 @@ function GuestPreview({ onSignUp }: { onSignUp: () => void }) {
     <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2rem 0' }}>
       <div style={{ marginBottom: '2rem' }}>
         <div style={{
-          width: '56px', height: '56px', borderRadius: '50%',
-          background: '#E2E8F0',
+          width: '60px', height: '60px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '22px', marginBottom: '12px',
+          boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
         }}>
           👋
         </div>
-        <h1 style={{ fontSize: '22px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '4px', letterSpacing: '-0.3px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 500, color: '#15151C', marginBottom: '4px', letterSpacing: '-0.3px' }}>
           Alex Chen's profile
         </h1>
-        <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Class of 2026 · Example profile</div>
+        <div style={{ fontSize: '13px', color: '#8B8B9E' }}>Class of 2026 · Example profile</div>
       </div>
 
       <div style={{
-        background: '#0F172A', borderRadius: '16px', padding: '20px 24px',
+        background: 'linear-gradient(150deg, #6366F1, #8B5CF6 60%, #EC4899)',
+        borderRadius: '16px', padding: '20px 24px',
         marginBottom: '2rem',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
       }}>
@@ -142,75 +141,81 @@ function GuestPreview({ onSignUp }: { onSignUp: () => void }) {
           <div style={{ fontSize: '14px', fontWeight: 500, color: '#FFFFFF', marginBottom: '4px' }}>
             Create your own profile
           </div>
-          <div style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>
+          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
             Save your schools, track vibe checks, and let Sage remember everything about you.
           </div>
         </div>
-        <Button onClick={onSignUp} className="shrink-0">
+        <button
+          onClick={onSignUp}
+          style={{
+            background: 'rgba(255,255,255,0.2)', color: 'white',
+            border: '1.5px solid rgba(255,255,255,0.4)',
+            borderRadius: '10px', padding: '9px 18px',
+            fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+            whiteSpace: 'nowrap', flexShrink: 0, backdropFilter: 'blur(4px)',
+          }}
+        >
           Sign up free
-        </Button>
+        </button>
       </div>
 
       <CompletenessBar score={72} nudge="Tell Sage your GPA to improve match scores." />
 
-      {/* Example Sage profile */}
       <div style={{ marginBottom: '2rem' }}>
         <SectionHeader title="What Sage knows" />
         <div style={{
-          background: 'var(--color-background-primary)',
-          border: '0.5px solid var(--color-border-tertiary)',
-          borderRadius: '12px', padding: '16px',
-          display: 'flex', flexDirection: 'column', gap: '10px',
-          opacity: 0.6, pointerEvents: 'none',
+          background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '16px',
+          display: 'flex', flexDirection: 'column', gap: '10px', opacity: 0.6, pointerEvents: 'none',
         }}>
           {[
             { label: 'Location', value: 'California, Pacific Northwest' },
             { label: 'Intended major', value: 'Computer Science' },
             { label: 'Career goals', value: 'Software engineering, startups' },
-            { label: 'School size', value: 'Large universities preferred' },
           ].map(item => (
             <div key={item.label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', width: '100px', flexShrink: 0, paddingTop: '1px' }}>{item.label}</div>
-              <div style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{item.value}</div>
+              <div style={{ fontSize: '11px', color: '#A8A8BC', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0, paddingTop: '2px' }}>{item.label}</div>
+              <div style={{ fontSize: '13px', color: '#3A3A4D' }}>{item.value}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Example schools */}
       <div style={{ marginBottom: '2rem' }}>
         <SectionHeader title="My schools" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6, pointerEvents: 'none' }}>
           {exampleHearts.map(name => (
             <div key={name} style={{
-              background: 'var(--color-background-primary)',
-              border: '0.5px solid var(--color-border-tertiary)',
-              borderRadius: '12px', padding: '14px 16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'white', border: '1px solid #EEECFB', borderRadius: '12px', padding: '14px 16px',
+              display: 'flex', alignItems: 'center', gap: '12px',
             }}>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>{name}</div>
-              <span style={{ color: '#F0ABFC', fontSize: '18px' }}>♥</span>
+              <div style={{
+                width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
+                background: 'linear-gradient(135deg, #FCE7F3, #FBCFE8)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '16px', color: '#EC4899',
+              }}>♥</div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C' }}>{name}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Example vibes */}
       <div style={{ marginBottom: '2rem' }}>
         <SectionHeader title="Vibe Checks" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6, pointerEvents: 'none' }}>
           {exampleVibes.map(v => (
             <div key={v.name} style={{
-              background: 'var(--color-background-primary)',
-              border: '0.5px solid var(--color-border-tertiary)',
-              borderRadius: '12px', padding: '14px 16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+              background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', overflow: 'hidden',
+              display: 'flex', alignItems: 'stretch',
             }}>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '3px' }}>{v.name}</div>
-                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{v.summary}</div>
+              <div style={{ width: '3px', flexShrink: 0, background: 'linear-gradient(180deg, #6366F1, #EC4899)' }} />
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 16px' }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C', marginBottom: '3px' }}>{v.name}</div>
+                  <div style={{ fontSize: '12px', color: '#8B8B9E' }}>{v.summary}</div>
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: 500, color: '#6366F1', flexShrink: 0 }}>{v.score}</div>
               </div>
-              <div style={{ fontSize: '20px', fontWeight: 500, color: '#6366F1', flexShrink: 0 }}>{v.score}</div>
             </div>
           ))}
         </div>
@@ -219,15 +224,7 @@ function GuestPreview({ onSignUp }: { onSignUp: () => void }) {
   )
 }
 
-function PreferencesModal({
-  prefs,
-  onSave,
-  onClose,
-}: {
-  prefs: UserPreferences
-  onSave: (p: UserPreferences) => void
-  onClose: () => void
-}) {
+function PreferencesModal({ prefs, onSave, onClose }: { prefs: UserPreferences; onSave: (p: UserPreferences) => void; onClose: () => void }) {
   const [states, setStates] = useState<string[]>(prefs.preferred_states)
   const [maxTuition, setMaxTuition] = useState(prefs.max_tuition ?? 70000)
   const [major, setMajor] = useState(prefs.preferred_majors[0] ?? '')
@@ -246,14 +243,13 @@ function PreferencesModal({
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent style={{ maxWidth: '480px', padding: '24px', maxHeight: '85vh', overflowY: 'auto' }}>
         <DialogHeader style={{ marginBottom: '20px' }}>
-          <DialogTitle style={{ fontSize: '18px', fontWeight: 500, letterSpacing: '-0.3px' }}>
+          <DialogTitle style={{ fontSize: '18px', fontWeight: 500, letterSpacing: '-0.3px', color: '#15151C' }}>
             My preferences
           </DialogTitle>
         </DialogHeader>
 
-        {/* Intended major */}
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 500, color: '#8B8B9E', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
             Intended major
           </label>
           <Input
@@ -261,14 +257,13 @@ function PreferencesModal({
             value={major}
             onChange={e => setMajor(e.target.value)}
             placeholder="e.g. Computer Science"
-            style={{ fontSize: '14px', height: '40px' }}
+            style={{ fontSize: '14px', height: '42px', borderRadius: '10px', border: '1px solid #DDD9F8', color: '#15151C' }}
           />
         </div>
 
-        {/* Max tuition */}
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
-            Max tuition — ${maxTuition.toLocaleString()}/yr
+          <label style={{ fontSize: '12px', fontWeight: 500, color: '#8B8B9E', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+            Max tuition — <span style={{ color: '#6366F1' }}>${maxTuition.toLocaleString()}/yr</span>
           </label>
           <input
             type="range" min={5000} max={75000} step={1000}
@@ -276,14 +271,13 @@ function PreferencesModal({
             onChange={e => setMaxTuition(Number(e.target.value))}
             style={{ width: '100%', accentColor: '#6366F1' }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#A8A8BC', marginTop: '4px' }}>
             <span>$5k</span><span>$75k+</span>
           </div>
         </div>
 
-        {/* States — searchable */}
         <div style={{ marginBottom: '24px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 500, color: '#8B8B9E', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
             Preferred states {states.length > 0 && `— ${states.length} selected`}
           </label>
 
@@ -292,16 +286,12 @@ function PreferencesModal({
               {states.map(abbr => {
                 const s = US_STATES.find(s => s.abbr === abbr)
                 return (
-                  <span
-                    key={abbr}
-                    onClick={() => toggleState(abbr)}
-                    style={{
-                      fontSize: '12px', padding: '4px 10px',
-                      borderRadius: '20px', cursor: 'pointer',
-                      background: '#6366F1', color: 'white',
-                      fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px',
-                    }}
-                  >
+                  <span key={abbr} onClick={() => toggleState(abbr)} style={{
+                    fontSize: '12px', padding: '4px 10px',
+                    borderRadius: '20px', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: 'white',
+                    fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px',
+                  }}>
                     {s?.name} <span style={{ opacity: 0.8 }}>✕</span>
                   </span>
                 )
@@ -314,51 +304,43 @@ function PreferencesModal({
             value={stateSearch}
             onChange={e => setStateSearch(e.target.value)}
             placeholder="Search states..."
-            style={{ fontSize: '13px', height: '36px', marginBottom: '8px' }}
+            style={{ fontSize: '13px', height: '38px', marginBottom: '8px', borderRadius: '10px', border: '1px solid #DDD9F8', color: '#15151C' }}
           />
 
-          <div style={{
-            maxHeight: '180px', overflowY: 'auto',
-            border: '0.5px solid var(--color-border-tertiary)',
-            borderRadius: '8px',
-          }}>
+          <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #EEECFB', borderRadius: '10px' }}>
             {filteredStates.map((s, i) => (
-              <div
-                key={s.abbr}
-                onClick={() => toggleState(s.abbr)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '10px 14px', cursor: 'pointer',
-                  background: states.includes(s.abbr) ? '#EEF2FF' : 'transparent',
-                  borderBottom: i < filteredStates.length - 1 ? '0.5px solid var(--color-border-tertiary)' : 'none',
-                  transition: 'background 0.1s',
-                }}
-              >
+              <div key={s.abbr} onClick={() => toggleState(s.abbr)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', cursor: 'pointer',
+                background: states.includes(s.abbr) ? '#F4F3FE' : 'transparent',
+                borderBottom: i < filteredStates.length - 1 ? '1px solid #F4F3FE' : 'none',
+                transition: 'background 0.1s',
+              }}>
                 <span style={{
                   fontSize: '13px',
-                  color: states.includes(s.abbr) ? '#4338CA' : 'var(--color-text-primary)',
+                  color: states.includes(s.abbr) ? '#4338CA' : '#3A3A4D',
                   fontWeight: states.includes(s.abbr) ? 500 : 400,
                 }}>
                   {s.name}
                 </span>
-                {states.includes(s.abbr) && (
-                  <span style={{ color: '#6366F1', fontSize: '14px' }}>✓</span>
-                )}
+                {states.includes(s.abbr) && <span style={{ color: '#6366F1', fontSize: '14px' }}>✓</span>}
               </div>
             ))}
           </div>
         </div>
 
-        <Button
-          style={{ width: '100%' }}
-          onClick={() => onSave({
-            preferred_states: states,
-            max_tuition: maxTuition,
-            preferred_majors: major ? [major] : [],
-          })}
+        <button
+          onClick={() => onSave({ preferred_states: states, max_tuition: maxTuition, preferred_majors: major ? [major] : [] })}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            color: 'white', border: 'none', borderRadius: '12px',
+            padding: '13px', fontSize: '14px', fontWeight: 500,
+            cursor: 'pointer', boxShadow: '0 6px 20px rgba(99,102,241,0.25)',
+          }}
         >
           Save preferences
-        </Button>
+        </button>
       </DialogContent>
     </Dialog>
   )
@@ -372,9 +354,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [hearts, setHearts] = useState<HeartedSchool[]>([])
   const [vibes, setVibes] = useState<SavedVibe[]>([])
-  const [prefs, setPrefs] = useState<UserPreferences>({
-    preferred_states: [], max_tuition: null, preferred_majors: [],
-  })
+  const [prefs, setPrefs] = useState<UserPreferences>({ preferred_states: [], max_tuition: null, preferred_majors: [] })
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -436,10 +416,10 @@ export default function Profile() {
   const completeness = getCompleteness()
   const initials = user.email?.charAt(0).toUpperCase() ?? '?'
 
-  const linkStyle = {
+  const linkStyle: React.CSSProperties = {
     display: 'inline-block', fontSize: '13px', color: '#6366F1',
-    background: '#EEF2FF', border: '0.5px solid #C7D2FE',
-    borderRadius: '8px', padding: '7px 14px',
+    background: '#F4F3FE', border: '1px solid #DDD9F8',
+    borderRadius: '10px', padding: '7px 14px',
     textDecoration: 'none', fontWeight: 500,
   }
 
@@ -449,18 +429,19 @@ export default function Profile() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '2rem' }}>
         <div style={{
-          width: '52px', height: '52px', borderRadius: '50%',
-          background: '#6366F1', border: '2px solid #818CF8',
+          width: '60px', height: '60px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '20px', fontWeight: 500, color: 'white', flexShrink: 0,
+          fontSize: '22px', fontWeight: 500, color: 'white', flexShrink: 0,
+          boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
         }}>
           {initials}
         </div>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '2px', letterSpacing: '-0.3px' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 500, color: '#15151C', marginBottom: '2px', letterSpacing: '-0.3px' }}>
             {user.email?.split('@')[0]}'s profile
           </h1>
-          <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{user.email}</div>
+          <div style={{ fontSize: '13px', color: '#8B8B9E' }}>{user.email}</div>
         </div>
       </div>
 
@@ -470,7 +451,7 @@ export default function Profile() {
       <div style={{ marginBottom: '2rem' }}>
         <SectionHeader
           title="What Sage knows"
-          action={<a href="/" style={{ fontSize: '12px', color: '#6366F1', textDecoration: 'none' }}>Chat with Sage →</a>}
+          action={<a href="/" style={{ fontSize: '12px', color: '#6366F1', textDecoration: 'none', fontWeight: 500 }}>Chat with Sage →</a>}
         />
         {loading ? (
           <Skeleton height={120} />
@@ -482,10 +463,9 @@ export default function Profile() {
           />
         ) : (
           <div style={{
-            background: 'var(--color-background-primary)',
-            border: '0.5px solid var(--color-border-tertiary)',
-            borderRadius: '12px', padding: '16px',
+            background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '16px',
             display: 'flex', flexDirection: 'column', gap: '12px',
+            boxShadow: '0 2px 12px rgba(99,102,241,0.05)',
           }}>
             {[
               { label: 'Location', value: sageProfile.preferredLocations?.join(', ') },
@@ -494,13 +474,13 @@ export default function Profile() {
             ].filter(item => item.value).map(item => (
               <div key={item.label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <div style={{
-                  fontSize: '11px', fontWeight: 500, color: 'var(--color-text-tertiary)',
+                  fontSize: '11px', fontWeight: 500, color: '#A8A8BC',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
                   width: '90px', flexShrink: 0, paddingTop: '2px',
                 }}>
                   {item.label}
                 </div>
-                <div style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{item.value}</div>
+                <div style={{ fontSize: '13px', color: '#3A3A4D' }}>{item.value}</div>
               </div>
             ))}
           </div>
@@ -511,7 +491,7 @@ export default function Profile() {
       <div style={{ marginBottom: '2rem' }}>
         <SectionHeader
           title="My schools"
-          action={<span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{hearts.length} saved</span>}
+          action={<span style={{ fontSize: '12px', color: '#A8A8BC' }}>{hearts.length} saved</span>}
         />
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -527,35 +507,34 @@ export default function Profile() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {hearts.map(h => (
               <div key={h.id} style={{
-                background: 'var(--color-background-primary)',
-                border: '0.5px solid var(--color-border-tertiary)',
-                borderRadius: '12px', padding: '14px 16px',
+                background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '12px 16px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+                boxShadow: '0 2px 8px rgba(99,102,241,0.04)',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#F0ABFC', fontSize: '16px' }}>♥</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                    background: 'linear-gradient(135deg, #FCE7F3, #FBCFE8)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '16px', color: '#EC4899',
+                  }}>♥</div>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                      {h.college_name}
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C' }}>{h.college_name}</div>
+                    <div style={{ fontSize: '11px', color: '#A8A8BC', marginTop: '2px' }}>
                       Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <a href={`/college/${h.college_id}`} style={{ fontSize: '12px', color: '#6366F1', textDecoration: 'none' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <a href={`/college/${h.college_id}`} style={{ fontSize: '12px', color: '#6366F1', textDecoration: 'none', fontWeight: 500 }}>
                     View →
                   </a>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
                     onClick={() => handleUnheart(h.college_id)}
-                    className="text-slate-400 text-xs h-7 px-2"
-                    title="Remove from saved"
+                    style={{ fontSize: '12px', color: '#A8A8BC', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
                   >
                     Remove
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}
@@ -567,7 +546,7 @@ export default function Profile() {
       <div style={{ marginBottom: '2rem' }}>
         <SectionHeader
           title="Vibe Checks"
-          action={<span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{vibes.length} saved</span>}
+          action={<span style={{ fontSize: '12px', color: '#A8A8BC' }}>{vibes.length} saved</span>}
         />
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -582,36 +561,29 @@ export default function Profile() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {vibes.map(v => {
-              const fitColor = v.fit_score >= 80 ? '#059669' : v.fit_score >= 60 ? '#6366F1' : '#94A3B8'
+              const fitColor = v.fit_score >= 80 ? '#6366F1' : v.fit_score >= 60 ? '#8B5CF6' : '#A8A8BC'
               return (
                 <div key={v.id} style={{
-                  background: 'var(--color-background-primary)',
-                  border: '0.5px solid var(--color-border-tertiary)',
-                  borderRadius: '12px', padding: '14px 16px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+                  background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', overflow: 'hidden',
+                  display: 'flex', alignItems: 'stretch',
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.04)',
                 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                        {v.college_name}
-                      </span>
-                      <span style={{
-                        fontSize: '11px', padding: '1px 7px', borderRadius: '20px',
-                        background: '#EEF2FF', color: '#4338CA', fontWeight: 500,
-                      }}>
-                        ✨ Vibe Check
-                      </span>
+                  <div style={{ width: '3px', flexShrink: 0, background: 'linear-gradient(180deg, #6366F1, #EC4899)' }} />
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 16px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: '#15151C' }}>{v.college_name}</span>
+                        <span style={{ fontSize: '11px', padding: '1px 7px', borderRadius: '20px', background: '#F4F3FE', color: '#6366F1', fontWeight: 500 }}>✨ Vibe Check</span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#8B8B9E', lineHeight: 1.5 }}>{v.overall_summary}</div>
+                      <div style={{ fontSize: '11px', color: '#A8A8BC', marginTop: '4px' }}>
+                        {new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-                      {v.overall_summary}
+                    <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                      <div style={{ fontSize: '24px', fontWeight: 500, color: fitColor }}>{v.fit_score}</div>
+                      <div style={{ fontSize: '10px', color: '#A8A8BC' }}>fit</div>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-                      {new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                    <div style={{ fontSize: '24px', fontWeight: 500, color: fitColor }}>{v.fit_score}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>fit</div>
                   </div>
                 </div>
               )
@@ -625,9 +597,9 @@ export default function Profile() {
         <SectionHeader
           title="My preferences"
           action={
-            <Button variant="link" size="sm" onClick={() => setShowPrefsModal(true)} className="h-auto p-0 text-xs">
+            <button onClick={() => setShowPrefsModal(true)} style={{ fontSize: '12px', color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, padding: 0 }}>
               Edit
-            </Button>
+            </button>
           }
         />
         {loading ? (
@@ -637,38 +609,41 @@ export default function Profile() {
             emoji="⚙️"
             message="Set standing preferences to help Sage and the search page work better for you."
             action={
-              <Button variant="outline" size="sm" onClick={() => setShowPrefsModal(true)} className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+              <button onClick={() => setShowPrefsModal(true)} style={{
+                fontSize: '13px', color: '#6366F1', background: '#F4F3FE',
+                border: '1px solid #DDD9F8', borderRadius: '10px',
+                padding: '8px 16px', cursor: 'pointer', fontWeight: 500,
+              }}>
                 Set preferences
-              </Button>
+              </button>
             }
           />
         ) : (
           <div style={{
-            background: 'var(--color-background-primary)',
-            border: '0.5px solid var(--color-border-tertiary)',
-            borderRadius: '12px', padding: '16px',
+            background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '16px',
             display: 'flex', flexDirection: 'column', gap: '12px',
+            boxShadow: '0 2px 12px rgba(99,102,241,0.05)',
           }}>
             {prefs.preferred_states.length > 0 && (
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0, paddingTop: '2px' }}>States</div>
+                <div style={{ fontSize: '11px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0, paddingTop: '2px' }}>States</div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {prefs.preferred_states.map(s => (
-                    <span key={s} style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: '#EEF2FF', color: '#4338CA', border: '0.5px solid #C7D2FE' }}>{s}</span>
+                    <span key={s} style={{ fontSize: '12px', padding: '3px 9px', borderRadius: '20px', background: '#F4F3FE', color: '#4338CA', border: '1px solid #DDD9F8', fontWeight: 500 }}>{s}</span>
                   ))}
                 </div>
               </div>
             )}
             {prefs.max_tuition != null && (
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0 }}>Max tuition</div>
-                <div style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>${prefs.max_tuition.toLocaleString()}/yr</div>
+                <div style={{ fontSize: '11px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0 }}>Max tuition</div>
+                <div style={{ fontSize: '13px', color: '#3A3A4D' }}>${prefs.max_tuition.toLocaleString()}/yr</div>
               </div>
             )}
             {prefs.preferred_majors.length > 0 && (
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0 }}>Major</div>
-                <div style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{prefs.preferred_majors.join(', ')}</div>
+                <div style={{ fontSize: '11px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0 }}>Major</div>
+                <div style={{ fontSize: '13px', color: '#3A3A4D' }}>{prefs.preferred_majors.join(', ')}</div>
               </div>
             )}
           </div>

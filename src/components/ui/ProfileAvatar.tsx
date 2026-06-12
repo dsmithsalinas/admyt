@@ -38,10 +38,13 @@ export default function ProfileAvatar() {
         <div style={{
           width: '32px', height: '32px',
           borderRadius: '50%',
-          background: user ? '#6366F1' : '#1E293B',
-          border: user ? '2px solid #818CF8' : '1.5px solid #334155',
+          background: user
+            ? 'linear-gradient(135deg, #6366F1, #8B5CF6)'
+            : '#F4F3FE',
+          border: user ? '2px solid rgba(99,102,241,0.3)' : '1.5px solid #DDD9F8',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'all 0.15s',
+          boxShadow: user ? '0 2px 8px rgba(99,102,241,0.25)' : 'none',
         }}>
           {user ? (
             <span style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>
@@ -49,14 +52,14 @@ export default function ProfileAvatar() {
             </span>
           ) : (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="4" stroke="#64748B" strokeWidth="1.5"/>
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round"/>
+              <circle cx="12" cy="8" r="4" stroke="#A8A8BC" strokeWidth="1.5"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#A8A8BC" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           )}
         </div>
         <span style={{
           fontSize: '10px',
-          color: user ? '#818CF8' : '#475569',
+          color: user ? '#6366F1' : '#8B8B9E',
           fontWeight: 500,
           letterSpacing: '0.02em',
         }}>
@@ -68,23 +71,23 @@ export default function ProfileAvatar() {
       {showDropdown && user && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-          background: '#1E293B',
-          border: '0.5px solid #334155',
-          borderRadius: '10px',
+          background: 'white',
+          border: '1px solid #EEECFB',
+          borderRadius: '14px',
           padding: '8px',
           minWidth: '200px',
           zIndex: 100,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          boxShadow: '0 8px 32px rgba(99,102,241,0.15)',
         }}>
           <div style={{
             padding: '8px 10px 12px',
-            borderBottom: '0.5px solid #334155',
+            borderBottom: '1px solid #F4F3FE',
             marginBottom: '6px',
           }}>
-            <div style={{ fontSize: '11px', color: '#475569', marginBottom: '2px' }}>
+            <div style={{ fontSize: '11px', color: '#A8A8BC', marginBottom: '2px' }}>
               Signed in as
             </div>
-            <div style={{ fontSize: '13px', color: '#E2E8F0', fontWeight: 500 }}>
+            <div style={{ fontSize: '13px', color: '#15151C', fontWeight: 500 }}>
               {user.email}
             </div>
           </div>
@@ -93,12 +96,12 @@ export default function ProfileAvatar() {
             style={{
               width: '100%', textAlign: 'left',
               padding: '8px 10px',
-              fontSize: '13px', color: '#E2E8F0',
+              fontSize: '13px', color: '#3A3A4D',
               background: 'none', border: 'none',
-              cursor: 'pointer', borderRadius: '6px',
+              cursor: 'pointer', borderRadius: '8px',
               transition: 'background 0.15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F4F3FE')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             View profile
@@ -108,12 +111,12 @@ export default function ProfileAvatar() {
             style={{
               width: '100%', textAlign: 'left',
               padding: '8px 10px',
-              fontSize: '13px', color: '#94A3B8',
+              fontSize: '13px', color: '#8B8B9E',
               background: 'none', border: 'none',
-              cursor: 'pointer', borderRadius: '6px',
+              cursor: 'pointer', borderRadius: '8px',
               transition: 'background 0.15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F4F3FE')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             Sign out
