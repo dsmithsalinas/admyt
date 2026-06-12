@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { sampleColleges } from '@/data/sampleColleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useAuth } from '@/context/AuthContext'
 import AuthModal from '@/components/ui/AuthModal'
+import { saveVibeCheck, getSavedVibe } from '@/lib/savedVibes'
 
 interface VibeDimension {
   key: string
@@ -237,6 +238,16 @@ export default function VibeCheck() {
   const [result, setResult] = useState<VibeResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user || !result || !college) return
+    getSavedVibe(user.id, college.id).then(existing => {
+      if (existing) setSaved(true)
+    })
+  }, [user, result, college])
 
   const college = sampleColleges.find(c => c.id === id)
 
@@ -274,6 +285,28 @@ export default function VibeCheck() {
     } else {
       setSelected(new Set(VIBE_DIMENSIONS.map(d => d.key)))
     }
+  }
+
+  async function handleSave() {
+    if (!user || !result || !college) return
+    setSaveLoading(true)
+    setSaveError(null)
+
+    const err = await saveVibeCheck({
+      user_id: user.id,
+      college_id: college.id,
+      college_name: college.name,
+      fit_score: result.fitScore,
+      dimensions: result.dimensions,
+      overall_summary: result.overallSummary,
+    })
+
+    if (err) {
+      setSaveError(err)
+    } else {
+      setSaved(true)
+    }
+    setSaveLoading(false)
   }
 
   async function runVibeCheck() {
@@ -501,10 +534,108 @@ Please generate a vibe check for only these dimensions.`
             ))}
           </div>
 
+          {/* Save bar — signed in */}
+          {user && (
+            <div style={{
+              marginTop: '16px',
+              background: saved ? '#ECFDF5' : 'var(--color-background-secondary)',
+              border: `0.5px solid ${saved ? '#A7F3D0' : 'var(--color-border-tertiary)'}`,
+              borderRadius: '12px',
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              transition: 'all 0.3s',
+            }}>
+              <div>
+                <div style={{
+                  fontSize: '13px', fontWeight: 500,
+                  color: saved ? '#065F46' : 'var(--color-text-primary)',
+                  marginBottom: '2px',
+                }}>
+                  {saved ? '✓ Vibe Check saved' : 'Save this Vibe Check'}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: saved ? '#059669' : 'var(--color-text-secondary)',
+                }}>
+                  {saved
+                    ? 'You can find this in your saved results.'
+                    : 'Save to your profile to revisit later.'}
+                </div>
+              </div>
+              {!saved && (
+                <button
+                  onClick={handleSave}
+                  disabled={saveLoading}
+                  style={{
+                    background: '#6366F1', color: 'white',
+                    border: 'none', borderRadius: '8px',
+                    padding: '8px 16px', fontSize: '13px',
+                    fontWeight: 500, cursor: saveLoading ? 'default' : 'pointer',
+                    opacity: saveLoading ? 0.7 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {saveLoading ? 'Saving...' : 'Save results'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Save error */}
+          {saveError && (
+            <div style={{
+              marginTop: '8px',
+              fontSize: '12px', color: '#DC2626',
+              background: '#FEF2F2', border: '0.5px solid #FECACA',
+              borderRadius: '6px', padding: '8px 12px',
+            }}>
+              {saveError} — make sure the saved_vibes table exists in Supabase.
+            </div>
+          )}
+
+          {/* Save prompt — guest */}
+          {!user && (
+            <div style={{
+              marginTop: '16px',
+              background: '#EEF2FF',
+              border: '0.5px solid #C7D2FE',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+            }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 500, color: '#3730A3', marginBottom: '3px' }}>
+                  Save your Vibe Check
+                </div>
+                <div style={{ fontSize: '12px', color: '#4338CA' }}>
+                  Create a free account to save these results and your college list.
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                style={{
+                  background: '#6366F1', color: 'white',
+                  border: 'none', borderRadius: '8px',
+                  padding: '8px 16px', fontSize: '13px',
+                  fontWeight: 500, cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Save results
+              </button>
+            </div>
+          )}
+
           {/* Re-run / adjust */}
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
             <button
-              onClick={() => { setResult(null); setError(null) }}
+              onClick={() => { setResult(null); setError(null); setSaved(false) }}
               style={{
                 flex: 1, fontSize: '13px',
                 color: 'var(--color-text-secondary)',
@@ -532,41 +663,6 @@ Please generate a vibe check for only these dimensions.`
             </button>
           </div>
         </>
-      )}
-
-      {result && !user && (
-        <div style={{
-          marginTop: '16px',
-          background: '#EEF2FF',
-          border: '0.5px solid #C7D2FE',
-          borderRadius: '12px',
-          padding: '16px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-        }}>
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: 500, color: '#3730A3', marginBottom: '3px' }}>
-              Save your Vibe Check
-            </div>
-            <div style={{ fontSize: '12px', color: '#4338CA' }}>
-              Create a free account to save these results and your college list.
-            </div>
-          </div>
-          <button
-            onClick={() => setShowAuthModal(true)}
-            style={{
-              background: '#6366F1', color: 'white',
-              border: 'none', borderRadius: '8px',
-              padding: '8px 16px', fontSize: '13px',
-              fontWeight: 500, cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Save results
-          </button>
-        </div>
       )}
 
       {showAuthModal && (
