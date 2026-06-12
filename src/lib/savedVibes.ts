@@ -12,9 +12,14 @@ export interface SavedVibe {
 }
 
 export async function saveVibeCheck(vibe: Omit<SavedVibe, 'id' | 'created_at'>): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) return 'Not authenticated'
+
   const { error } = await supabase
     .from('saved_vibes')
     .upsert(vibe, { onConflict: 'user_id,college_id' })
+
   return error?.message ?? null
 }
 
