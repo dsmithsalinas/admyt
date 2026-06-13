@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SageOrb from '@/components/sage/SageOrb'
 import { useFadeUp } from '@/hooks/useFadeUp'
@@ -109,6 +109,12 @@ export default function Landing() {
     }, 50)
   }, [])
 
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 100)
+    return () => clearTimeout(t)
+  }, [])
+
   const s2Ref = useFadeUp()
   const s3HeadRef = useFadeUp()
   const s3BodyRef = useFadeUp()
@@ -116,7 +122,8 @@ export default function Landing() {
   const s5Ref = useFadeUp()
   const s6Ref = useFadeUp()
   const s7Ref = useFadeUp()
-  const s8Ref = useFadeUp()
+  const s7BodyRef = useFadeUp()
+  const s8ctaRef = useFadeUp()
   const chatPreviewRef = useFadeUp()
 
   return (
@@ -196,7 +203,7 @@ export default function Landing() {
         </div>
 
         {/* Chat preview mockup */}
-        <div ref={chatPreviewRef} className="fade-up landing-chat-preview" style={{
+        <div ref={chatPreviewRef} className={`fade-up${mounted ? ' visible' : ''} landing-chat-preview`} style={{
           marginTop: '52px',
           width: '100%', maxWidth: '480px',
           border: '1px solid #EEECFB',
@@ -523,7 +530,7 @@ export default function Landing() {
               Built for you — especially if no one's helped before.
             </h2>
           </div>
-          <div ref={s8Ref} className="fade-up fade-up-delay-1">
+          <div ref={s7BodyRef} className="fade-up fade-up-delay-1">
             <p style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.8, marginBottom: '20px' }}>
               Maybe you're the first in your family to do this, with no roadmap and no one to ask. Maybe you're drowning in everyone else's expectations and just want someone to ask what <em>you</em> want. Maybe you test fine but don't see yourself in the glossy brochures. Maybe you just need a school you can actually afford.
             </p>
@@ -537,7 +544,7 @@ export default function Landing() {
       {/* ── Section 8: Final CTA ─────────────────────────────── */}
       <section style={{ padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         <div style={{ maxWidth: '560px', width: '100%' }}>
-          <div ref={s5Ref} className="fade-up">
+          <div ref={s8ctaRef} className="fade-up">
             <h2 style={{
               fontSize: 'clamp(28px, 5vw, 38px)', fontWeight: 500, color: '#15151C',
               letterSpacing: '-0.5px', marginBottom: '16px',

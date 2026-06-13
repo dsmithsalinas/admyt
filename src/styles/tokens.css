@@ -40,7 +40,7 @@
 /* ── Scroll animation ──────────────────────────────────────── */
 .fade-up {
   opacity: 0;
-  transform: translateY(28px);
+  transform: translateY(24px);
   transition: opacity 0.55s ease, transform 0.55s ease;
 }
 
