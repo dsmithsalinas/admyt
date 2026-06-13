@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SageOrb from '@/components/sage/SageOrb'
-import { useFadeUp } from '@/hooks/useFadeUp'
 
 const GradText = ({ children }: { children: React.ReactNode }) => (
   <span style={{
@@ -57,17 +56,16 @@ function CTAButton({ onClick, large }: { onClick: () => void; large?: boolean })
 }
 
 function VibeBar({ label, score, delay }: { label: string; score: number; delay: string }) {
-  const ref = useFadeUp()
   return (
-    <div ref={ref} className={`fade-up`} style={{ transitionDelay: delay, background: 'white', borderRadius: '14px', padding: '12px 14px' }}>
+    <div className="fade-up" style={{ transitionDelay: delay, background: 'white', borderRadius: '14px', padding: '12px 14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span style={{ fontSize: '13px', fontWeight: 500, color: '#6366F1' }}>{label}</span>
         <span style={{ fontSize: '13px', fontWeight: 500, color: '#6366F1' }}>{score}/10</span>
       </div>
-      <div style={{ height: '6px', background: '#F4F3FE', borderRadius: '3px', overflow: 'hidden' }}>
+      <div style={{ height: '6px', background: 'rgba(255,255,255,0.3)', borderRadius: '3px', overflow: 'hidden' }}>
         <div style={{
           width: `${score * 10}%`, height: '100%',
-          background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+          background: 'linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))',
           borderRadius: '3px',
         }} />
       </div>
@@ -78,8 +76,42 @@ function VibeBar({ label, score, delay }: { label: string; score: number; delay:
 export default function Landing() {
   const navigate = useNavigate()
   const goToChat = () => navigate('/chat')
+  const pageRef = useRef<HTMLDivElement>(null)
 
-  // Hero orb scale-in
+  // Single global observer — watches every .fade-up element on the page
+  useEffect(() => {
+    const makeVisible = (el: Element) => el.classList.add('visible')
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            makeVisible(entry.target)
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.05, rootMargin: '0px 0px -20px 0px' }
+    )
+
+    // Observe all current .fade-up elements
+    const observe = () => {
+      document.querySelectorAll('.fade-up:not(.visible)').forEach(el => observer.observe(el))
+    }
+    observe()
+
+    // Fallback: force all visible after 1.5s in case observer never fires
+    const fallback = setTimeout(() => {
+      document.querySelectorAll('.fade-up:not(.visible)').forEach(makeVisible)
+    }, 1500)
+
+    return () => {
+      observer.disconnect()
+      clearTimeout(fallback)
+    }
+  }, [])
+
+  // Hero orb scale-in on mount
   const orbRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = orbRef.current
@@ -95,7 +127,7 @@ export default function Landing() {
     })
   }, [])
 
-  // Hero text fade-in
+  // Hero text fade-in on mount
   const heroTextRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = heroTextRef.current
@@ -109,25 +141,15 @@ export default function Landing() {
     }, 50)
   }, [])
 
+  // Chat preview animates in shortly after mount (it's above the fold)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 100)
+    const t = setTimeout(() => setMounted(true), 400)
     return () => clearTimeout(t)
   }, [])
 
-  const s2Ref = useFadeUp()
-  const s3HeadRef = useFadeUp()
-  const s3BodyRef = useFadeUp()
-  const s4Ref = useFadeUp()
-  const s5Ref = useFadeUp()
-  const s6Ref = useFadeUp()
-  const s7Ref = useFadeUp()
-  const s7BodyRef = useFadeUp()
-  const s8ctaRef = useFadeUp()
-  const chatPreviewRef = useFadeUp()
-
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif', color: '#3A3A4D', background: '#FCFCFF', overflowX: 'hidden' }}>
+    <div ref={pageRef} style={{ fontFamily: 'Inter, sans-serif', color: '#3A3A4D', background: '#FCFCFF', overflowX: 'hidden' }}>
 
       {/* ── Nav ─────────────────────────────────────────────── */}
       <nav style={{
@@ -202,68 +224,35 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Chat preview mockup */}
-        <div ref={chatPreviewRef} className={`fade-up${mounted ? ' visible' : ''} landing-chat-preview`} style={{
-          marginTop: '52px',
-          width: '100%', maxWidth: '480px',
-          border: '1px solid #EEECFB',
-          borderRadius: '22px',
-          boxShadow: '0 8px 40px rgba(99,102,241,0.08)',
-          background: 'white',
-          overflow: 'hidden',
-        }}>
-          {/* Chat messages */}
+        {/* Chat preview mockup — fade in on mount since it's above the fold */}
+        <div
+          className={`fade-up${mounted ? ' visible' : ''} landing-chat-preview`}
+          style={{ transitionDelay: '0.15s', marginTop: '52px', width: '100%', maxWidth: '480px', border: '1px solid #EEECFB', borderRadius: '22px', boxShadow: '0 8px 40px rgba(99,102,241,0.08)', background: 'white', overflow: 'hidden' }}
+        >
           <div style={{ padding: '20px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Sage bubble */}
             <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               <SageOrb size={28} />
-              <div style={{
-                background: '#F4F3FE', borderRadius: '0 14px 14px 14px',
-                padding: '10px 14px', fontSize: '13px', color: '#3A3A4D', lineHeight: 1.55,
-                maxWidth: '80%',
-              }}>
+              <div style={{ background: '#F4F3FE', borderRadius: '0 14px 14px 14px', padding: '10px 14px', fontSize: '13px', color: '#3A3A4D', lineHeight: 1.55, maxWidth: '80%' }}>
                 Hey, I'm Sage 👋 Tell me what you're looking for in a college — or just that you have no idea. Both are totally fine.
               </div>
             </div>
-            {/* User bubble */}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                borderRadius: '14px 14px 0 14px',
-                padding: '10px 14px', fontSize: '13px', color: 'white', lineHeight: 1.55,
-                maxWidth: '80%',
-              }}>
+              <div style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', borderRadius: '14px 14px 0 14px', padding: '10px 14px', fontSize: '13px', color: 'white', lineHeight: 1.55, maxWidth: '80%' }}>
                 Honestly? I have no idea where to start.
               </div>
             </div>
-            {/* Sage bubble */}
             <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               <SageOrb size={28} />
-              <div style={{
-                background: '#F4F3FE', borderRadius: '0 14px 14px 14px',
-                padding: '10px 14px', fontSize: '13px', color: '#3A3A4D', lineHeight: 1.55,
-                maxWidth: '80%',
-              }}>
+              <div style={{ background: '#F4F3FE', borderRadius: '0 14px 14px 14px', padding: '10px 14px', fontSize: '13px', color: '#3A3A4D', lineHeight: 1.55, maxWidth: '80%' }}>
                 Perfect starting point. Let's figure it out together.
               </div>
             </div>
           </div>
-          {/* Input bar */}
-          <div style={{
-            borderTop: '1px solid #F0EEFB', padding: '12px 16px',
-            display: 'flex', alignItems: 'center', gap: '8px',
-          }}>
-            <div style={{
-              flex: 1, background: '#F8F8FC', border: '1px solid #EEECFB', borderRadius: '12px',
-              padding: '9px 14px', fontSize: '13px', color: '#A8A8BC',
-            }}>
+          <div style={{ borderTop: '1px solid #F0EEFB', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ flex: 1, background: '#F8F8FC', border: '1px solid #EEECFB', borderRadius: '12px', padding: '9px 14px', fontSize: '13px', color: '#A8A8BC' }}>
               Ask me anything...
             </div>
-            <div style={{
-              width: '34px', height: '34px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -276,12 +265,12 @@ export default function Landing() {
       {/* ── Section 2: The problem ───────────────────────────── */}
       <section style={{ padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ maxWidth: '640px', width: '100%' }}>
-          <div ref={s2Ref} className="fade-up">
+          <div className="fade-up">
             <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '28px', letterSpacing: '-0.3px' }}>
               The college search is broken.
             </h2>
           </div>
-          <div ref={s3HeadRef} className="fade-up fade-up-delay-1" style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.75 }}>
+          <div className="fade-up fade-up-delay-1" style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.75 }}>
             <p style={{ marginBottom: '16px' }}>
               Somewhere along the way, finding a college stopped being exciting and started being terrifying.
             </p>
@@ -301,7 +290,7 @@ export default function Landing() {
       {/* ── Section 3: Meet Sage ─────────────────────────────── */}
       <section style={{ background: '#F8F7FF', padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ maxWidth: '680px', width: '100%' }}>
-          <div ref={s3BodyRef} className="fade-up">
+          <div className="fade-up">
             <div style={{
               fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em',
               background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
@@ -330,8 +319,9 @@ export default function Landing() {
             ].map((q, i) => (
               <div
                 key={q}
-                className={`fade-up fade-up-delay-${i + 1}`}
+                className="fade-up"
                 style={{
+                  transitionDelay: `${(i + 1) * 0.1}s`,
                   background: 'white', border: '1px solid #EEECFB', borderRadius: '14px',
                   padding: '12px 16px', fontStyle: 'italic', color: '#3A3A4D', fontSize: '14px',
                   lineHeight: 1.5,
@@ -342,7 +332,7 @@ export default function Landing() {
             ))}
           </div>
 
-          <div className="fade-up fade-up-delay-4">
+          <div className="fade-up" style={{ transitionDelay: '0.4s' }}>
             <p style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.75, marginBottom: '24px' }}>
               Sage doesn't push. Sage doesn't hype the famous schools. Sage helps you understand yourself first — then helps you find the places that match.
             </p>
@@ -354,7 +344,7 @@ export default function Landing() {
       {/* ── Section 4: How it works ──────────────────────────── */}
       <section id="how-it-works" style={{ padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ maxWidth: '680px', width: '100%' }}>
-          <div ref={s4Ref} className="fade-up">
+          <div className="fade-up">
             <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '40px', letterSpacing: '-0.3px' }}>
               How Admyt works
             </h2>
@@ -381,10 +371,12 @@ export default function Landing() {
             ].map((step, i) => (
               <div
                 key={step.title}
-                className={`fade-up fade-up-delay-${i + 1}`}
-                style={{ display: 'flex', gap: '20px', marginBottom: i < 3 ? '32px' : '0', position: 'relative' }}
+                className="fade-up"
+                style={{
+                  transitionDelay: `${(i + 1) * 0.1}s`,
+                  display: 'flex', gap: '20px', marginBottom: i < 3 ? '32px' : '0', position: 'relative',
+                }}
               >
-                {/* Number circle + connector */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                   <div style={{
                     width: '36px', height: '36px', borderRadius: '50%',
@@ -395,14 +387,10 @@ export default function Landing() {
                     {i + 1}
                   </div>
                   {i < 3 && (
-                    <div style={{
-                      width: '2px', flex: 1, minHeight: '32px', marginTop: '6px',
-                      background: 'linear-gradient(180deg, #6366F1, #8B5CF6)',
-                      opacity: 0.3,
-                    }} />
+                    <div style={{ width: '2px', flex: 1, minHeight: '32px', marginTop: '6px', background: 'linear-gradient(180deg, #6366F1, #8B5CF6)', opacity: 0.3 }} />
                   )}
                 </div>
-                <div style={{ paddingTop: '6px', paddingBottom: i < 3 ? '0' : '0' }}>
+                <div style={{ paddingTop: '6px' }}>
                   <div style={{ fontSize: '15px', fontWeight: 500, color: '#15151C', marginBottom: '6px' }}>
                     {step.title}
                   </div>
@@ -414,7 +402,7 @@ export default function Landing() {
             ))}
           </div>
 
-          <div style={{ marginTop: '40px' }} className="fade-up fade-up-delay-4">
+          <div className="fade-up" style={{ marginTop: '40px', transitionDelay: '0.4s' }}>
             <CTAButton onClick={goToChat} large />
           </div>
         </div>
@@ -426,11 +414,8 @@ export default function Landing() {
         padding: '80px 20px',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
       }}>
-        <div ref={s5Ref} className="fade-up" style={{ maxWidth: '680px', width: '100%' }}>
-          <div style={{
-            fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em',
-            color: 'rgba(255,255,255,0.85)', marginBottom: '12px', fontWeight: 500,
-          }}>
+        <div className="fade-up" style={{ maxWidth: '680px', width: '100%' }}>
+          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.85)', marginBottom: '12px', fontWeight: 500 }}>
             ✨ vibe check
           </div>
           <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: 'white', marginBottom: '20px', letterSpacing: '-0.3px' }}>
@@ -457,7 +442,7 @@ export default function Landing() {
       {/* ── Section 6: What we stand for ────────────────────── */}
       <section style={{ padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ maxWidth: '680px', width: '100%' }}>
-          <div ref={s6Ref} className="fade-up">
+          <div className="fade-up">
             <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '36px', letterSpacing: '-0.3px' }}>
               What we stand for
             </h2>
@@ -493,21 +478,16 @@ export default function Landing() {
                 key={card.title}
                 className="fade-up"
                 style={{
+                  transitionDelay: card.delay,
                   background: 'white', border: '1px solid #EEECFB', borderRadius: '18px',
                   padding: '20px', boxShadow: '0 3px 16px rgba(99,102,241,0.06)',
                   borderTop: '3px solid transparent',
                   backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #6366F1, #8B5CF6)',
                   backgroundOrigin: 'border-box',
                   backgroundClip: 'padding-box, border-box',
-                  transitionDelay: card.delay,
                 }}
               >
-                <div style={{
-                  width: '36px', height: '36px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #F4F3FE, #EDE9FE)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '18px', marginBottom: '12px',
-                }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #F4F3FE, #EDE9FE)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '12px' }}>
                   {card.emoji}
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C', marginBottom: '8px' }}>
@@ -525,12 +505,12 @@ export default function Landing() {
       {/* ── Section 7: Who it's for ──────────────────────────── */}
       <section style={{ background: '#F8F7FF', padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ maxWidth: '600px', width: '100%' }}>
-          <div ref={s7Ref} className="fade-up">
+          <div className="fade-up">
             <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '24px', letterSpacing: '-0.3px' }}>
               Built for you — especially if no one's helped before.
             </h2>
           </div>
-          <div ref={s7BodyRef} className="fade-up fade-up-delay-1">
+          <div className="fade-up" style={{ transitionDelay: '0.15s' }}>
             <p style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.8, marginBottom: '20px' }}>
               Maybe you're the first in your family to do this, with no roadmap and no one to ask. Maybe you're drowning in everyone else's expectations and just want someone to ask what <em>you</em> want. Maybe you test fine but don't see yourself in the glossy brochures. Maybe you just need a school you can actually afford.
             </p>
@@ -544,11 +524,8 @@ export default function Landing() {
       {/* ── Section 8: Final CTA ─────────────────────────────── */}
       <section style={{ padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         <div style={{ maxWidth: '560px', width: '100%' }}>
-          <div ref={s8ctaRef} className="fade-up">
-            <h2 style={{
-              fontSize: 'clamp(28px, 5vw, 38px)', fontWeight: 500, color: '#15151C',
-              letterSpacing: '-0.5px', marginBottom: '16px',
-            }}>
+          <div className="fade-up">
+            <h2 style={{ fontSize: 'clamp(28px, 5vw, 38px)', fontWeight: 500, color: '#15151C', letterSpacing: '-0.5px', marginBottom: '16px' }}>
               Your future starts with a conversation.
             </h2>
             <p style={{ fontSize: '16px', color: '#8B8B9E', lineHeight: 1.65, marginBottom: '32px' }}>
@@ -563,14 +540,8 @@ export default function Landing() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────── */}
-      <footer style={{
-        background: 'white', borderTop: '1px solid #F0EEFB', padding: '32px 20px',
-      }}>
-        <div style={{
-          maxWidth: '720px', margin: '0 auto',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-          flexWrap: 'wrap', gap: '20px',
-        }}>
+      <footer style={{ background: 'white', borderTop: '1px solid #F0EEFB', padding: '32px 20px' }}>
+        <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
           <div>
             <div style={{ fontSize: '17px', fontWeight: 500, color: '#15151C', letterSpacing: '-0.2px', marginBottom: '4px' }}>
               adm<GradText>y</GradText>t
@@ -579,29 +550,19 @@ export default function Landing() {
           </div>
           <div style={{ display: 'flex', gap: '20px' }}>
             {['About', 'Privacy', 'Contact'].map(link => (
-              <a
-                key={link}
-                href="#"
-                style={{ fontSize: '13px', color: '#A8A8BC', textDecoration: 'none' }}
-              >
+              <a key={link} href="#" style={{ fontSize: '13px', color: '#A8A8BC', textDecoration: 'none' }}>
                 {link}
               </a>
             ))}
           </div>
         </div>
         <div style={{ textAlign: 'center', marginTop: '24px' }}>
-          <span style={{
-            fontSize: '11px',
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            fontWeight: 500,
-          }}>
+          <span style={{ fontSize: '11px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontWeight: 500 }}>
             The y is for you.
           </span>
         </div>
       </footer>
 
-      {/* Nav CTA mobile hide */}
       <style>{`
         @media (max-width: 479px) {
           .landing-nav-cta { display: none !important; }
