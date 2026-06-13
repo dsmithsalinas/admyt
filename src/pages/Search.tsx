@@ -194,7 +194,7 @@ export default function Search() {
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Search by school name or city..."
+          placeholder="Search by school name, city, or state..."
           style={{
             width: '100%', boxSizing: 'border-box',
             paddingLeft: '40px', paddingRight: '16px', paddingTop: '11px', paddingBottom: '11px',
@@ -277,10 +277,11 @@ export default function Search() {
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#8B8B9E' }}>
-          <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎓</div>
-          <div style={{ fontSize: '14px', marginBottom: '12px' }}>No schools match those filters.</div>
+          <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔍</div>
+          <div style={{ fontSize: '14px', marginBottom: '4px', color: '#3A3A4D' }}>Nothing matching those filters.</div>
+          <div style={{ fontSize: '13px', color: '#8B8B9E', marginBottom: '16px' }}>Try loosening them up — there might be a hidden gem in there.</div>
           <button onClick={clearFilters} style={{ fontSize: '13px', color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-            Clear filters
+            Clear filters and start over
           </button>
         </div>
       ) : (

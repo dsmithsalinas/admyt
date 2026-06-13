@@ -139,10 +139,10 @@ function GuestPreview({ onSignUp }: { onSignUp: () => void }) {
       }}>
         <div>
           <div style={{ fontSize: '14px', fontWeight: 500, color: '#FFFFFF', marginBottom: '4px' }}>
-            Create your own profile
+            This could be your profile
           </div>
           <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
-            Save your schools, track vibe checks, and let Sage remember everything about you.
+            Free account. Save your schools, your Vibe Checks, and let Sage remember everything.
           </div>
         </div>
         <button
@@ -394,12 +394,12 @@ export default function Profile() {
   }
 
   function getCompletenessNudge() {
-    if (!sageProfile?.intendedMajor) return 'Tell Sage your intended major to improve match scores.'
-    if (!sageProfile?.careerGoals?.length) return 'Share your career goals with Sage for better recommendations.'
-    if (!sageProfile?.preferredLocations?.length) return 'Tell Sage where you want to study.'
-    if (!hearts.length) return 'Heart a school to start building your list.'
-    if (!vibes.length) return "Run a Vibe Check on a school you're interested in."
-    return 'Your profile is complete!'
+    if (!sageProfile?.intendedMajor) return "Tell Sage your intended major — it makes a big difference in what comes up."
+    if (!sageProfile?.careerGoals?.length) return "Share your career goals with Sage so recommendations actually make sense."
+    if (!sageProfile?.preferredLocations?.length) return "Tell Sage where you're thinking of studying — even a rough idea helps."
+    if (!hearts.length) return "Heart a school you're curious about and it'll show up here."
+    if (!vibes.length) return "Run a Vibe Check on a school to see if the culture actually fits you."
+    return "You're all set — Sage knows what it needs to find your fit."
   }
 
   if (!user) {
@@ -457,9 +457,9 @@ export default function Profile() {
           <Skeleton height={120} />
         ) : !sageProfile || (!sageProfile.intendedMajor && !sageProfile.careerGoals?.length && !sageProfile.preferredLocations?.length) ? (
           <EmptyState
-            emoji="🤔"
-            message="Sage hasn't learned much about you yet. Start a conversation to build your profile."
-            action={<a href="/" style={linkStyle}>Chat with Sage</a>}
+            emoji="💬"
+            message="Sage doesn't know much about you yet — start a conversation and it'll fill in fast."
+            action={<a href="/" style={linkStyle}>Chat with Sage →</a>}
           />
         ) : (
           <div style={{
@@ -500,8 +500,8 @@ export default function Profile() {
         ) : hearts.length === 0 ? (
           <EmptyState
             emoji="🏫"
-            message="No saved schools yet. Heart a school in Sage or Browse to save it here."
-            action={<a href="/search" style={linkStyle}>Browse schools</a>}
+            message="No saved schools yet — heart the ones you love and they'll show up here."
+            action={<a href="/search" style={linkStyle}>Browse schools →</a>}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -555,8 +555,8 @@ export default function Profile() {
         ) : vibes.length === 0 ? (
           <EmptyState
             emoji="✨"
-            message="No saved Vibe Checks yet. Run one on a school you're curious about."
-            action={<a href="/search" style={linkStyle}>Find a school</a>}
+            message="No Vibe Checks saved yet — run one on a school you're curious about and see if it actually fits you."
+            action={<a href="/search" style={linkStyle}>Find a school →</a>}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -607,7 +607,7 @@ export default function Profile() {
         ) : prefs.preferred_states.length === 0 && !prefs.max_tuition && prefs.preferred_majors.length === 0 ? (
           <EmptyState
             emoji="⚙️"
-            message="Set standing preferences to help Sage and the search page work better for you."
+            message="Set your standing preferences and Sage will use them every time — no need to repeat yourself."
             action={
               <button onClick={() => setShowPrefsModal(true)} style={{
                 fontSize: '13px', color: '#6366F1', background: '#F4F3FE',

@@ -176,7 +176,7 @@ export default function VibeCheck() {
       const parsed: VibeResult = JSON.parse(text.replace(/```json|```/g, '').trim())
       setResult(parsed)
     } catch (err) {
-      setError('Something went wrong generating the vibe check. Try again.')
+      setError("Hmm, something didn't work — mind trying again?")
       console.error(err)
     } finally {
       setLoading(false)
@@ -214,10 +214,10 @@ export default function VibeCheck() {
           ✨ Vibe Check
         </div>
         <h1 style={{ fontSize: '21px', fontWeight: 500, color: 'white', letterSpacing: '-0.3px', marginBottom: '6px' }}>
-          Would you actually vibe at {schoolFirst}?
+          Would you actually fit at {schoolFirst}?
         </h1>
         <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.55 }}>
-          Let's see if the campus culture matches your energy.
+          Not the brochure version — the real one. Pick what matters to you and I'll give it to you straight.
         </p>
       </div>
 
@@ -245,7 +245,7 @@ export default function VibeCheck() {
                 transition: 'all 0.15s',
               }}
             >
-              {selected.size === 0 ? 'Select at least one dimension' : `Run Vibe Check — ${selected.size} dimension${selected.size !== 1 ? 's' : ''}`}
+              {selected.size === 0 ? 'Pick at least one dimension first' : `Run my Vibe Check — ${selected.size} dimension${selected.size !== 1 ? 's' : ''}`}
             </button>
           </div>
         </>
@@ -258,7 +258,7 @@ export default function VibeCheck() {
           borderRadius: '16px', padding: '2.5rem 2rem', textAlign: 'center', marginTop: '1rem',
         }}>
           <div style={{ fontSize: '13px', color: '#8B8B9E', marginBottom: '16px' }}>
-            Analyzing {college.name}'s vibe across {selected.size} dimensions...
+            Looking into {schoolFirst}'s real deal across {selected.size} dimensions...
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
             {[0, 1, 2].map(i => (
@@ -279,7 +279,7 @@ export default function VibeCheck() {
           }}>
             <div>
               <div style={{ fontSize: '11px', color: '#6366F1', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>
-                Overall vibe fit
+                Your fit score
               </div>
               <div style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6, maxWidth: '380px' }}>
                 {result.overallSummary}
@@ -307,10 +307,10 @@ export default function VibeCheck() {
             }}>
               <div>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: saved ? '#065F46' : '#15151C', marginBottom: '2px' }}>
-                  {saved ? '✓ Vibe Check saved' : 'Save this Vibe Check'}
+                  {saved ? '✓ Saved to your profile' : 'Save this Vibe Check'}
                 </div>
                 <div style={{ fontSize: '12px', color: saved ? '#059669' : '#8B8B9E' }}>
-                  {saved ? 'You can find this in your saved results.' : 'Save to your profile to revisit later.'}
+                  {saved ? 'Find it anytime in your profile.' : 'Come back to it whenever — it\'ll be in your profile.'}
                 </div>
               </div>
               {!saved && (
@@ -345,8 +345,8 @@ export default function VibeCheck() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
             }}>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 500, color: '#4338CA', marginBottom: '3px' }}>Save your Vibe Check</div>
-                <div style={{ fontSize: '12px', color: '#6366F1' }}>Create a free account to save these results and your college list.</div>
+                <div style={{ fontSize: '13px', fontWeight: 500, color: '#4338CA', marginBottom: '3px' }}>Don't lose this</div>
+                <div style={{ fontSize: '12px', color: '#6366F1' }}>Free account. Save this result and keep building your list.</div>
               </div>
               <button
                 onClick={() => setShowAuthModal(true)}
@@ -367,13 +367,13 @@ export default function VibeCheck() {
               onClick={() => { setResult(null); setError(null); setSaved(false) }}
               style={{ flex: 1, fontSize: '13px', color: '#8B8B9E', background: 'white', border: '1px solid #EEECFB', borderRadius: '10px', padding: '10px', cursor: 'pointer' }}
             >
-              Adjust dimensions
+              Change what I'm checking
             </button>
             <button
               onClick={runVibeCheck}
               style={{ flex: 1, fontSize: '13px', color: '#6366F1', background: '#F4F3FE', border: '1px solid #EEECFB', borderRadius: '10px', padding: '10px', cursor: 'pointer', fontWeight: 500 }}
             >
-              Re-run analysis
+              Run it again
             </button>
           </div>
         </>

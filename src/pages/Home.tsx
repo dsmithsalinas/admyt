@@ -6,10 +6,10 @@ import AuthModal from '@/components/ui/AuthModal'
 import { useAuth } from '@/context/AuthContext'
 
 const ACTION_TILES = [
-  { label: 'Help me find my fit', icon: '🎯', message: 'Help me find my fit', bg: 'linear-gradient(140deg, #6366F1, #8B5CF6)' },
-  { label: 'Run a Vibe Check', icon: '✨', message: 'I want to run a Vibe Check', bg: 'linear-gradient(140deg, #7C3AED, #A855F7)' },
-  { label: "I'm totally lost, help", icon: '🧭', message: 'I have no idea where to start', bg: 'linear-gradient(140deg, #4F46E5, #6366F1)' },
-  { label: 'Compare two schools', icon: '⚖️', message: 'Compare two schools for me', bg: 'linear-gradient(140deg, #EC4899, #F472B6)' },
+  { label: 'Find where I fit', icon: '🎯', message: 'Help me find where I fit', bg: 'linear-gradient(140deg, #6366F1, #8B5CF6)' },
+  { label: 'Check a school\'s vibe', icon: '✨', message: 'I want to run a Vibe Check on a school', bg: 'linear-gradient(140deg, #7C3AED, #A855F7)' },
+  { label: 'I have no idea where to start', icon: '🧭', message: "I have no idea where to start with college", bg: 'linear-gradient(140deg, #4F46E5, #6366F1)' },
+  { label: 'Compare two schools', icon: '⚖️', message: 'Can you compare two schools for me?', bg: 'linear-gradient(140deg, #EC4899, #F472B6)' },
 ]
 
 function TypingDots() {
@@ -33,7 +33,7 @@ export default function Home() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const placeholder = useMemo(
-    () => ['Ask about schools...', 'What matters most to you?', 'Try: find me something like NYU but warmer'][Math.floor(Math.random() * 3)],
+    () => ['Ask me anything...', 'What matters most to you?', 'Try: find something like NYU but warmer'][Math.floor(Math.random() * 3)],
     [],
   )
 
@@ -74,7 +74,7 @@ export default function Home() {
                   Hey, I'm Sage 👋
                 </h1>
                 <p style={{ fontSize: '13px', color: '#8B8B9E', margin: 0, lineHeight: 1.6 }}>
-                  Let's find the college that actually fits you — not just your GPA. Where should we start?
+                  I'm here to help you find where you actually fit — not just where you're supposed to go. Where's your head at?
                 </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
@@ -104,7 +104,7 @@ export default function Home() {
 
           {initializing && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#A8A8BC', fontSize: '13px' }}>
-              Loading your conversation...
+              Picking up where you left off...
             </div>
           )}
 
@@ -176,7 +176,7 @@ export default function Home() {
             borderRadius: '10px', padding: '9px 14px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
           }}>
-            <span style={{ fontSize: '12px', color: '#6366F1' }}>Sign in to save this conversation</span>
+            <span style={{ fontSize: '12px', color: '#6366F1' }}>Save this conversation so you can come back to it</span>
             <button
               onClick={() => setShowAuthModal(true)}
               style={{
@@ -185,7 +185,7 @@ export default function Home() {
                 border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', flexShrink: 0,
               }}
             >
-              Sign in
+              Save it
             </button>
           </div>
         )}

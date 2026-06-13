@@ -17,12 +17,12 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
   const [loading, setLoading] = useState(false)
 
   const headline = trigger === 'vibecheck'
-    ? 'Save your Vibe Check results'
-    : 'Create your Admyt profile'
+    ? 'Save your Vibe Check'
+    : 'Find where you fit'
 
   const subline = trigger === 'vibecheck'
-    ? 'Create a free account to save your results and come back to them anytime.'
-    : 'Sign up to save your college list, profile, and Vibe Check results.'
+    ? "Create a free account so you can come back to these results — and keep building your list."
+    : "It's free. Save your schools, your Vibe Checks, and your conversation with Sage."
 
   async function handleEmailSubmit() {
     if (!email || !password) return
@@ -117,7 +117,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
           disabled={loading || !email || !password}
           style={{ width: '100%', height: '42px', marginBottom: '16px' }}
         >
-          {loading ? 'Please wait...' : mode === 'signup' ? 'Create free account' : 'Sign in'}
+          {loading ? 'One sec...' : mode === 'signup' ? 'Create free account' : 'Sign in'}
         </Button>
 
         <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
@@ -137,7 +137,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
             onClick={onClose}
             style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', height: 'auto', padding: '4px 8px' }}
           >
-            Continue as guest
+            Keep going without an account
           </Button>
         </div>
       </DialogContent>

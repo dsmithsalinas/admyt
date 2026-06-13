@@ -29,9 +29,9 @@ function ringColor(score: number) {
 }
 
 function matchLabel(score: number) {
-  if (score >= 85) return 'Strong match'
-  if (score >= 70) return 'Good match'
-  return 'Possible match'
+  if (score >= 85) return 'Looks like a strong fit'
+  if (score >= 70) return 'Decent fit for you'
+  return 'Might be worth a look'
 }
 
 export default function CollegeDetail() {
@@ -129,7 +129,7 @@ export default function CollegeDetail() {
             {matchLabel(score)} — {score}%
           </div>
           <div style={{ fontSize: '12px', color: '#7C6FB0', lineHeight: 1.5 }}>
-            Based on your goals and location preferences
+            Based on what you've told Sage so far
           </div>
         </div>
       </div>
@@ -174,10 +174,10 @@ export default function CollegeDetail() {
       }}>
         <div>
           <div style={{ fontSize: '15px', fontWeight: 500, color: '#FFFFFF', marginBottom: '5px' }}>
-            ✨ Run a Vibe Check
+            ✨ Vibe Check
           </div>
           <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>
-            See if {getShortName(college.name)}'s culture actually fits you
+            Does {getShortName(college.name)}'s culture actually fit you? Let's find out.
           </div>
         </div>
         <button
