@@ -19,7 +19,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const { user, signOut } = useAuth()
-  const isHome = location.pathname === '/'
+  const isHome = location.pathname === '/chat'
   const [showMobileProfile, setShowMobileProfile] = useState(false)
 
   const activeTabColor = '#6366F1'
@@ -37,7 +37,7 @@ export default function Layout() {
         flexShrink: 0, zIndex: 10,
         boxShadow: '0 1px 8px rgba(99,102,241,0.04)',
       }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+        <Link to="/chat" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <div style={{
             width: '32px', height: '32px',
             background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
@@ -61,7 +61,7 @@ export default function Layout() {
 
         {!isMobile && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '28px' }}>
-            <Link to="/" style={{
+            <Link to="/chat" style={{
               fontSize: '14px', textDecoration: 'none',
               color: isHome ? '#6366F1' : '#8B8B9E',
               fontWeight: isHome ? 500 : 400,
@@ -102,7 +102,7 @@ export default function Layout() {
       {/* ── Back to Sage pill (non-home pages) ──────────────────── */}
       {!isHome && (
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/chat')}
           style={{
             position: 'fixed',
             bottom: isMobile ? '76px' : '24px',
@@ -139,7 +139,7 @@ export default function Layout() {
         }}>
           {/* Chat tab */}
           <Link
-            to="/"
+            to="/chat"
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
