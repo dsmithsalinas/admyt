@@ -155,6 +155,46 @@ All tables have Row Level Security enabled. Users can only access their own data
 - [ ] School/district licensing model
 - [ ] Equity narrative — free tier positioning for first-gen and underserved students
 
+## Brand & Voice — Source of Truth
+
+Admyt has a defined brand and voice. Four brand docs live in the repo and are the
+standing source of truth for ALL user-facing copy and Sage's personality. Read them
+before writing or editing any user-facing text:
+
+- `admyt-brand-story.md` — brand story, values, and the finalized tagline system
+- `sage-personality-guide.md` — Sage's voice, traits, rules, and example responses
+- `admyt-naming-conventions.md` — what features are named what (respect these exactly)
+- `admyt-landing-page-copy.md` — the marketing landing page copy and structure
+
+### Voice rules (quick reference — full detail in the guides)
+- Sentence case everywhere. We're a friend, not a headline.
+- "You" and "your" constantly. It's about the student.
+- Short, real, warm. No jargon, no admissions-speak, no corporate tone.
+- Playful, warm, bold. Emoji occasionally and tastefully (👋 ✨ 👇), never overdone.
+- Honest about tradeoffs — Sage never just sells a school, never pushes prestige,
+  never pressures, never makes a student feel small for their stats or budget.
+- The test: would this make a stressed-out 17-year-old feel like they finally found
+  something that gets them? If it sounds like a brochure, rewrite it.
+
+### Locked names (never rename)
+- **Sage** — the AI advisor/friend
+- **Vibe Check** — campus culture fit analysis
+- **What Sage knows** — the preferences Sage learns
+- **My Schools** — saved/hearted schools
+- **Application tracker** — stays descriptive (deadline tool, clarity matters)
+
+### Taglines
+- Primary (product + app): **Find where you fit.**
+- Brand signature (landing hero): **The y is for you.**
+- Emotional (campaigns): **Find your people. Find your place.**
+- "Fit" is the brand promise (the what); "Vibe Check" is the feature that delivers it
+  (the how). Keep that hierarchy — don't use "vibe" as a brand-level tagline.
+
+### When writing any new copy or feature
+Default to Sage's voice. New hero features can earn playful branded names; utilities
+stay descriptive (see naming conventions). Let Sage's voice carry warmth where a
+plain feature name can't.
+
 ## Working style notes
 - Always use the Supabase Edge Function proxy for Claude API calls — never call Anthropic directly from the browser
 - When creating new Supabase tables via SQL Editor, remember to expose them to the API in Table Editor (past gotcha)
