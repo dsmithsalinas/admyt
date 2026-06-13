@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getCollege, getShortName } from '@/lib/colleges'
+import { getCollege, getShortName, clearCollegeCache } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
+import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
@@ -41,12 +42,62 @@ export default function CollegeDetail() {
   const { heartedSchools, toggleHeart } = useChatContext()
   const [college, setCollege] = useState<College | null>(null)
   const [loading, setLoading] = useState(true)
+  const [descriptionLoading, setDescriptionLoading] = useState(false)
+  const [generatedDescription, setGeneratedDescription] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
     setLoading(true)
+    setGeneratedDescription(null)
     getCollege(id).then(data => { setCollege(data); setLoading(false) })
   }, [id])
+
+  useEffect(() => {
+    if (!college) return
+    if (college.description) return
+
+    async function generateDescription() {
+      if (!college) return
+      setDescriptionLoading(true)
+      try {
+        const prompt = `Write a 2-3 sentence description of ${college.name} in an honest, warm, direct voice — like a knowledgeable older sibling giving real talk, not a brochure. Be specific to this school. Base it only on these facts: located in ${college.location}, ${college.type} institution, ${college.size} size, ${college.acceptanceRate ? college.acceptanceRate + '% acceptance rate' : 'acceptance rate unknown'}, top majors include ${college.majors.slice(0, 5).join(', ')}. No hype, no generic phrases like "vibrant campus community." Just honest, specific, useful.`
+
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              messages: [{ role: 'user', content: prompt }],
+              system: 'You write honest, specific, warm college descriptions in 2-3 sentences. No marketing speak. No generic phrases. Real talk only.',
+              max_tokens: 150,
+            }),
+          }
+        )
+
+        const data = await resp.json()
+        const description = data?.content?.[0]?.text?.trim()
+
+        if (description) {
+          setGeneratedDescription(description)
+          await supabase
+            .from('colleges')
+            .update({ description })
+            .eq('id', college.id)
+          clearCollegeCache()
+        }
+      } catch (err) {
+        console.error('Failed to generate description:', err)
+      } finally {
+        setDescriptionLoading(false)
+      }
+    }
+
+    generateDescription()
+  }, [college])
 
   if (loading) {
     return (
@@ -145,10 +196,18 @@ export default function CollegeDetail() {
       </div>
 
       {/* Description */}
-      {college.description && (
+      {(college.description || generatedDescription || descriptionLoading) && (
         <div style={{ background: 'white', border: '1px solid #EEECFB', borderRadius: '16px', padding: '18px', marginBottom: '1.5rem', boxShadow: '0 3px 16px rgba(99,102,241,0.06)' }}>
           <div style={{ fontSize: '12px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>About</div>
-          <p style={{ fontSize: '14px', color: '#3A3A4D', lineHeight: 1.7, margin: 0 }}>{college.description}</p>
+          {descriptionLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[100, 85, 60].map(w => (
+                <div key={w} style={{ height: '14px', width: `${w}%`, borderRadius: '6px', background: '#F4F3FE', animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: '14px', color: '#3A3A4D', lineHeight: 1.7, margin: 0 }}>{college.description ?? generatedDescription}</p>
+          )}
         </div>
       )}
 
