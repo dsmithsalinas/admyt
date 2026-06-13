@@ -99,7 +99,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     let up = userPrefsRef.current
 
     if (user) {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('user_preferences')
         .select('preferred_states,max_tuition,preferred_majors')
         .eq('user_id', user.id)
