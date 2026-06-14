@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
-import { scoreCollege } from '@/lib/matchScore'
+import { scoreCollege, hasEnoughProfileForScore } from '@/lib/matchScore'
 import type { College } from '@/lib/colleges'
 import HeartButton from '@/components/ui/HeartButton'
 
@@ -41,6 +41,7 @@ function whyFit(college: College, score: number, profile: ReturnType<typeof useP
 
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
   const score = scoreCollege(college, profile)
+  const showScore = hasEnoughProfileForScore(profile)
   const navigate = useNavigate()
   const { heartedSchools, toggleHeart } = useChatContext()
   const isHearted = heartedSchools.has(college.id)
@@ -82,10 +83,24 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
           <p>{college.location}</p>
         </div>
         <div className="score-stack">
-          <div className="score" style={{ background: `conic-gradient(var(--admyt-teal) 0 ${score}%, #eeeaf8 ${score}% 100%)` }}>
-            <strong>{score}</strong>
-          </div>
-          <span className="score-label">Fit Score</span>
+          {showScore ? (
+            <>
+              <div className="score" style={{ background: `conic-gradient(var(--admyt-teal) 0 ${score}%, #eeeaf8 ${score}% 100%)` }}>
+                <strong>{score}</strong>
+              </div>
+              <span className="score-label">Fit Score</span>
+            </>
+          ) : (
+            <div style={{
+              fontSize: '11px',
+              color: '#A8A8BC',
+              textAlign: 'center',
+              maxWidth: '52px',
+              lineHeight: 1.3,
+            }}>
+              Chat with Sage to get your score
+            </div>
+          )}
         </div>
       </div>
 

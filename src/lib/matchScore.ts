@@ -1,6 +1,17 @@
 import type { College } from './colleges'
 import type { StudentProfile } from '@/context/ProfileContext'
 
+// A Fit Score is only meaningful once Sage knows something about the student.
+// Without any location, major, or career-goal signal the number is noise — hide it.
+export function hasEnoughProfileForScore(profile: StudentProfile | null): boolean {
+  if (!profile) return false
+  return !!(
+    (profile.preferredLocations && profile.preferredLocations.length > 0) ||
+    profile.intendedMajor ||
+    (profile.careerGoals && profile.careerGoals.length > 0)
+  )
+}
+
 export function scoreCollege(college: College, profile: StudentProfile | null): number {
   if (!profile) {
     // No profile — return a varied but neutral score in the 45–65 range

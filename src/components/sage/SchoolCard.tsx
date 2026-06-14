@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useColleges } from '@/context/CollegeContext'
-import { scoreCollege } from '@/lib/matchScore'
+import { scoreCollege, hasEnoughProfileForScore } from '@/lib/matchScore'
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
 import type { College } from '@/lib/colleges'
@@ -42,6 +42,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
   if (!college) return null
 
   const score = scoreCollege(college, profile)
+  const showScore = hasEnoughProfileForScore(profile)
   const isHearted = heartedSchools.has(college.id)
   const fitRead = whyFit(college, score, profile)
 
@@ -109,8 +110,22 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
           <div style={{ fontSize: '11px', color: 'var(--admyt-muted)' }}>{college.location}</div>
         </div>
         <div className="score-stack">
-          <ScoreRing score={score} size={46} color={ringColor(score)} />
-          <span className="score-label">Fit Score</span>
+          {showScore ? (
+            <>
+              <ScoreRing score={score} size={46} color={ringColor(score)} />
+              <span className="score-label">Fit Score</span>
+            </>
+          ) : (
+            <div style={{
+              fontSize: '11px',
+              color: '#A8A8BC',
+              textAlign: 'center',
+              maxWidth: '52px',
+              lineHeight: 1.3,
+            }}>
+              Chat with Sage to get your score
+            </div>
+          )}
         </div>
       </div>
 
