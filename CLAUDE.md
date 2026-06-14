@@ -32,7 +32,7 @@ Admyt exists because fit matters more than rank. The right school for you is the
 - **Backend:** Supabase (auth, database, edge functions)
 - **AI:** Anthropic Claude API (model: claude-sonnet-4-6)
 - **API proxy:** Supabase Edge Function at `supabase/functions/chat/index.ts` — all Claude API calls go through here, never directly from the browser
-- **Deployment:** Vercel (not yet deployed)
+- **Deployment:** Vercel — live at `youradmyt.vercel.app`, auto-deploys on every push to `main` (Vercel GitHub integration). Per-deploy/preview URLs are gated by Vercel Deployment Protection; the `youradmyt.vercel.app` production domain is public. Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars set in the Vercel project.
 - **Data:** 1,000 colleges from College Scorecard API, stored in Supabase `colleges` table
 
 ## Project structure
