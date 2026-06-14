@@ -1,7 +1,0 @@
-export * from './button'
-export * from './badge'
-export * from './card'
-export * from './input'
-export * from './separator'
-export * from './dialog'
-export * from './tooltip'

@@ -1,37 +1,56 @@
 :root {
-  /* Core gradient — Admyt's signature */
-  --grad-primary: linear-gradient(135deg, #6366F1, #8B5CF6);
-  --grad-primary-soft: linear-gradient(135deg, #6366F1, #8B5CF6 60%, #EC4899);
-  --grad-orb: radial-gradient(circle at 35% 30%, #A5B4FC, #6366F1 55%, #7C3AED);
-  --grad-vibe-soft: linear-gradient(135deg, #F4F3FE, #FCE7F3);
-  --grad-vibe-hero: linear-gradient(150deg, #6366F1, #8B5CF6 60%, #EC4899);
-  --grad-pink-pill: linear-gradient(135deg, #FCE7F3, #FBCFE8);
-  --grad-complete: linear-gradient(135deg, #F4F3FE, #FCE7F3);
+  --admyt-ink: #171722;
+  --admyt-slate: #3c3c4f;
+  --admyt-muted: #77768d;
+  --admyt-faint: #aaa8bd;
+  --admyt-line: #e8e4f6;
+  --admyt-paper: #fffdfa;
+  --admyt-mist: #f8f6ff;
+  --admyt-lavender: #f0ecff;
+  --admyt-indigo: #635bff;
+  --admyt-violet: #8458f3;
+  --admyt-plum: #2a2148;
+  --admyt-teal: #21b8a5;
+  --admyt-coral: #ff7a66;
+  --admyt-pink: #d94f9d;
+  --admyt-grad: linear-gradient(135deg, #635bff 0%, #8458f3 48%, #d94f9d 100%);
+  --admyt-grad-soft: linear-gradient(135deg, #f2efff 0%, #e9fbf8 54%, #fff0eb 100%);
+  --admyt-shadow: 0 18px 50px rgba(78, 65, 150, 0.11);
+  --admyt-shadow-small: 0 8px 24px rgba(78, 65, 150, 0.09);
+
+  /* Backward-compatible aliases used by current screens. */
+  --grad-primary: linear-gradient(135deg, #635bff, #8458f3);
+  --grad-primary-soft: var(--admyt-grad);
+  --grad-orb: radial-gradient(circle at 30% 24%, #fff 0%, #d9d4ff 11%, #8d83ff 38%, #635bff 64%, #2a2148 100%);
+  --grad-vibe-soft: var(--admyt-grad-soft);
+  --grad-vibe-hero: var(--admyt-grad);
+  --grad-pink-pill: linear-gradient(135deg, #fff0f6, #ffe5df);
+  --grad-complete: var(--admyt-grad-soft);
 
   /* Solid colors */
-  --c-indigo: #6366F1;
-  --c-purple: #8B5CF6;
-  --c-violet: #7C3AED;
-  --c-pink: #EC4899;
-  --c-pink-soft: #F9A8D4;
-  --c-ink: #15151C;
-  --c-slate: #3A3A4D;
-  --c-muted: #8B8B9E;
-  --c-faint: #A8A8BC;
-  --c-bg: #FCFCFF;
-  --c-card-border: #EEECFB;
-  --c-pill-bg: #F4F3FE;
+  --c-indigo: var(--admyt-indigo);
+  --c-purple: var(--admyt-violet);
+  --c-violet: var(--admyt-violet);
+  --c-pink: var(--admyt-pink);
+  --c-pink-soft: #f0abfc;
+  --c-ink: var(--admyt-ink);
+  --c-slate: var(--admyt-slate);
+  --c-muted: var(--admyt-muted);
+  --c-faint: var(--admyt-faint);
+  --c-bg: var(--admyt-paper);
+  --c-card-border: var(--admyt-line);
+  --c-pill-bg: var(--admyt-lavender);
 
   /* Shadows — soft purple-tinted */
-  --shadow-card: 0 3px 16px rgba(99,102,241,0.06);
-  --shadow-soft: 0 2px 12px rgba(99,102,241,0.05);
-  --shadow-orb: 0 8px 32px rgba(99,102,241,0.35);
-  --shadow-float: 0 6px 20px rgba(99,102,241,0.25);
-  --shadow-input: 0 4px 20px rgba(99,102,241,0.06);
+  --shadow-card: var(--admyt-shadow-small);
+  --shadow-soft: 0 2px 12px rgba(78, 65, 150, 0.06);
+  --shadow-orb: 0 12px 38px rgba(99, 91, 255, 0.32);
+  --shadow-float: 0 10px 30px rgba(99, 91, 255, 0.22);
+  --shadow-input: 0 8px 24px rgba(78, 65, 150, 0.07);
 
   /* Radius */
-  --r-tile: 18px;
-  --r-card: 18px;
+  --r-tile: 8px;
+  --r-card: 8px;
   --r-bubble: 16px;
   --r-pill: 24px;
   --r-hero: 22px;

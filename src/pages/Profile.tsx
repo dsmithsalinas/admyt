@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
 import { supabase } from '@/lib/supabase'
 import AuthModal from '@/components/ui/AuthModal'
-import { Input, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/shadcn'
+import Modal from '@/components/ui/Modal'
+import SageOrb from '@/components/sage/SageOrb'
 
 interface SavedVibe {
   id: string
@@ -28,198 +30,53 @@ interface UserPreferences {
 }
 
 const US_STATES = [
-  { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' },
-  { abbr: 'AR', name: 'Arkansas' }, { abbr: 'AZ', name: 'Arizona' },
-  { abbr: 'CA', name: 'California' }, { abbr: 'CO', name: 'Colorado' },
-  { abbr: 'CT', name: 'Connecticut' }, { abbr: 'DC', name: 'Washington D.C.' },
-  { abbr: 'DE', name: 'Delaware' }, { abbr: 'FL', name: 'Florida' },
-  { abbr: 'GA', name: 'Georgia' }, { abbr: 'HI', name: 'Hawaii' },
-  { abbr: 'IA', name: 'Iowa' }, { abbr: 'ID', name: 'Idaho' },
-  { abbr: 'IL', name: 'Illinois' }, { abbr: 'IN', name: 'Indiana' },
-  { abbr: 'KS', name: 'Kansas' }, { abbr: 'KY', name: 'Kentucky' },
-  { abbr: 'LA', name: 'Louisiana' }, { abbr: 'MA', name: 'Massachusetts' },
-  { abbr: 'MD', name: 'Maryland' }, { abbr: 'ME', name: 'Maine' },
-  { abbr: 'MI', name: 'Michigan' }, { abbr: 'MN', name: 'Minnesota' },
-  { abbr: 'MO', name: 'Missouri' }, { abbr: 'MS', name: 'Mississippi' },
-  { abbr: 'MT', name: 'Montana' }, { abbr: 'NC', name: 'North Carolina' },
-  { abbr: 'ND', name: 'North Dakota' }, { abbr: 'NE', name: 'Nebraska' },
-  { abbr: 'NH', name: 'New Hampshire' }, { abbr: 'NJ', name: 'New Jersey' },
-  { abbr: 'NM', name: 'New Mexico' }, { abbr: 'NV', name: 'Nevada' },
-  { abbr: 'NY', name: 'New York' }, { abbr: 'OH', name: 'Ohio' },
-  { abbr: 'OK', name: 'Oklahoma' }, { abbr: 'OR', name: 'Oregon' },
-  { abbr: 'PA', name: 'Pennsylvania' }, { abbr: 'RI', name: 'Rhode Island' },
-  { abbr: 'SC', name: 'South Carolina' }, { abbr: 'SD', name: 'South Dakota' },
-  { abbr: 'TN', name: 'Tennessee' }, { abbr: 'TX', name: 'Texas' },
-  { abbr: 'UT', name: 'Utah' }, { abbr: 'VA', name: 'Virginia' },
-  { abbr: 'VT', name: 'Vermont' }, { abbr: 'WA', name: 'Washington' },
-  { abbr: 'WI', name: 'Wisconsin' }, { abbr: 'WV', name: 'West Virginia' },
-  { abbr: 'WY', name: 'Wyoming' },
+  { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' }, { abbr: 'AR', name: 'Arkansas' },
+  { abbr: 'AZ', name: 'Arizona' }, { abbr: 'CA', name: 'California' }, { abbr: 'CO', name: 'Colorado' },
+  { abbr: 'CT', name: 'Connecticut' }, { abbr: 'DC', name: 'Washington D.C.' }, { abbr: 'DE', name: 'Delaware' },
+  { abbr: 'FL', name: 'Florida' }, { abbr: 'GA', name: 'Georgia' }, { abbr: 'HI', name: 'Hawaii' },
+  { abbr: 'IA', name: 'Iowa' }, { abbr: 'ID', name: 'Idaho' }, { abbr: 'IL', name: 'Illinois' },
+  { abbr: 'IN', name: 'Indiana' }, { abbr: 'KS', name: 'Kansas' }, { abbr: 'KY', name: 'Kentucky' },
+  { abbr: 'LA', name: 'Louisiana' }, { abbr: 'MA', name: 'Massachusetts' }, { abbr: 'MD', name: 'Maryland' },
+  { abbr: 'ME', name: 'Maine' }, { abbr: 'MI', name: 'Michigan' }, { abbr: 'MN', name: 'Minnesota' },
+  { abbr: 'MO', name: 'Missouri' }, { abbr: 'MS', name: 'Mississippi' }, { abbr: 'MT', name: 'Montana' },
+  { abbr: 'NC', name: 'North Carolina' }, { abbr: 'ND', name: 'North Dakota' }, { abbr: 'NE', name: 'Nebraska' },
+  { abbr: 'NH', name: 'New Hampshire' }, { abbr: 'NJ', name: 'New Jersey' }, { abbr: 'NM', name: 'New Mexico' },
+  { abbr: 'NV', name: 'Nevada' }, { abbr: 'NY', name: 'New York' }, { abbr: 'OH', name: 'Ohio' },
+  { abbr: 'OK', name: 'Oklahoma' }, { abbr: 'OR', name: 'Oregon' }, { abbr: 'PA', name: 'Pennsylvania' },
+  { abbr: 'RI', name: 'Rhode Island' }, { abbr: 'SC', name: 'South Carolina' }, { abbr: 'SD', name: 'South Dakota' },
+  { abbr: 'TN', name: 'Tennessee' }, { abbr: 'TX', name: 'Texas' }, { abbr: 'UT', name: 'Utah' },
+  { abbr: 'VA', name: 'Virginia' }, { abbr: 'VT', name: 'Vermont' }, { abbr: 'WA', name: 'Washington' },
+  { abbr: 'WI', name: 'Wisconsin' }, { abbr: 'WV', name: 'West Virginia' }, { abbr: 'WY', name: 'Wyoming' },
 ]
 
-function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-      <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#15151C', margin: 0 }}>{title}</h2>
-      {action}
-    </div>
-  )
-}
-
-function EmptyState({ emoji, message, action }: { emoji: string; message: string; action?: React.ReactNode }) {
-  return (
-    <div style={{ background: '#F4F3FE', borderRadius: '14px', padding: '24px', textAlign: 'center' }}>
-      <div style={{ fontSize: '24px', marginBottom: '8px' }}>{emoji}</div>
-      <div style={{ fontSize: '13px', color: '#8B8B9E', marginBottom: action ? '12px' : 0 }}>{message}</div>
-      {action}
-    </div>
-  )
-}
-
 function Skeleton({ height = 80 }: { height?: number }) {
-  return (
-    <div style={{ height, borderRadius: '12px', background: '#F4F3FE', animation: 'profilePulse 1.5s ease-in-out infinite' }} />
-  )
+  return <div className="mock-card" style={{ height, animation: 'profilePulse 1.5s ease-in-out infinite' }} />
 }
 
-function CompletenessBar({ score, nudge }: { score: number; nudge: string }) {
+function EmptyState({ message, action }: { message: string; action: React.ReactNode }) {
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #F4F3FE, #FCE7F3)',
-      border: '1px solid #EEECFB',
-      borderRadius: '14px', padding: '14px 18px', marginBottom: '1.5rem',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 500, color: '#4338CA' }}>Profile completeness</div>
-        <div style={{
-          fontSize: '13px', fontWeight: 500,
-          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>{score}%</div>
-      </div>
-      <div style={{ height: '6px', background: '#DDD9F8', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
-        <div style={{ height: '100%', width: `${score}%`, background: 'linear-gradient(90deg, #6366F1, #8B5CF6)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
-      </div>
-      {score < 100 && (
-        <div style={{ fontSize: '12px', color: '#6366F1' }}>💡 {nudge}</div>
-      )}
+    <div className="callout">
+      <p style={{ marginTop: 0 }}>{message}</p>
+      <div style={{ marginTop: 14 }}>{action}</div>
     </div>
   )
 }
 
-function GuestPreview({ onSignUp }: { onSignUp: () => void }) {
-  const exampleHearts = ['University of California, Berkeley', 'Northeastern University', 'University of Michigan']
-  const exampleVibes = [
-    { name: 'UC Berkeley', score: 82, summary: 'Strong academic intensity with a vibrant activist culture.' },
-    { name: 'Northeastern', score: 58, summary: 'Career-driven, decentralized social scene — great for self-starters.' },
-  ]
+function PreferenceRows({ prefs }: { prefs: UserPreferences }) {
+  const rows = [
+    prefs.preferred_states.length ? ['States', prefs.preferred_states.join(', ')] : null,
+    prefs.max_tuition != null ? ['Max tuition', `$${prefs.max_tuition.toLocaleString()}/yr`] : null,
+    prefs.preferred_majors.length ? ['Major', prefs.preferred_majors.join(', ')] : null,
+  ].filter(Boolean) as string[][]
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2rem 0' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{
-          width: '60px', height: '60px', borderRadius: '50%',
-          background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '22px', marginBottom: '12px',
-          boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
-        }}>
-          👋
+    <div className="learn-list">
+      {rows.map(([label, value]) => (
+        <div className="learn-item" key={label}>
+          <span>{label}</span>
+          <span>{value}</span>
         </div>
-        <h1 style={{ fontSize: '22px', fontWeight: 500, color: '#15151C', marginBottom: '4px', letterSpacing: '-0.3px' }}>
-          Alex Chen's profile
-        </h1>
-        <div style={{ fontSize: '13px', color: '#8B8B9E' }}>Class of 2026 · Example profile</div>
-      </div>
-
-      <div style={{
-        background: 'linear-gradient(150deg, #6366F1, #8B5CF6 60%, #EC4899)',
-        borderRadius: '16px', padding: '20px 24px',
-        marginBottom: '2rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
-      }}>
-        <div>
-          <div style={{ fontSize: '14px', fontWeight: 500, color: '#FFFFFF', marginBottom: '4px' }}>
-            This could be your profile
-          </div>
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
-            Free account. Save your schools, your Vibe Checks, and let Sage remember everything.
-          </div>
-        </div>
-        <button
-          onClick={onSignUp}
-          style={{
-            background: 'rgba(255,255,255,0.2)', color: 'white',
-            border: '1.5px solid rgba(255,255,255,0.4)',
-            borderRadius: '10px', padding: '9px 18px',
-            fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-            whiteSpace: 'nowrap', flexShrink: 0, backdropFilter: 'blur(4px)',
-          }}
-        >
-          Sign up free
-        </button>
-      </div>
-
-      <CompletenessBar score={72} nudge="Tell Sage your GPA to improve match scores." />
-
-      <div style={{ marginBottom: '2rem' }}>
-        <SectionHeader title="What Sage knows" />
-        <div style={{
-          background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '16px',
-          display: 'flex', flexDirection: 'column', gap: '10px', opacity: 0.6, pointerEvents: 'none',
-        }}>
-          {[
-            { label: 'Location', value: 'California, Pacific Northwest' },
-            { label: 'Intended major', value: 'Computer Science' },
-            { label: 'Career goals', value: 'Software engineering, startups' },
-          ].map(item => (
-            <div key={item.label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: '11px', color: '#A8A8BC', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0, paddingTop: '2px' }}>{item.label}</div>
-              <div style={{ fontSize: '13px', color: '#3A3A4D' }}>{item.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: '2rem' }}>
-        <SectionHeader title="My schools" />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6, pointerEvents: 'none' }}>
-          {exampleHearts.map(name => (
-            <div key={name} style={{
-              background: 'white', border: '1px solid #EEECFB', borderRadius: '12px', padding: '14px 16px',
-              display: 'flex', alignItems: 'center', gap: '12px',
-            }}>
-              <div style={{
-                width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
-                background: 'linear-gradient(135deg, #FCE7F3, #FBCFE8)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '16px', color: '#EC4899',
-              }}>♥</div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C' }}>{name}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: '2rem' }}>
-        <SectionHeader title="Vibe Checks" />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', opacity: 0.6, pointerEvents: 'none' }}>
-          {exampleVibes.map(v => (
-            <div key={v.name} style={{
-              background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', overflow: 'hidden',
-              display: 'flex', alignItems: 'stretch',
-            }}>
-              <div style={{ width: '3px', flexShrink: 0, background: 'linear-gradient(180deg, #6366F1, #EC4899)' }} />
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 16px' }}>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C', marginBottom: '3px' }}>{v.name}</div>
-                  <div style={{ fontSize: '12px', color: '#8B8B9E' }}>{v.summary}</div>
-                </div>
-                <div style={{ fontSize: '20px', fontWeight: 500, color: '#6366F1', flexShrink: 0 }}>{v.score}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      ))}
     </div>
   )
 }
@@ -240,113 +97,56 @@ function PreferencesModal({ prefs, onSave, onClose }: { prefs: UserPreferences; 
   )
 
   return (
-    <Dialog open onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent style={{ maxWidth: '480px', padding: '24px', maxHeight: '85vh', overflowY: 'auto' }}>
-        <DialogHeader style={{ marginBottom: '20px' }}>
-          <DialogTitle style={{ fontSize: '18px', fontWeight: 500, letterSpacing: '-0.3px', color: '#15151C' }}>
-            My preferences
-          </DialogTitle>
-        </DialogHeader>
+    <Modal onClose={onClose} labelledBy="prefs-modal-title" panelStyle={{ maxWidth: 560, padding: 0, maxHeight: '86vh' }}>
+      <div className="frame-head">
+        <h2 id="prefs-modal-title" style={{ fontSize: 18, color: 'var(--admyt-ink)', margin: 0 }}>My preferences</h2>
+        <button className="btn secondary" onClick={onClose}>Close</button>
+      </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: '#8B8B9E', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
-            Intended major
-          </label>
-          <Input
-            type="text"
-            value={major}
-            onChange={e => setMajor(e.target.value)}
-            placeholder="e.g. Computer Science"
-            style={{ fontSize: '14px', height: '42px', borderRadius: '10px', border: '1px solid #DDD9F8', color: '#15151C' }}
-          />
-        </div>
+      <div className="section-pad" style={{ display: 'grid', gap: 14 }}>
+        <section className="mock-card section-pad">
+          <label className="mini-title" style={{ display: 'block' }}>Preferred major</label>
+          <input className="field" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" style={{ height: 44 }} />
+        </section>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: '#8B8B9E', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
-            Max tuition — <span style={{ color: '#6366F1' }}>${maxTuition.toLocaleString()}/yr</span>
-          </label>
-          <input
-            type="range" min={5000} max={75000} step={1000}
-            value={maxTuition}
-            onChange={e => setMaxTuition(Number(e.target.value))}
-            style={{ width: '100%', accentColor: '#6366F1' }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#A8A8BC', marginTop: '4px' }}>
-            <span>$5k</span><span>$75k+</span>
-          </div>
-        </div>
+        <section className="mock-card section-pad">
+          <label className="mini-title" style={{ display: 'block' }}>Max tuition — ${maxTuition.toLocaleString()}/yr</label>
+          <input type="range" min={5000} max={75000} step={1000} value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))} style={{ width: '100%', accentColor: '#6366F1' }} />
+        </section>
 
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: '#8B8B9E', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
-            Preferred states {states.length > 0 && `— ${states.length} selected`}
-          </label>
-
+        <section className="mock-card section-pad">
+          <label className="mini-title" style={{ display: 'block' }}>Preferred states {states.length ? `— ${states.length} selected` : ''}</label>
           {states.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-              {states.map(abbr => {
-                const s = US_STATES.find(s => s.abbr === abbr)
-                return (
-                  <span key={abbr} onClick={() => toggleState(abbr)} style={{
-                    fontSize: '12px', padding: '4px 10px',
-                    borderRadius: '20px', cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: 'white',
-                    fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px',
-                  }}>
-                    {s?.name} <span style={{ opacity: 0.8 }}>✕</span>
-                  </span>
-                )
-              })}
+            <div className="filters" style={{ marginBottom: 12 }}>
+              {states.map(abbr => <button className="pill teal" key={abbr} onClick={() => toggleState(abbr)}>{abbr} ×</button>)}
             </div>
           )}
-
-          <Input
-            type="text"
-            value={stateSearch}
-            onChange={e => setStateSearch(e.target.value)}
-            placeholder="Search states..."
-            style={{ fontSize: '13px', height: '38px', marginBottom: '8px', borderRadius: '10px', border: '1px solid #DDD9F8', color: '#15151C' }}
-          />
-
-          <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #EEECFB', borderRadius: '10px' }}>
-            {filteredStates.map((s, i) => (
-              <div key={s.abbr} onClick={() => toggleState(s.abbr)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px', cursor: 'pointer',
-                background: states.includes(s.abbr) ? '#F4F3FE' : 'transparent',
-                borderBottom: i < filteredStates.length - 1 ? '1px solid #F4F3FE' : 'none',
-                transition: 'background 0.1s',
-              }}>
-                <span style={{
-                  fontSize: '13px',
-                  color: states.includes(s.abbr) ? '#4338CA' : '#3A3A4D',
-                  fontWeight: states.includes(s.abbr) ? 500 : 400,
-                }}>
-                  {s.name}
-                </span>
-                {states.includes(s.abbr) && <span style={{ color: '#6366F1', fontSize: '14px' }}>✓</span>}
-              </div>
+          <input className="field" value={stateSearch} onChange={e => setStateSearch(e.target.value)} placeholder="Search states..." style={{ height: 40, marginBottom: 10 }} />
+          <div className="mock-soft-card" style={{ maxHeight: 190, overflow: 'auto' }}>
+            {filteredStates.map(s => (
+              <button
+                key={s.abbr}
+                onClick={() => toggleState(s.abbr)}
+                className="saved-row"
+                style={{ width: '100%', border: 0, borderBottom: '1px solid var(--admyt-line)', background: states.includes(s.abbr) ? '#f1fffc' : 'white', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span>{s.name}</span>
+                <strong>{states.includes(s.abbr) ? '✓' : s.abbr}</strong>
+              </button>
             ))}
           </div>
-        </div>
+        </section>
 
-        <button
-          onClick={() => onSave({ preferred_states: states, max_tuition: maxTuition, preferred_majors: major ? [major] : [] })}
-          style={{
-            width: '100%',
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            color: 'white', border: 'none', borderRadius: '12px',
-            padding: '13px', fontSize: '14px', fontWeight: 500,
-            cursor: 'pointer', boxShadow: '0 6px 20px rgba(99,102,241,0.25)',
-          }}
-        >
+        <button className="btn" onClick={() => onSave({ preferred_states: states, max_tuition: maxTuition, preferred_majors: major ? [major] : [] })}>
           Save preferences
         </button>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </Modal>
   )
 }
 
 export default function Profile() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { profile: sageProfile } = useProfile()
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -394,266 +194,137 @@ export default function Profile() {
   }
 
   function getCompletenessNudge() {
-    if (!sageProfile?.intendedMajor) return "Tell Sage your intended major — it makes a big difference in what comes up."
-    if (!sageProfile?.careerGoals?.length) return "Share your career goals with Sage so recommendations actually make sense."
-    if (!sageProfile?.preferredLocations?.length) return "Tell Sage where you're thinking of studying — even a rough idea helps."
-    if (!hearts.length) return "Heart a school you're curious about and it'll show up here."
-    if (!vibes.length) return "Run a Vibe Check on a school to see if the culture actually fits you."
-    return "You're all set — Sage knows what it needs to find your fit."
+    if (!sageProfile?.intendedMajor) return 'Tell Sage your intended major. It changes what shows up.'
+    if (!sageProfile?.careerGoals?.length) return 'Share your career goals so recommendations make more sense.'
+    if (!sageProfile?.preferredLocations?.length) return "Tell Sage where you're thinking of studying, even roughly."
+    if (!hearts.length) return "Heart a school you're curious about. It gives Sage a real signal."
+    if (!vibes.length) return 'Run a Vibe Check so Sage can learn what culture fits you.'
+    return "You're all set. Sage has enough to make a much sharper read."
   }
 
-  if (!user) {
-    return (
-      <>
-        <GuestPreview onSignUp={() => setShowAuthModal(true)} />
-        {showAuthModal && (
-          <AuthModal trigger="general" onClose={() => setShowAuthModal(false)} onSuccess={() => setShowAuthModal(false)} />
-        )}
-      </>
-    )
-  }
-
-  const completeness = getCompleteness()
-  const initials = user.email?.charAt(0).toUpperCase() ?? '?'
-
-  const linkStyle: React.CSSProperties = {
-    display: 'inline-block', fontSize: '13px', color: '#6366F1',
-    background: '#F4F3FE', border: '1px solid #DDD9F8',
-    borderRadius: '10px', padding: '7px 14px',
-    textDecoration: 'none', fontWeight: 500,
-  }
+  const completeness = user ? getCompleteness() : 48
+  const initials = user?.email?.charAt(0).toUpperCase() ?? 'Y'
+  const hasSageFacts = !!(sageProfile?.intendedMajor || sageProfile?.careerGoals?.length || sageProfile?.preferredLocations?.length)
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2rem 0' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '2rem' }}>
-        <div style={{
-          width: '60px', height: '60px', borderRadius: '50%',
-          background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '22px', fontWeight: 500, color: 'white', flexShrink: 0,
-          boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
-        }}>
-          {initials}
+    <div className="app-frame">
+      <section className="profile-hero">
+        <div style={{ width: 64, height: 64, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--admyt-grad)', color: 'white', fontWeight: 850, fontSize: 24 }}>
+          {user ? initials : <SageOrb size={52} />}
         </div>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 500, color: '#15151C', marginBottom: '2px', letterSpacing: '-0.3px' }}>
-            {user.email?.split('@')[0]}'s profile
-          </h1>
-          <div style={{ fontSize: '13px', color: '#8B8B9E' }}>{user.email}</div>
+        <div style={{ flex: 1 }}>
+          <h1>{user ? 'Your Admyt profile' : "This becomes Sage's memory."}</h1>
+          <p>{user ? user.email : 'Save your schools, Vibe Checks, conversation, and preferences so Sage can pick up where you left off.'}</p>
         </div>
-      </div>
+        {!user && <button className="btn" onClick={() => setShowAuthModal(true)}>Create a free account</button>}
+      </section>
 
-      {!loading && <CompletenessBar score={completeness} nudge={getCompletenessNudge()} />}
-
-      {/* What Sage knows */}
-      <div style={{ marginBottom: '2rem' }}>
-        <SectionHeader
-          title="What Sage knows"
-          action={<a href="/" style={{ fontSize: '12px', color: '#6366F1', textDecoration: 'none', fontWeight: 500 }}>Chat with Sage →</a>}
-        />
-        {loading ? (
-          <Skeleton height={120} />
-        ) : !sageProfile || (!sageProfile.intendedMajor && !sageProfile.careerGoals?.length && !sageProfile.preferredLocations?.length) ? (
-          <EmptyState
-            emoji="💬"
-            message="Sage doesn't know much about you yet — start a conversation and it'll fill in fast."
-            action={<a href="/" style={linkStyle}>Chat with Sage →</a>}
-          />
-        ) : (
-          <div style={{
-            background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '16px',
-            display: 'flex', flexDirection: 'column', gap: '12px',
-            boxShadow: '0 2px 12px rgba(99,102,241,0.05)',
-          }}>
-            {[
-              { label: 'Location', value: sageProfile.preferredLocations?.join(', ') },
-              { label: 'Intended major', value: sageProfile.intendedMajor },
-              { label: 'Career goals', value: sageProfile.careerGoals?.join(', ') },
-            ].filter(item => item.value).map(item => (
-              <div key={item.label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{
-                  fontSize: '11px', fontWeight: 500, color: '#A8A8BC',
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                  width: '90px', flexShrink: 0, paddingTop: '2px',
-                }}>
-                  {item.label}
-                </div>
-                <div style={{ fontSize: '13px', color: '#3A3A4D' }}>{item.value}</div>
+      <div className="profile-layout">
+        <main className="timeline">
+          <section className="mock-card section-pad">
+            <div className="school-head">
+              <div>
+                <span className="mini-title">What Sage knows</span>
+                <p className="match-note" style={{ marginTop: 8 }}>Your conversation signals, organized so recommendations feel less random.</p>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* My schools */}
-      <div style={{ marginBottom: '2rem' }}>
-        <SectionHeader
-          title="My schools"
-          action={<span style={{ fontSize: '12px', color: '#A8A8BC' }}>{hearts.length} saved</span>}
-        />
-        {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <Skeleton height={60} /><Skeleton height={60} /><Skeleton height={60} />
-          </div>
-        ) : hearts.length === 0 ? (
-          <EmptyState
-            emoji="🏫"
-            message="No saved schools yet — heart the ones you love and they'll show up here."
-            action={<a href="/search" style={linkStyle}>Browse schools →</a>}
-          />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {hearts.map(h => (
-              <div key={h.id} style={{
-                background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '12px 16px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-                boxShadow: '0 2px 8px rgba(99,102,241,0.04)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-                    background: 'linear-gradient(135deg, #FCE7F3, #FBCFE8)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '16px', color: '#EC4899',
-                  }}>♥</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C' }}>{h.college_name}</div>
-                    <div style={{ fontSize: '11px', color: '#A8A8BC', marginTop: '2px' }}>
-                      Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <a href={`/college/${h.college_id}`} style={{ fontSize: '12px', color: '#6366F1', textDecoration: 'none', fontWeight: 500 }}>
-                    View →
-                  </a>
-                  <button
-                    onClick={() => handleUnheart(h.college_id)}
-                    style={{ fontSize: '12px', color: '#A8A8BC', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Vibe checks */}
-      <div style={{ marginBottom: '2rem' }}>
-        <SectionHeader
-          title="Vibe Checks"
-          action={<span style={{ fontSize: '12px', color: '#A8A8BC' }}>{vibes.length} saved</span>}
-        />
-        {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <Skeleton height={80} /><Skeleton height={80} />
-          </div>
-        ) : vibes.length === 0 ? (
-          <EmptyState
-            emoji="✨"
-            message="No Vibe Checks saved yet — run one on a school you're curious about and see if it actually fits you."
-            action={<a href="/search" style={linkStyle}>Find a school →</a>}
-          />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {vibes.map(v => {
-              const fitColor = v.fit_score >= 80 ? '#6366F1' : v.fit_score >= 60 ? '#8B5CF6' : '#A8A8BC'
-              return (
-                <div key={v.id} style={{
-                  background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', overflow: 'hidden',
-                  display: 'flex', alignItems: 'stretch',
-                  boxShadow: '0 2px 8px rgba(99,102,241,0.04)',
-                }}>
-                  <div style={{ width: '3px', flexShrink: 0, background: 'linear-gradient(180deg, #6366F1, #EC4899)' }} />
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 16px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 500, color: '#15151C' }}>{v.college_name}</span>
-                        <span style={{ fontSize: '11px', padding: '1px 7px', borderRadius: '20px', background: '#F4F3FE', color: '#6366F1', fontWeight: 500 }}>✨ Vibe Check</span>
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#8B8B9E', lineHeight: 1.5 }}>{v.overall_summary}</div>
-                      <div style={{ fontSize: '11px', color: '#A8A8BC', marginTop: '4px' }}>
-                        {new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                      <div style={{ fontSize: '24px', fontWeight: 500, color: fitColor }}>{v.fit_score}</div>
-                      <div style={{ fontSize: '10px', color: '#A8A8BC' }}>fit</div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Preferences */}
-      <div style={{ marginBottom: '2rem' }}>
-        <SectionHeader
-          title="My preferences"
-          action={
-            <button onClick={() => setShowPrefsModal(true)} style={{ fontSize: '12px', color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, padding: 0 }}>
-              Edit
-            </button>
-          }
-        />
-        {loading ? (
-          <Skeleton height={100} />
-        ) : prefs.preferred_states.length === 0 && !prefs.max_tuition && prefs.preferred_majors.length === 0 ? (
-          <EmptyState
-            emoji="⚙️"
-            message="Set your standing preferences and Sage will use them every time — no need to repeat yourself."
-            action={
-              <button onClick={() => setShowPrefsModal(true)} style={{
-                fontSize: '13px', color: '#6366F1', background: '#F4F3FE',
-                border: '1px solid #DDD9F8', borderRadius: '10px',
-                padding: '8px 16px', cursor: 'pointer', fontWeight: 500,
-              }}>
-                Set preferences
-              </button>
-            }
-          />
-        ) : (
-          <div style={{
-            background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '16px',
-            display: 'flex', flexDirection: 'column', gap: '12px',
-            boxShadow: '0 2px 12px rgba(99,102,241,0.05)',
-          }}>
-            {prefs.preferred_states.length > 0 && (
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: '11px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0, paddingTop: '2px' }}>States</div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {prefs.preferred_states.map(s => (
-                    <span key={s} style={{ fontSize: '12px', padding: '3px 9px', borderRadius: '20px', background: '#F4F3FE', color: '#4338CA', border: '1px solid #DDD9F8', fontWeight: 500 }}>{s}</span>
+              <button className="btn secondary" onClick={() => navigate('/chat')}>Chat</button>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              {loading ? <Skeleton height={100} /> : hasSageFacts ? (
+                <div className="learn-list">
+                  {[
+                    ['Location', sageProfile?.preferredLocations?.join(', ')],
+                    ['Intended major', sageProfile?.intendedMajor],
+                    ['Career goals', sageProfile?.careerGoals?.join(', ')],
+                  ].filter(([, value]) => value).map(([label, value]) => (
+                    <div className="learn-item" key={label}><span>{label}</span><span>{value}</span></div>
                   ))}
                 </div>
-              </div>
-            )}
-            {prefs.max_tuition != null && (
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ fontSize: '11px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0 }}>Max tuition</div>
-                <div style={{ fontSize: '13px', color: '#3A3A4D' }}>${prefs.max_tuition.toLocaleString()}/yr</div>
-              </div>
-            )}
-            {prefs.preferred_majors.length > 0 && (
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ fontSize: '11px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', width: '90px', flexShrink: 0 }}>Major</div>
-                <div style={{ fontSize: '13px', color: '#3A3A4D' }}>{prefs.preferred_majors.join(', ')}</div>
-              </div>
-            )}
-          </div>
-        )}
+              ) : (
+                <EmptyState message="Sage doesn't know much about you yet. Start a conversation and this fills in fast." action={<button className="btn secondary" onClick={() => navigate('/chat')}>Chat with Sage</button>} />
+              )}
+            </div>
+          </section>
+
+          <section className="mock-card section-pad">
+            <div className="school-head">
+              <span className="mini-title">My Schools</span>
+              <span className="pill">{hearts.length} saved</span>
+            </div>
+            <div className="timeline" style={{ marginTop: 12 }}>
+              {loading ? <><Skeleton height={62} /><Skeleton height={62} /></> : hearts.length ? hearts.map(h => (
+                <div className="saved-row mock-soft-card" key={h.id}>
+                  <div>
+                    <h3>{h.college_name}</h3>
+                    <p>Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                  </div>
+                  <div className="filters">
+                    <button className="pill teal" onClick={() => navigate(`/college/${h.college_id}`)}>View</button>
+                    <button className="pill" onClick={() => handleUnheart(h.college_id)}>Remove</button>
+                  </div>
+                </div>
+              )) : (
+                <EmptyState message="No saved schools yet — heart the ones you love and they'll show up here." action={<button className="btn secondary" onClick={() => navigate('/search')}>Browse schools</button>} />
+              )}
+            </div>
+          </section>
+
+          <section className="mock-card section-pad">
+            <div className="school-head">
+              <span className="mini-title">Vibe Checks</span>
+              <span className="pill">{vibes.length} saved</span>
+            </div>
+            <div className="timeline" style={{ marginTop: 12 }}>
+              {loading ? <><Skeleton height={86} /><Skeleton height={86} /></> : vibes.length ? vibes.map(v => (
+                <div className="saved-row mock-soft-card" key={v.id}>
+                  <div>
+                    <h3>{v.college_name}</h3>
+                    <p>{v.overall_summary}</p>
+                  </div>
+                  <div className="score" style={{ width: 54, height: 54, background: `conic-gradient(var(--admyt-teal) 0 ${v.fit_score}%, #eeeaf8 ${v.fit_score}% 100%)` }}>
+                    <strong style={{ width: 40, height: 40, fontSize: 14 }}>{v.fit_score}</strong>
+                  </div>
+                </div>
+              )) : (
+                <EmptyState message="No Vibe Checks saved yet. Run one on a school you're curious about and see if it actually fits you." action={<button className="btn secondary" onClick={() => navigate('/search')}>Find a school</button>} />
+              )}
+            </div>
+          </section>
+
+          <section className="mock-card section-pad">
+            <div className="school-head">
+              <span className="mini-title">My preferences</span>
+              {user && <button className="pill teal" onClick={() => setShowPrefsModal(true)}>Edit</button>}
+            </div>
+            <div style={{ marginTop: 12 }}>
+              {prefs.preferred_states.length || prefs.max_tuition || prefs.preferred_majors.length ? (
+                <PreferenceRows prefs={prefs} />
+              ) : (
+                <EmptyState message="Set standing preferences so Sage can use them without making you repeat yourself." action={user ? <button className="btn secondary" onClick={() => setShowPrefsModal(true)}>Set preferences</button> : <button className="btn secondary" onClick={() => setShowAuthModal(true)}>Sign up to save</button>} />
+              )}
+            </div>
+          </section>
+        </main>
+
+        <aside className="sage-panel">
+          <section className="mock-soft-card section-pad">
+            <span className="mini-title">Profile strength</span>
+            <h2 style={{ margin: '8px 0', fontSize: 34, color: 'var(--admyt-ink)' }}>{completeness}%</h2>
+            <div className="bar"><span style={{ width: `${completeness}%` }} /></div>
+            <p className="match-note" style={{ marginTop: 12 }}>{getCompletenessNudge()}</p>
+          </section>
+
+          <section className="callout">
+            <strong>Sage nudges</strong>
+            <p>{getCompletenessNudge()}</p>
+            <p>{hearts.length > 1 ? "You've got a few saved schools. Ask Sage how they stack up." : "Heart one school you're curious about. It gives Sage a real signal."}</p>
+            <button className="btn" onClick={() => navigate('/chat')} style={{ marginTop: 14, width: '100%' }}>Ask Sage</button>
+          </section>
+        </aside>
       </div>
 
-      {showPrefsModal && (
-        <PreferencesModal prefs={prefs} onSave={handleSavePrefs} onClose={() => setShowPrefsModal(false)} />
-      )}
-
+      {showPrefsModal && <PreferencesModal prefs={prefs} onSave={handleSavePrefs} onClose={() => setShowPrefsModal(false)} />}
+      {showAuthModal && <AuthModal trigger="general" onClose={() => setShowAuthModal(false)} onSuccess={() => setShowAuthModal(false)} />}
       <style>{`@keyframes profilePulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
     </div>
   )

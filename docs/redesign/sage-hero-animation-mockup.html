@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sage horizontal hero animation mockup</title>
+    <style>
+      :root {
+        --ink: #17161f;
+        --muted: #696778;
+        --line: #eeecfb;
+        --soft: #fcfcff;
+        --violet: #6366f1;
+        --pink: #f0abfc;
+        --teal: #1b9a9c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+        background:
+          radial-gradient(circle at 20% 35%, rgba(27, 154, 156, 0.10), transparent 28%),
+          radial-gradient(circle at 80% 24%, rgba(240, 171, 252, 0.14), transparent 30%),
+          linear-gradient(180deg, #ffffff 0%, var(--soft) 100%);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      .wrap {
+        width: min(1080px, calc(100vw - 32px));
+        padding: 44px 0;
+      }
+
+      .mock-label {
+        margin-bottom: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .stage {
+        position: relative;
+        display: grid;
+        min-height: 310px;
+        overflow: hidden;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background:
+          radial-gradient(ellipse at center, rgba(99, 102, 241, 0.11), transparent 45%),
+          rgba(255, 255, 255, 0.74);
+        box-shadow: 0 28px 90px rgba(46, 37, 111, 0.12);
+      }
+
+      .stage::before {
+        position: absolute;
+        right: 8%;
+        left: 8%;
+        top: 50%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.18), rgba(27, 154, 156, 0.18), transparent);
+        content: "";
+      }
+
+      .lineup {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: min(940px, calc(100% - 42px));
+        min-height: 220px;
+        gap: clamp(14px, 3.4vw, 34px);
+      }
+
+      .cutout {
+        position: relative;
+        width: clamp(104px, 13vw, 146px);
+        height: clamp(118px, 14vw, 160px);
+        display: grid;
+        place-items: end center;
+        animation: float 5.4s ease-in-out infinite;
+        filter: drop-shadow(0 18px 24px rgba(46, 37, 111, 0.16));
+      }
+
+      .cutout img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .cutout.one {
+        transform: translateY(10px) rotate(-2deg);
+      }
+
+      .cutout.two {
+        transform: translateY(-8px) rotate(2deg);
+        animation-delay: 0.45s;
+      }
+
+      .cutout.three {
+        transform: translateY(-6px) rotate(-1deg);
+        animation-delay: 0.9s;
+      }
+
+      .cutout.four {
+        transform: translateY(9px) rotate(2deg);
+        animation-delay: 1.25s;
+      }
+
+      .orb-wrap {
+        position: relative;
+        display: grid;
+        flex: 0 0 clamp(120px, 15vw, 168px);
+        width: clamp(120px, 15vw, 168px);
+        height: clamp(120px, 15vw, 168px);
+        place-items: center;
+      }
+
+      .pulse-ring {
+        position: absolute;
+        inset: 4px;
+        border: 2px solid rgba(99, 102, 241, 0.20);
+        border-radius: 50%;
+        animation: pulse 2.8s ease-out infinite;
+      }
+
+      .pulse-ring:nth-child(2) {
+        border-color: rgba(27, 154, 156, 0.18);
+        animation-delay: 0.7s;
+      }
+
+      .pulse-ring:nth-child(3) {
+        border-color: rgba(240, 171, 252, 0.20);
+        animation-delay: 1.4s;
+      }
+
+      .sage-orb {
+        position: relative;
+        z-index: 2;
+        width: 72%;
+        height: 72%;
+        border-radius: 50%;
+        animation: bob 3.1s ease-in-out infinite;
+        filter: drop-shadow(0 22px 34px rgba(99, 102, 241, 0.28));
+        overflow: hidden;
+      }
+
+      .sage-orb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.72);
+      }
+
+      .caption {
+        position: absolute;
+        right: 28px;
+        bottom: 22px;
+        left: 28px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+        text-align: center;
+      }
+
+      .caption strong {
+        color: var(--ink);
+      }
+
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+        }
+
+        50% {
+          transform: translateY(-10px) scale(1.025);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.74;
+          transform: scale(0.72);
+        }
+
+        72% {
+          opacity: 0;
+          transform: scale(1.72);
+        }
+
+        100% {
+          opacity: 0;
+          transform: scale(1.72);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          margin-top: 0;
+        }
+
+        50% {
+          margin-top: -9px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .stage {
+          min-height: 250px;
+          border-radius: 22px;
+        }
+
+        .lineup {
+          width: calc(100% - 26px);
+          min-height: 170px;
+          gap: 0;
+        }
+
+        .cutout {
+          width: 54px;
+          height: 70px;
+        }
+
+        .orb-wrap {
+          flex-basis: 84px;
+          width: 84px;
+          height: 84px;
+          margin: 0 2px;
+        }
+
+        .caption {
+          bottom: 12px;
+          font-size: 12px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pulse-ring,
+        .sage-orb,
+        .cutout {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="mock-label">Horizontal hero animation concept · transparent Sage cutouts + orb</div>
+      <section class="stage" aria-label="Animated horizontal Sage hero concept">
+        <div class="lineup">
+          <div class="cutout one">
+            <img src="assets/sage-cutout-01.png" alt="Human Sage cutout avatar" />
+          </div>
+          <div class="cutout two">
+            <img src="assets/sage-cutout-02.png" alt="Human Sage cutout avatar" />
+          </div>
+
+          <div class="orb-wrap" aria-hidden="true">
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring"></div>
+            <div class="sage-orb">
+              <img src="assets/sage-orb.png" alt="" />
+            </div>
+          </div>
+
+          <div class="cutout three">
+            <img src="assets/sage-cutout-03.png" alt="Human Sage cutout avatar" />
+          </div>
+          <div class="cutout four">
+            <img src="assets/sage-cutout-04.png" alt="Human Sage cutout avatar" />
+          </div>
+        </div>
+
+        <p class="caption"><strong>Sage stays the orb.</strong> The faces are just different ways a student might imagine the guide in their corner.</p>
+      </section>
+    </main>
+  </body>
+</html>

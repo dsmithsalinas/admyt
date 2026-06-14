@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SageOrb from '@/components/sage/SageOrb'
+import sageCutout01 from '@/assets/sage/sage-cutout-01.webp'
+import sageCutout02 from '@/assets/sage/sage-cutout-02.webp'
+import sageCutout03 from '@/assets/sage/sage-cutout-03.webp'
+import sageCutout04 from '@/assets/sage/sage-cutout-04.webp'
+import humanSage01 from '@/assets/sage/human-sage-01.webp'
+import humanSage02 from '@/assets/sage/human-sage-02.webp'
+import humanSage03 from '@/assets/sage/human-sage-03.webp'
+import humanSage04 from '@/assets/sage/human-sage-04.webp'
+import humanSage05 from '@/assets/sage/human-sage-05.webp'
+import humanSage06 from '@/assets/sage/human-sage-06.webp'
+import humanSage07 from '@/assets/sage/human-sage-07.webp'
+import humanSage08 from '@/assets/sage/human-sage-08.webp'
 
 const GradText = ({ children }: { children: React.ReactNode }) => (
   <span style={{
     background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  }}>
-    {children}
-  </span>
-)
-
-const GradTextPink = ({ children }: { children: React.ReactNode }) => (
-  <span style={{
-    background: 'linear-gradient(135deg, #6366F1, #8B5CF6 60%, #EC4899)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
@@ -29,7 +30,7 @@ function CTAButton({ onClick, large }: { onClick: () => void; large?: boolean })
     <button
       onClick={onClick}
       style={{
-        background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+        background: 'var(--admyt-grad)',
         color: 'white',
         border: 'none',
         borderRadius: large ? '24px' : '20px',
@@ -55,23 +56,48 @@ function CTAButton({ onClick, large }: { onClick: () => void; large?: boolean })
   )
 }
 
-function VibeBar({ label, score, delay }: { label: string; score: number; delay: string }) {
+function SageHeroAnimation() {
+  const cutouts = [
+    { src: sageCutout01, delay: '0s' },
+    { src: sageCutout02, delay: '.4s' },
+    { src: sageCutout03, delay: '.2s' },
+    { src: sageCutout04, delay: '.6s' },
+  ]
+
   return (
-    <div className="fade-up" style={{ transitionDelay: delay, background: 'white', borderRadius: '14px', padding: '12px 14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 500, color: '#6366F1' }}>{label}</span>
-        <span style={{ fontSize: '13px', fontWeight: 500, color: '#6366F1' }}>{score}/10</span>
-      </div>
-      <div style={{ height: '6px', background: 'rgba(255,255,255,0.3)', borderRadius: '3px', overflow: 'hidden' }}>
-        <div style={{
-          width: `${score * 10}%`, height: '100%',
-          background: 'linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))',
-          borderRadius: '3px',
-        }} />
+    <div className="hero-visual" style={{
+      gridColumn: '1 / -1',
+      position: 'relative',
+      minHeight: '188px',
+      overflow: 'hidden',
+      border: '1px solid var(--admyt-line)',
+      borderRadius: '22px',
+      background: 'radial-gradient(ellipse at center, rgba(99,102,241,.11), transparent 45%), rgba(255,255,255,.76)',
+      boxShadow: '0 20px 58px rgba(46,37,111,.09)',
+    }}>
+      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '50%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(99,102,241,.18), rgba(27,154,156,.18), transparent)' }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '188px', gap: 'clamp(14px, 4vw, 42px)' }}>
+        {cutouts.slice(0, 2).map(cutout => (
+          <img key={cutout.src} src={cutout.src} alt="" aria-hidden="true" className="sage-hero-cutout" style={{ width: 'clamp(76px, 9vw, 118px)', height: 'clamp(88px, 10vw, 132px)', objectFit: 'contain', filter: 'drop-shadow(0 16px 20px rgba(46,37,111,.15))', animationDelay: cutout.delay }} />
+        ))}
+        <div style={{ position: 'relative', display: 'grid', placeItems: 'center', flex: '0 0 clamp(110px, 13vw, 154px)', width: 'clamp(110px, 13vw, 154px)', height: 'clamp(110px, 13vw, 154px)' }}>
+          <div className="hero-pulse" />
+          <div className="hero-pulse hero-pulse-two" />
+          <div className="hero-pulse hero-pulse-three" />
+          <SageOrb size={108} animate />
+        </div>
+        {cutouts.slice(2).map(cutout => (
+          <img key={cutout.src} src={cutout.src} alt="" aria-hidden="true" className="sage-hero-cutout" style={{ width: 'clamp(76px, 9vw, 118px)', height: 'clamp(88px, 10vw, 132px)', objectFit: 'contain', filter: 'drop-shadow(0 16px 20px rgba(46,37,111,.15))', animationDelay: cutout.delay }} />
+        ))}
       </div>
     </div>
   )
 }
+
+const humanSageAvatars = [
+  humanSage01, humanSage02, humanSage03, humanSage04,
+  humanSage05, humanSage06, humanSage07, humanSage08,
+]
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -149,77 +175,85 @@ export default function Landing() {
   }, [])
 
   return (
-    <div ref={pageRef} style={{ fontFamily: 'Inter, sans-serif', color: '#3A3A4D', background: '#FCFCFF', overflowX: 'hidden' }}>
+    <div ref={pageRef} style={{ fontFamily: 'Inter, sans-serif', color: 'var(--admyt-slate)', background: 'var(--admyt-paper)', overflowX: 'hidden' }}>
 
       {/* ── Nav ─────────────────────────────────────────────── */}
-      <nav style={{
+      <nav className="landing-nav" style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'white', borderBottom: '1px solid #F0EEFB',
-        padding: '14px 20px',
+        background: 'rgba(255,253,250,0.9)', borderBottom: '1px solid var(--admyt-line)', backdropFilter: 'blur(16px)',
+        minHeight: '68px',
+        padding: '0 34px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <span style={{ fontSize: '17px', fontWeight: 500, color: '#15151C', letterSpacing: '-0.2px' }}>
-          adm<GradText>y</GradText>t
-        </span>
-        <button
-          onClick={goToChat}
-          style={{
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            color: 'white', border: 'none',
-            borderRadius: '20px', padding: '8px 18px',
-            fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-            fontFamily: 'Inter, sans-serif',
-          }}
-          className="landing-nav-cta"
-        >
-          Start chatting with Sage
-        </button>
+        <a style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 650, color: 'var(--admyt-ink)', textDecoration: 'none' }} href="#">
+          <SageOrb size={30} />
+          <span>adm<GradText>y</GradText>t</span>
+        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', color: 'var(--admyt-muted)', fontSize: '14px' }}>
+          <a href="#how-it-works" style={{ color: 'inherit', textDecoration: 'none' }}>How it works</a>
+          <a href="#vibe" style={{ color: 'inherit', textDecoration: 'none' }}>Vibe Check</a>
+          <a href="#trust" style={{ color: 'inherit', textDecoration: 'none' }}>Why trust it</a>
+          <button
+            onClick={goToChat}
+            style={{
+              background: 'var(--admyt-grad)',
+              color: 'white', border: 'none',
+              borderRadius: '999px', padding: '0 22px',
+              minHeight: 46,
+              fontSize: '14px', fontWeight: 650, cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              boxShadow: '0 16px 34px rgba(96,76,223,.28)',
+            }}
+            className="landing-nav-cta"
+          >
+            Start chatting with Sage
+          </button>
+        </div>
       </nav>
 
       {/* ── Section 1: Hero ──────────────────────────────────── */}
-      <section style={{ padding: '80px 20px 60px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <section className="landing-hero" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, .9fr) minmax(410px, 520px)', gap: '34px 46px', alignItems: 'center', alignContent: 'start', width: 'min(1180px, calc(100% - 48px))', minHeight: 'auto', margin: '0 auto', padding: '34px 0 64px' }}>
 
-        <div ref={orbRef} style={{ marginBottom: '28px', display: 'inline-flex' }}>
-          <div style={{ boxShadow: '0 0 60px rgba(99,102,241,0.25)', borderRadius: '50%' }}>
-            <SageOrb size={80} />
-          </div>
+        <div ref={orbRef} style={{ gridColumn: '1 / -1' }}>
+          <SageHeroAnimation />
         </div>
 
-        <div ref={heroTextRef}>
+        <div ref={heroTextRef} style={{ textAlign: 'left' }}>
           <div style={{
-            fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em',
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            marginBottom: '16px', fontWeight: 500,
+            display: 'inline-flex', alignItems: 'center', gap: '10px',
+            color: '#4b3dcc', fontSize: '12px', fontWeight: 760, letterSpacing: '0.12em',
+            textTransform: 'uppercase', marginBottom: '18px',
           }}>
-            the y is for you
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--admyt-teal)', boxShadow: '0 0 0 6px rgba(27,154,156,.12)' }} />
+            The y is for you
           </div>
 
           <h1 style={{
-            fontSize: 'clamp(32px, 6vw, 48px)', fontWeight: 500, color: '#15151C',
-            letterSpacing: '-0.8px', margin: '0 0 20px',
-            lineHeight: 1.1,
+            fontSize: 'clamp(48px, 7vw, 78px)', fontWeight: 820, color: 'var(--admyt-ink)',
+            letterSpacing: '-.04em', margin: '0 0 24px',
+            lineHeight: .96,
           }}>
-            Find where you <GradTextPink>fit.</GradTextPink>
+            Find where you fit.
           </h1>
 
           <p style={{
-            fontSize: '17px', color: '#8B8B9E', lineHeight: 1.65,
-            maxWidth: '520px', margin: '0 auto 32px',
+            fontSize: '20px', color: 'var(--admyt-muted)', lineHeight: 1.65,
+            maxWidth: '500px', margin: '0 0 32px',
           }}>
             College isn't about the rankings. It's about finding the place where you'll actually thrive. Admyt helps you discover schools that match who you are — not just your GPA.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
             <CTAButton onClick={goToChat} large />
             <button
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
               style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '13px', color: '#8B8B9E', fontFamily: 'Inter, sans-serif', padding: 0,
+                background: '#fff', border: '1px solid var(--admyt-line)', cursor: 'pointer',
+                fontSize: '15px', color: '#4b3dcc', fontFamily: 'Inter, sans-serif', padding: '0 22px',
+                minHeight: 46, borderRadius: 999, fontWeight: 650,
               }}
             >
-              See how it works →
+              See how it works
             </button>
           </div>
         </div>
@@ -227,8 +261,21 @@ export default function Landing() {
         {/* Chat preview mockup — fade in on mount since it's above the fold */}
         <div
           className={`fade-up${mounted ? ' visible' : ''} landing-chat-preview`}
-          style={{ transitionDelay: '0.15s', marginTop: '52px', width: '100%', maxWidth: '480px', border: '1px solid #EEECFB', borderRadius: '22px', boxShadow: '0 8px 40px rgba(99,102,241,0.08)', background: 'white', overflow: 'hidden' }}
+          style={{ transitionDelay: '0.15s', marginTop: 0, width: '100%', border: '1px solid var(--admyt-line)', borderRadius: '20px', boxShadow: 'var(--admyt-shadow)', background: '#ffffff', overflow: 'hidden' }}
         >
+          <div style={{ minHeight: 74, borderBottom: '1px solid var(--admyt-line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: '16px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <SageOrb size={44} />
+              <div>
+                <strong style={{ display: 'block', color: 'var(--admyt-ink)' }}>Sage</strong>
+                <span style={{ display: 'block', color: 'var(--admyt-muted)', fontSize: 13 }}>the older sibling you wish you had</span>
+              </div>
+            </div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--admyt-muted)', fontSize: 13 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--admyt-teal)', boxShadow: '0 0 0 6px rgba(27,154,156,.12)' }} />
+              live preview
+            </span>
+          </div>
           <div style={{ padding: '20px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               <SageOrb size={28} />
@@ -247,6 +294,19 @@ export default function Landing() {
                 Perfect starting point. Let's figure it out together.
               </div>
             </div>
+            <div style={{ border: '1px solid var(--admyt-line)', borderRadius: 16, padding: 16, boxShadow: 'var(--admyt-shadow-small)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                <div>
+                  <strong style={{ display: 'block', color: 'var(--admyt-ink)', fontSize: 18 }}>Lewis & Clark College</strong>
+                  <span style={{ color: 'var(--admyt-muted)', fontSize: 13 }}>Portland, OR · liberal arts · strong aid profile</span>
+                </div>
+                <span style={{ borderRadius: 999, background: 'rgba(27,154,156,.12)', color: '#087a70', padding: '7px 10px', fontWeight: 760, whiteSpace: 'nowrap' }}>91% fit</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
+                <div style={{ background: '#fbfaff', borderRadius: 10, padding: 10, color: 'var(--admyt-slate)', fontSize: 12 }}>Outdoors are part of the rhythm there, not just brochure scenery.</div>
+                <div style={{ background: '#fbfaff', borderRadius: 10, padding: 10, color: 'var(--admyt-slate)', fontSize: 12 }}>Small classes could make it easier to find your people early.</div>
+              </div>
+            </div>
           </div>
           <div style={{ borderTop: '1px solid #F0EEFB', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ flex: 1, background: '#F8F8FC', border: '1px solid #EEECFB', borderRadius: '12px', padding: '9px 14px', fontSize: '13px', color: '#A8A8BC' }}>
@@ -262,311 +322,206 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Section 2: The problem ───────────────────────────── */}
-      <section style={{ padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ maxWidth: '640px', width: '100%' }}>
+      <section className="landing-section landing-sage-scenes" id="meet-sage">
+        <div className="landing-inner landing-sage-strip">
           <div className="fade-up">
-            <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '28px', letterSpacing: '-0.3px' }}>
-              The college search is broken.
-            </h2>
-          </div>
-          <div className="fade-up fade-up-delay-1" style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.75 }}>
-            <p style={{ marginBottom: '16px' }}>
-              Somewhere along the way, finding a college stopped being exciting and started being terrifying.
+            <div className="landing-eyebrow"><span className="landing-signal" />Meet Sage</div>
+            <h2>One guide. A lot of ways to feel seen.</h2>
+            <p className="landing-wide-copy">
+              Sage is the calm voice in your corner — part older sibling, part friend who already figured it out. However you picture that person, the point is the same: you're not doing this alone.
             </p>
-            <p style={{ marginBottom: '16px' }}>
-              It became a numbers game. A GPA. A test score. A ranking in a magazine. A list of "reach, target, safety" schools from a counselor with four hundred other students. A dinner-table debate about which name will look best.
-            </p>
-            <p style={{ marginBottom: '0' }}>
-              And underneath all of it, the one question almost nobody asks you:
-            </p>
-            <p style={{ marginTop: '20px', marginBottom: '0', fontSize: '18px', fontWeight: 500 }}>
-              <GradTextPink>Where would you actually be happy?</GradTextPink>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Section 3: Meet Sage ─────────────────────────────── */}
-      <section style={{ background: '#F8F7FF', padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ maxWidth: '680px', width: '100%' }}>
-          <div className="fade-up">
-            <div style={{
-              fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em',
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-              marginBottom: '12px', fontWeight: 500,
-            }}>
-              meet sage
+            <div className="landing-orb-note">
+              <SageOrb size={54} />
+              <p className="match-note">In chat, Sage stays simple: a calm little orb, ready when you are.</p>
             </div>
-            <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '20px', letterSpacing: '-0.3px' }}>
-              Like having a friend who already figured it out.
-            </h2>
-            <p style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.75, marginBottom: '28px' }}>
-              Sage is the senior who's been through the whole confusing process, learned from it, and genuinely wants you to get it right. The older sibling you wish you had.
-            </p>
-            <p style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.75, marginBottom: '24px' }}>
-              You can ask Sage the real questions — the ones that feel too small or too honest to ask anyone else:
-            </p>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginBottom: '32px' }}>
-            {[
-              'Will I be lonely there?',
-              'Do people like me actually go here?',
-              'Is everyone going to be richer than me?',
-              "What's it really like?",
-            ].map((q, i) => (
-              <div
-                key={q}
-                className="fade-up"
-                style={{
-                  transitionDelay: `${(i + 1) * 0.1}s`,
-                  background: 'white', border: '1px solid #EEECFB', borderRadius: '14px',
-                  padding: '12px 16px', fontStyle: 'italic', color: '#3A3A4D', fontSize: '14px',
-                  lineHeight: 1.5,
-                }}
-              >
-                {q}
-              </div>
-            ))}
-          </div>
-
-          <div className="fade-up" style={{ transitionDelay: '0.4s' }}>
-            <p style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.75, marginBottom: '24px' }}>
-              Sage doesn't push. Sage doesn't hype the famous schools. Sage helps you understand yourself first — then helps you find the places that match.
-            </p>
-            <CTAButton onClick={goToChat} />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Section 4: How it works ──────────────────────────── */}
-      <section id="how-it-works" style={{ padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ maxWidth: '680px', width: '100%' }}>
-          <div className="fade-up">
-            <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '40px', letterSpacing: '-0.3px' }}>
-              How Admyt works
-            </h2>
-          </div>
-
-          <div style={{ position: 'relative' }}>
-            {[
-              {
-                title: "Just start talking.",
-                body: "No forms, no logins, no SAT score required. Tell Sage what you're thinking — or that you have no idea where to start. Both are totally fine.",
-              },
-              {
-                title: "Sage gets to know you.",
-                body: "Through a real conversation, Sage learns what actually matters to you — your goals, your budget, the kind of place you'd feel at home. Not just your stats.",
-              },
-              {
-                title: "Discover schools that fit.",
-                body: "Sage surfaces colleges matched to you — including ones you've never heard of that might fit better (and cost less) than the names everyone talks about.",
-              },
-              {
-                title: "Run a Vibe Check.",
-                body: "Before you fall in love with a school, see what it's really like. Vibe Check breaks down the social scene, culture, and campus life — honestly — so you know if you'd actually thrive there.",
-              },
-            ].map((step, i) => (
-              <div
-                key={step.title}
-                className="fade-up"
-                style={{
-                  transitionDelay: `${(i + 1) * 0.1}s`,
-                  display: 'flex', gap: '20px', marginBottom: i < 3 ? '32px' : '0', position: 'relative',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontSize: '14px', fontWeight: 500, flexShrink: 0,
-                  }}>
-                    {i + 1}
-                  </div>
-                  {i < 3 && (
-                    <div style={{ width: '2px', flex: 1, minHeight: '32px', marginTop: '6px', background: 'linear-gradient(180deg, #6366F1, #8B5CF6)', opacity: 0.3 }} />
-                  )}
-                </div>
-                <div style={{ paddingTop: '6px' }}>
-                  <div style={{ fontSize: '15px', fontWeight: 500, color: '#15151C', marginBottom: '6px' }}>
-                    {step.title}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#8B8B9E', lineHeight: 1.65 }}>
-                    {step.body}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="fade-up" style={{ marginTop: '40px', transitionDelay: '0.4s' }}>
-            <CTAButton onClick={goToChat} large />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Section 5: Vibe Check spotlight ─────────────────── */}
-      <section style={{
-        background: 'linear-gradient(150deg, #6366F1, #8B5CF6 60%, #EC4899)',
-        padding: '80px 20px',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-      }}>
-        <div className="fade-up" style={{ maxWidth: '680px', width: '100%' }}>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.85)', marginBottom: '12px', fontWeight: 500 }}>
-            ✨ vibe check
-          </div>
-          <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: 'white', marginBottom: '20px', letterSpacing: '-0.3px' }}>
-            Would you actually vibe there?
-          </h2>
-          <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.75, marginBottom: '16px' }}>
-            A school can look perfect on paper and feel completely wrong in person. Vibe Check is how you find out before you apply.
-          </p>
-          <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.75, marginBottom: '16px' }}>
-            Pick what matters to you — social scene, creativity, diversity, the outdoors, school spirit, whatever — and Sage gives you the real read on campus culture. Not the brochure version. The honest one.
-          </p>
-          <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.75, marginBottom: '36px' }}>
-            Because fit isn't a number. It's a feeling. And you deserve to know it before you commit four years of your life.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-            <VibeBar label="Social scene" score={7} delay="0.1s" />
-            <VibeBar label="Arts & creativity" score={8} delay="0.2s" />
-            <VibeBar label="Outdoor access" score={6} delay="0.3s" />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Section 6: What we stand for ────────────────────── */}
-      <section style={{ padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ maxWidth: '680px', width: '100%' }}>
-          <div className="fade-up">
-            <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '36px', letterSpacing: '-0.3px' }}>
-              What we stand for
-            </h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-            {[
-              {
-                emoji: "🎯",
-                title: "Fit beats rank.",
-                body: "The right school is the one where you'll thrive — not the one that scores highest on someone else's list.",
-                delay: "0.1s",
-              },
-              {
-                emoji: "🤝",
-                title: "Everyone deserves a guide.",
-                body: "Great college guidance shouldn't cost thousands or depend on which counselor you got. Admyt is free, for anyone, from the first question.",
-                delay: "0.2s",
-              },
-              {
-                emoji: "🗺️",
-                title: "There are more options than you've been told.",
-                body: "We'll introduce you to schools you've never heard of — including ones that fit you better and cost a lot less.",
-                delay: "0.3s",
-              },
-              {
-                emoji: "🛡️",
-                title: "We're on your side. Only yours.",
-                body: "We'll never sell your data. We'll never take money to promote schools. Every recommendation is about your fit — nothing else.",
-                delay: "0.4s",
-              },
-            ].map(card => (
-              <div
-                key={card.title}
-                className="fade-up"
-                style={{
-                  transitionDelay: card.delay,
-                  background: 'white', border: '1px solid #EEECFB', borderRadius: '18px',
-                  padding: '20px', boxShadow: '0 3px 16px rgba(99,102,241,0.06)',
-                  borderTop: '3px solid transparent',
-                  backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #6366F1, #8B5CF6)',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box',
-                }}
-              >
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #F4F3FE, #EDE9FE)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '12px' }}>
-                  {card.emoji}
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: '#15151C', marginBottom: '8px' }}>
-                  {card.title}
-                </div>
-                <div style={{ fontSize: '13px', color: '#8B8B9E', lineHeight: 1.65 }}>
-                  {card.body}
-                </div>
+          <div className="landing-avatar-rail" aria-label="Human Sage avatar set">
+            {humanSageAvatars.map(src => (
+              <div className="landing-human-avatar" key={src}>
+                <img src={src} alt="Human Sage avatar portrait" />
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Section 7: Who it's for ──────────────────────────── */}
-      <section style={{ background: '#F8F7FF', padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ maxWidth: '600px', width: '100%' }}>
-          <div className="fade-up">
-            <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 500, color: '#15151C', marginBottom: '24px', letterSpacing: '-0.3px' }}>
-              Built for you — especially if no one's helped before.
-            </h2>
-          </div>
-          <div className="fade-up" style={{ transitionDelay: '0.15s' }}>
-            <p style={{ fontSize: '16px', color: '#3A3A4D', lineHeight: 1.8, marginBottom: '20px' }}>
-              Maybe you're the first in your family to do this, with no roadmap and no one to ask. Maybe you're drowning in everyone else's expectations and just want someone to ask what <em>you</em> want. Maybe you test fine but don't see yourself in the glossy brochures. Maybe you just need a school you can actually afford.
-            </p>
-            <p style={{ fontSize: '16px', fontWeight: 500 }}>
-              <GradTextPink>Whoever you are — Admyt is a place to begin.</GradTextPink>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Section 8: Final CTA ─────────────────────────────── */}
-      <section style={{ padding: '100px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <div style={{ maxWidth: '560px', width: '100%' }}>
-          <div className="fade-up">
-            <h2 style={{ fontSize: 'clamp(28px, 5vw, 38px)', fontWeight: 500, color: '#15151C', letterSpacing: '-0.5px', marginBottom: '16px' }}>
-              Your future starts with a conversation.
-            </h2>
-            <p style={{ fontSize: '16px', color: '#8B8B9E', lineHeight: 1.65, marginBottom: '32px' }}>
-              No forms. No pressure. No cost. Just an honest conversation about where you actually belong.
-            </p>
-            <CTAButton onClick={goToChat} large />
-            <p style={{ fontSize: '12px', color: '#A8A8BC', marginTop: '10px' }}>
-              Free forever · No account needed to start
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer style={{ background: 'white', borderTop: '1px solid #F0EEFB', padding: '32px 20px' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
-          <div>
-            <div style={{ fontSize: '17px', fontWeight: 500, color: '#15151C', letterSpacing: '-0.2px', marginBottom: '4px' }}>
-              adm<GradText>y</GradText>t
+      <section className="landing-section" id="how-it-works">
+        <div className="landing-inner">
+          <div className="landing-section-head fade-up">
+            <div>
+              <div className="landing-eyebrow"><span className="landing-signal" />How Admyt works</div>
+              <h2>How Admyt works</h2>
             </div>
-            <div style={{ fontSize: '12px', color: '#A8A8BC' }}>Find where you fit.</div>
+            <p>No forms, no pressure, no SAT score required. Start with a real conversation and let Sage help you sort the messy parts into a list that actually feels like yours.</p>
           </div>
-          <div style={{ display: 'flex', gap: '20px' }}>
-            {['About', 'Privacy', 'Contact'].map(link => (
-              <a key={link} href="#" style={{ fontSize: '13px', color: '#A8A8BC', textDecoration: 'none' }}>
-                {link}
-              </a>
+          <div className="landing-panel">
+            <div className="landing-journey">
+              {[
+                ['Just start talking', "Tell Sage what you're thinking — or that you have no idea where to start. Both are totally fine."],
+                ['Sage gets to know you', "Sage learns what actually matters: your goals, your budget, and the kind of place you'd feel at home."],
+                ['Discover schools that fit', "See schools matched to you, including ones you may not know yet that could fit better and cost less."],
+                ['Run Vibe Check', 'Before you fall in love with a school, get the honest read on campus culture and daily life.'],
+              ].map(([title, body], i) => (
+                <article className="landing-step fade-up" key={title} style={{ transitionDelay: `${i * .08}s` }}>
+                  <div className="landing-num">{i + 1}</div>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-section landing-vibe-section" id="vibe">
+        <div className="landing-inner landing-vibe-layout">
+          <div className="fade-up">
+            <div className="landing-eyebrow"><span className="landing-signal" />Vibe Check</div>
+            <h2>Would you actually vibe there?</h2>
+            <p className="landing-wide-copy">
+              A school can look perfect on paper and feel completely wrong in person. Vibe Check helps you see the social scene, culture, and campus life before you commit four years of your life.
+            </p>
+            <div className="landing-voice-card">
+              <div className="landing-human-avatar"><img src={humanSage03} alt="Human Sage avatar portrait" /></div>
+              <p>Real talk belongs here. Not the brochure version — the version that helps you decide if you would actually feel at home.</p>
+            </div>
+          </div>
+          <div className="landing-score-card fade-up" style={{ transitionDelay: '.12s' }}>
+            <div className="landing-score-head">
+              <span>Sample Vibe Check · Oberlin College</span>
+              <h3>Creative, activist, and proudly unusual.</h3>
+            </div>
+            <div className="landing-meters">
+              {[
+                ['Creative energy', '9/10', '90%'],
+                ['Traditional school spirit', '4/10', '40%'],
+                ['Finding your people', '8/10', '80%'],
+              ].map(([label, score, width]) => (
+                <div className="landing-meter" key={label}>
+                  <div className="landing-meter-top"><span>{label}</span><strong>{score}</strong></div>
+                  <div className="bar"><span style={{ width }} /></div>
+                </div>
+              ))}
+              <div className="landing-readout">
+                Real talk: if you want a polished, rah-rah campus, this may feel too niche. If you want classmates who care intensely about art, politics, music, and identity, it could feel like permission to be yourself.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-section" id="trust">
+        <div className="landing-inner">
+          <div className="landing-section-head fade-up">
+            <div>
+              <div className="landing-eyebrow"><span className="landing-signal" />What we stand for</div>
+              <h2>What we stand for</h2>
+            </div>
+            <p>The right school is the one where you'll thrive. Not the one that scores highest on someone else's list.</p>
+          </div>
+          <div className="landing-value-grid">
+            {[
+              ['Fit beats rank', "The right school is the one where you'll show up, plug in, and become yourself.", 'var(--admyt-indigo)'],
+              ['Everyone deserves a guide', "Great college guidance shouldn't cost thousands or depend on which counselor you got.", 'var(--admyt-teal)'],
+              ['Affordability is part of fit', "A school you can't afford isn't a fit, no matter how good it looks.", 'var(--admyt-coral)'],
+              ['Only on your side', 'We never sell your data. We never take money to promote schools. No sponsored results, ever.', 'var(--admyt-gold)'],
+            ].map(([title, body, color], i) => (
+              <article className="landing-value fade-up" key={title} style={{ transitionDelay: `${i * .08}s` }}>
+                <div className="dot" style={{ background: color }} />
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </article>
             ))}
           </div>
         </div>
-        <div style={{ textAlign: 'center', marginTop: '24px' }}>
-          <span style={{ fontSize: '11px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontWeight: 500 }}>
-            The y is for you.
-          </span>
+      </section>
+
+      <section className="landing-section landing-audience">
+        <div className="landing-inner landing-audience-layout">
+          <div className="fade-up">
+            <div className="landing-eyebrow"><span className="landing-signal" />Built for students</div>
+            <h2>Built for you — especially if no one's helped before.</h2>
+            <p className="landing-wide-copy">
+              Maybe you're the first in your family to do this. Maybe you're drowning in everyone else's expectations. Maybe you just need a school you can actually afford. Whoever you are — Admyt is a place to begin.
+            </p>
+            <div className="landing-avatar-mini-row" aria-label="A few human Sage avatars">
+              {[humanSage01, humanSage05, humanSage07].map(src => (
+                <div className="landing-human-avatar" key={src}><img src={src} alt="Human Sage avatar portrait" /></div>
+              ))}
+            </div>
+          </div>
+          <div className="landing-quote-stack">
+            <div className="landing-quote-card"><strong>First-gen?</strong> Sage explains the process without assuming you already know the rules.</div>
+            <div className="landing-quote-card"><strong>Overwhelmed?</strong> Hey, take a breath. You do not have to figure it all out today.</div>
+            <div className="landing-quote-card"><strong>Feeling pressured?</strong> Sage helps you separate what sounds impressive from what might actually make you happy.</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-final">
+        <div className="landing-inner fade-up">
+          <h2>Your future starts with a conversation.</h2>
+          <p>No forms. No pressure. No cost. Just an honest conversation about where you actually belong.</p>
+          <CTAButton onClick={goToChat} large />
+          <p style={{ marginTop: 12, fontSize: 13 }}>Free forever · No account needed to start</p>
+        </div>
+      </section>
+
+      <footer style={{ background: 'white', borderTop: '1px solid var(--admyt-line)', padding: '24px 0' }}>
+        <div className="landing-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <a style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--admyt-ink)', textDecoration: 'none', fontWeight: 760 }} href="#">
+            <SageOrb size={30} />
+            <span>adm<GradText>y</GradText>t</span>
+          </a>
+          <div style={{ display: 'flex', gap: 20, color: 'var(--admyt-muted)', fontSize: 13 }}>
+            <span>Find where you fit.</span>
+            <span>The y is for you.</span>
+          </div>
         </div>
       </footer>
 
       <style>{`
+        .hero-pulse {
+          position: absolute;
+          inset: 4px;
+          border: 2px solid rgba(99,102,241,.2);
+          border-radius: 50%;
+          animation: heroPulse 2.8s ease-out infinite;
+        }
+        .hero-pulse-two {
+          border-color: rgba(27,154,156,.18);
+          animation-delay: .7s;
+        }
+        .hero-pulse-three {
+          border-color: rgba(240,171,252,.2);
+          animation-delay: 1.4s;
+        }
         @media (max-width: 479px) {
           .landing-nav-cta { display: none !important; }
           .landing-chat-preview { display: none !important; }
+        }
+        @media (max-width: 900px) {
+          .landing-hero {
+            grid-template-columns: 1fr !important;
+            min-height: auto !important;
+            width: min(100% - 32px, 720px) !important;
+          }
+        }
+        @media (max-width: 720px) {
+          .landing-sage-section { grid-template-columns: 1fr !important; }
+          .landing-sage-section > img { order: 2; max-width: 240px !important; }
+          .sage-hero-cutout { width: 68px !important; height: 68px !important; }
+        }
+        .sage-hero-cutout {
+          animation: sageHeroFloat 5s ease-in-out infinite;
+        }
+        @keyframes sageHeroFloat {
+          0%, 100% { margin-top: 0; }
+          50% { margin-top: -8px; }
+        }
+        @keyframes heroPulse {
+          0% { transform: scale(.82); opacity: .72; }
+          100% { transform: scale(1.22); opacity: 0; }
         }
       `}</style>
     </div>

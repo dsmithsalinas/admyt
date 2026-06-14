@@ -1,0 +1,1416 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admyt Redesign Mockup</title>
+    <style>
+      :root {
+        --ink: #17161f;
+        --muted: #696778;
+        --line: #e8e5f4;
+        --soft: #fbfbff;
+        --lavender: #f4f1ff;
+        --violet: #6957e8;
+        --violet-dark: #4b3dcc;
+        --teal: #1b9a9c;
+        --coral: #e9776a;
+        --gold: #d69b22;
+        --green: #4c9f70;
+        --shadow: 0 24px 70px rgba(46, 37, 111, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--soft);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .page {
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 68px;
+        padding: 0 34px;
+        border-bottom: 1px solid rgba(23, 22, 31, 0.07);
+        background: rgba(252, 252, 255, 0.84);
+        backdrop-filter: blur(18px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 12px 30px rgba(84, 68, 211, 0.24);
+        font-weight: 700;
+        overflow: hidden;
+      }
+
+      .brand-mark img,
+      .sage-avatar img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.72);
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 22px;
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+
+      .btn.primary {
+        color: white;
+        background: linear-gradient(135deg, var(--violet), #7e49df);
+        box-shadow: 0 16px 34px rgba(96, 76, 223, 0.28);
+      }
+
+      .btn.secondary {
+        color: var(--violet-dark);
+        background: #ffffff;
+        border: 1px solid var(--line);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(410px, 520px);
+        gap: 46px;
+        align-items: center;
+        width: min(1180px, calc(100% - 48px));
+        min-height: calc(100vh - 68px);
+        margin: 0 auto;
+        padding: 40px 0 52px;
+      }
+
+      .hero-visual {
+        grid-column: 1 / -1;
+        position: relative;
+        min-height: 188px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background:
+          radial-gradient(ellipse at center, rgba(99, 102, 241, 0.11), transparent 45%),
+          rgba(255, 255, 255, 0.76);
+        box-shadow: 0 20px 58px rgba(46, 37, 111, 0.09);
+      }
+
+      .hero-visual::before {
+        position: absolute;
+        right: 8%;
+        left: 8%;
+        top: 50%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.18), rgba(27, 154, 156, 0.18), transparent);
+        content: "";
+      }
+
+      .hero-lineup {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 188px;
+        gap: clamp(14px, 4vw, 42px);
+      }
+
+      .sage-cutout {
+        width: clamp(76px, 9vw, 118px);
+        height: clamp(88px, 10vw, 132px);
+        display: grid;
+        place-items: end center;
+        animation: float 5.4s ease-in-out infinite;
+        filter: drop-shadow(0 16px 20px rgba(46, 37, 111, 0.15));
+      }
+
+      .sage-cutout img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .sage-cutout:nth-child(2) {
+        transform: translateY(-8px);
+        animation-delay: 0.4s;
+      }
+
+      .sage-cutout:nth-child(4) {
+        transform: translateY(-6px);
+        animation-delay: 0.9s;
+      }
+
+      .sage-cutout:nth-child(5) {
+        animation-delay: 1.3s;
+      }
+
+      .hero-orb-wrap {
+        position: relative;
+        display: grid;
+        flex: 0 0 clamp(110px, 13vw, 154px);
+        width: clamp(110px, 13vw, 154px);
+        height: clamp(110px, 13vw, 154px);
+        place-items: center;
+      }
+
+      .hero-pulse {
+        position: absolute;
+        inset: 4px;
+        border: 2px solid rgba(99, 102, 241, 0.20);
+        border-radius: 50%;
+        animation: pulse 2.8s ease-out infinite;
+      }
+
+      .hero-pulse:nth-child(2) {
+        border-color: rgba(27, 154, 156, 0.18);
+        animation-delay: 0.7s;
+      }
+
+      .hero-pulse:nth-child(3) {
+        border-color: rgba(240, 171, 252, 0.20);
+        animation-delay: 1.4s;
+      }
+
+      .hero-orb {
+        position: relative;
+        z-index: 2;
+        width: 72%;
+        height: 72%;
+        overflow: hidden;
+        border-radius: 50%;
+        animation: bob 3.1s ease-in-out infinite;
+        filter: drop-shadow(0 22px 34px rgba(99, 102, 241, 0.28));
+      }
+
+      .hero-orb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.72);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--violet-dark);
+        font-size: 12px;
+        font-weight: 760;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .signal {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--teal);
+        box-shadow: 0 0 0 6px rgba(27, 154, 156, 0.12);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 660px;
+        margin-top: 18px;
+        font-size: clamp(48px, 6vw, 82px);
+        line-height: 0.97;
+        font-weight: 760;
+        letter-spacing: -0.04em;
+      }
+
+      .accent {
+        color: var(--violet);
+      }
+
+      .hero-copy {
+        max-width: 610px;
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 20px;
+        line-height: 1.65;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 34px;
+      }
+
+      .trust-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 12px;
+        max-width: 640px;
+        margin-top: 34px;
+      }
+
+      .trust-pill {
+        min-height: 78px;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+      }
+
+      .trust-pill strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 15px;
+      }
+
+      .trust-pill span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .product-card {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: #ffffff;
+        box-shadow: var(--shadow);
+      }
+
+      .product-card::before {
+        position: absolute;
+        inset: -32px;
+        z-index: -1;
+        border-radius: 42px;
+        background:
+          radial-gradient(circle at 20% 20%, rgba(105, 87, 232, 0.20), transparent 34%),
+          radial-gradient(circle at 90% 72%, rgba(27, 154, 156, 0.16), transparent 35%);
+        content: "";
+      }
+
+      .chat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 18px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sage {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .sage-avatar {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 50%;
+        background: #fff;
+        font-size: 20px;
+        font-weight: 760;
+        overflow: hidden;
+        box-shadow: 0 10px 28px rgba(84, 68, 211, 0.18);
+      }
+
+      .sage strong {
+        display: block;
+        font-size: 15px;
+      }
+
+      .sage span,
+      .status {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .chat-body {
+        display: grid;
+        gap: 14px;
+        padding: 20px 18px;
+      }
+
+      .bubble {
+        max-width: 88%;
+        padding: 13px 15px;
+        border-radius: 18px;
+        color: #373442;
+        background: #f5f3ff;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .bubble.user {
+        justify-self: end;
+        color: white;
+        background: linear-gradient(135deg, var(--violet), #7c49e3);
+      }
+
+      .recommendation {
+        margin-top: 4px;
+        padding: 16px;
+        border: 1px solid #dfdcf0;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #ffffff, #fbfaff);
+      }
+
+      .school-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .school-row h3 {
+        font-size: 18px;
+        line-height: 1.2;
+      }
+
+      .match {
+        min-width: 76px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        color: #0f6b6c;
+        background: rgba(27, 154, 156, 0.12);
+        font-size: 13px;
+        font-weight: 760;
+        text-align: center;
+      }
+
+      .reasons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .reason {
+        padding: 10px;
+        border-radius: 8px;
+        background: #f8f7ff;
+        color: #484457;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 8px;
+        padding: 14px 18px 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .input-row div {
+        flex: 1;
+        min-height: 42px;
+        padding: 12px 14px;
+        border: 1px solid #ebe8f6;
+        border-radius: 999px;
+        color: #9b98a7;
+        background: #faf9ff;
+        font-size: 14px;
+      }
+
+      .send {
+        width: 44px;
+        height: 44px;
+        border: 0;
+        border-radius: 50%;
+        color: white;
+        background: var(--violet);
+        font-size: 18px;
+      }
+
+      section {
+        padding: 94px 0;
+      }
+
+      .inner {
+        width: min(1100px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 28px;
+        margin-bottom: 34px;
+      }
+
+      h2 {
+        max-width: 720px;
+        font-size: clamp(34px, 4vw, 54px);
+        line-height: 1.02;
+        font-weight: 740;
+        letter-spacing: -0.035em;
+      }
+
+      .section-head p,
+      .wide-copy {
+        max-width: 500px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.65;
+      }
+
+      .proof-grid {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: 18px;
+      }
+
+      .sage-scenes {
+        padding: 74px 0;
+        background:
+          radial-gradient(circle at 12% 20%, rgba(27, 154, 156, 0.10), transparent 26%),
+          linear-gradient(180deg, #ffffff 0%, #f8f7ff 100%);
+      }
+
+      .orb-note {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 14px;
+        align-items: center;
+        margin-top: 26px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.74);
+      }
+
+      .orb-note p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .sage-strip {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 30px;
+        align-items: center;
+      }
+
+      .avatar-rail {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: flex-end;
+        max-width: 430px;
+      }
+
+      .human-avatar {
+        width: 76px;
+        height: 76px;
+        overflow: hidden;
+        border: 3px solid #fff;
+        border-radius: 24px;
+        background: #fff;
+        box-shadow: 0 14px 30px rgba(46, 37, 111, 0.13);
+      }
+
+      .human-avatar img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .avatar-rail .human-avatar:nth-child(2n) {
+        transform: translateY(12px);
+      }
+
+      .avatar-rail .human-avatar:nth-child(3n) {
+        transform: translateY(-8px);
+      }
+
+      .voice-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+        align-items: center;
+        max-width: 420px;
+        margin-top: 22px;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .voice-card .human-avatar {
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        box-shadow: none;
+      }
+
+      .voice-card p {
+        color: #f7f5ff;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .avatar-mini-row {
+        display: flex;
+        margin-top: 22px;
+      }
+
+      .avatar-mini-row .human-avatar {
+        width: 54px;
+        height: 54px;
+        margin-right: -12px;
+        border-radius: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 16px 45px rgba(46, 37, 111, 0.07);
+      }
+
+      .panel.pad {
+        padding: 26px;
+      }
+
+      .journey {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-top: 1px solid var(--line);
+      }
+
+      .step {
+        min-height: 180px;
+        padding: 24px;
+        border-right: 1px solid var(--line);
+      }
+
+      .step:last-child {
+        border-right: 0;
+      }
+
+      .num {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        margin-bottom: 28px;
+        place-items: center;
+        border-radius: 50%;
+        color: white;
+        background: var(--ink);
+        font-size: 13px;
+        font-weight: 760;
+      }
+
+      .step h3 {
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
+
+      .step p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .vibe-section {
+        background: #181622;
+        color: white;
+      }
+
+      .vibe-section .eyebrow,
+      .vibe-section .wide-copy {
+        color: #cfc9ff;
+      }
+
+      .vibe-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.84fr) minmax(420px, 1fr);
+        gap: 46px;
+        align-items: center;
+      }
+
+      .score-card {
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 18px;
+        background:
+          linear-gradient(145deg, rgba(105, 87, 232, 0.26), rgba(27, 154, 156, 0.14)),
+          #242131;
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+      }
+
+      .score-head {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .score-head span {
+        color: #cfc9ff;
+        font-size: 13px;
+      }
+
+      .score-head h3 {
+        margin-top: 8px;
+        font-size: 28px;
+      }
+
+      .meters {
+        display: grid;
+        gap: 14px;
+        padding: 22px 24px 26px;
+      }
+
+      .meter {
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .meter-top {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      .bar {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.13);
+      }
+
+      .bar span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #77d5ce, #dcb157, #f28a7b);
+      }
+
+      .readout {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 8px;
+        color: #f8f8ff;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .values {
+        background: #fff;
+      }
+
+      .value-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .value {
+        min-height: 230px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .value .dot {
+        width: 12px;
+        height: 12px;
+        margin-bottom: 36px;
+        border-radius: 50%;
+      }
+
+      .value h3 {
+        margin-bottom: 12px;
+        font-size: 22px;
+      }
+
+      .value p {
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .audience {
+        background: linear-gradient(180deg, #f7f4ff, #fff);
+      }
+
+      .audience-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.75fr);
+        gap: 28px;
+        align-items: start;
+      }
+
+      .quote-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .quote-card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        color: #403d4d;
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .quote-card strong {
+        color: var(--ink);
+      }
+
+      .final {
+        padding: 98px 0;
+        text-align: center;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0), #ffffff),
+          var(--soft);
+      }
+
+      .final h2 {
+        margin: 0 auto;
+      }
+
+      .final p {
+        max-width: 560px;
+        margin: 20px auto 30px;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.65;
+      }
+
+      .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 80px;
+        padding: 0 34px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        background: white;
+        font-size: 14px;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 20px;
+      }
+
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+        }
+
+        50% {
+          transform: translateY(-10px) scale(1.025);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.74;
+          transform: scale(0.72);
+        }
+
+        72%,
+        100% {
+          opacity: 0;
+          transform: scale(1.72);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          margin-top: 0;
+        }
+
+        50% {
+          margin-top: -9px;
+        }
+      }
+
+      @media (max-width: 920px) {
+        .hero,
+        .proof-grid,
+        .vibe-layout,
+        .audience-layout,
+        .sage-strip {
+          grid-template-columns: 1fr;
+        }
+
+        .avatar-rail {
+          justify-content: flex-start;
+        }
+
+        .hero {
+          gap: 34px;
+          min-height: auto;
+        }
+
+        .product-card {
+          max-width: 580px;
+          margin: 0 auto;
+        }
+
+        .hero-visual {
+          min-height: 164px;
+        }
+
+        .hero-lineup {
+          min-height: 164px;
+          gap: 6px;
+        }
+
+        .sage-cutout {
+          width: 64px;
+          height: 78px;
+        }
+
+        .hero-orb-wrap {
+          flex-basis: 96px;
+          width: 96px;
+          height: 96px;
+          margin: 0 2px;
+        }
+
+        .product-card::before {
+          inset: 0;
+        }
+
+        .section-head {
+          display: block;
+        }
+
+        .section-head p {
+          margin-top: 18px;
+        }
+
+        .journey,
+        .value-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .step:nth-child(2) {
+          border-right: 0;
+        }
+      }
+
+      @media (max-width: 620px) {
+        .nav {
+          min-height: 58px;
+          padding: 0 18px;
+        }
+
+        .nav-links a {
+          display: none;
+        }
+
+        .nav-links .btn {
+          display: none;
+        }
+
+        .hero,
+        .inner {
+          width: min(100% - 32px, 1100px);
+        }
+
+        .hero {
+          gap: 22px;
+          padding: 42px 0 38px;
+        }
+
+        .hero-visual {
+          order: 1;
+          min-height: 142px;
+          border-radius: 18px;
+        }
+
+        .hero > div {
+          display: contents;
+        }
+
+        .hero .eyebrow {
+          order: 2;
+        }
+
+        .hero h1 {
+          margin-top: 0;
+          order: 3;
+        }
+
+        .hero-copy {
+          margin-top: 0;
+          order: 4;
+        }
+
+        .hero-actions {
+          margin-top: 10px;
+          order: 5;
+        }
+
+        .product-card {
+          order: 6;
+        }
+
+        .trust-strip {
+          order: 7;
+        }
+
+        .hero-lineup {
+          min-height: 142px;
+          gap: 0;
+        }
+
+        .sage-cutout {
+          width: 46px;
+          height: 60px;
+        }
+
+        .hero-orb-wrap {
+          flex-basis: 78px;
+          width: 78px;
+          height: 78px;
+        }
+
+        h1 {
+          font-size: 46px;
+        }
+
+        .hero-copy {
+          font-size: 17px;
+        }
+
+        .hero-actions,
+        .trust-strip {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+
+        .btn {
+          width: 100%;
+        }
+
+        .product-card {
+          border-radius: 14px;
+        }
+
+        .product-card::before {
+          inset: 0;
+        }
+
+        .chat-top,
+        .chat-body,
+        .input-row {
+          padding-left: 14px;
+          padding-right: 14px;
+        }
+
+        .reasons,
+        .journey,
+        .value-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .human-avatar {
+          width: 64px;
+          height: 64px;
+          border-radius: 20px;
+        }
+
+        .step {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .step:last-child {
+          border-bottom: 0;
+        }
+
+        section {
+          padding: 70px 0;
+        }
+
+        .vibe-layout {
+          gap: 28px;
+        }
+
+        .footer {
+          display: grid;
+          gap: 16px;
+          padding: 22px 18px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .nav-links a {
+          display: none;
+        }
+
+        .nav-links {
+          gap: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="#">
+          <span class="brand-mark"><img src="assets/sage-orb.png" alt="" /></span>
+          <span>admyt</span>
+        </a>
+        <div class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#vibe">Vibe Check</a>
+          <a href="#trust">Why trust it</a>
+          <button class="btn primary">Start chatting with Sage</button>
+        </div>
+      </nav>
+
+      <main>
+        <header class="hero">
+          <div class="hero-visual" aria-label="Sage orb with human guide expressions">
+            <div class="hero-lineup">
+              <div class="sage-cutout"><img src="assets/sage-cutout-01.png" alt="Human Sage cutout avatar" /></div>
+              <div class="sage-cutout"><img src="assets/sage-cutout-02.png" alt="Human Sage cutout avatar" /></div>
+              <div class="hero-orb-wrap" aria-hidden="true">
+                <div class="hero-pulse"></div>
+                <div class="hero-pulse"></div>
+                <div class="hero-pulse"></div>
+                <div class="hero-orb"><img src="assets/sage-orb.png" alt="" /></div>
+              </div>
+              <div class="sage-cutout"><img src="assets/sage-cutout-03.png" alt="Human Sage cutout avatar" /></div>
+              <div class="sage-cutout"><img src="assets/sage-cutout-04.png" alt="Human Sage cutout avatar" /></div>
+            </div>
+          </div>
+          <div>
+            <div class="eyebrow"><span class="signal"></span>The y is for you</div>
+            <h1>Find where you fit.</h1>
+            <p class="hero-copy">
+              College isn't about the rankings. It's about finding the place where you'll actually thrive. Admyt helps you discover schools that match who you are — not just your GPA.
+            </p>
+            <div class="hero-actions">
+              <button class="btn primary">Start chatting with Sage</button>
+              <a class="btn secondary" href="#proof">See a sample match</a>
+            </div>
+            <div class="trust-strip" aria-label="Product promises">
+              <div class="trust-pill">
+                <strong>No account needed</strong>
+                <span>Start with Sage before giving up your inbox.</span>
+              </div>
+              <div class="trust-pill">
+                <strong>No sponsored results</strong>
+                <span>Recommendations are about your fit, nothing else.</span>
+              </div>
+              <div class="trust-pill">
+                <strong>Your data stays yours</strong>
+                <span>We never sell what you tell Sage.</span>
+              </div>
+            </div>
+          </div>
+
+          <aside class="product-card" aria-label="Sage conversation preview">
+            <div class="chat-top">
+              <div class="sage">
+                <div class="sage-avatar"><img src="assets/sage-orb.png" alt="" /></div>
+                <div>
+                  <strong>Sage</strong>
+                <span>the older sibling you wish you had</span>
+                </div>
+              </div>
+              <span class="status"><span class="signal"></span>live preview</span>
+            </div>
+            <div class="chat-body">
+              <div class="bubble">
+                Hey, I'm Sage 👋 Tell me what's in your head right now — schools, money, pressure, no idea where to start. All fair game.
+              </div>
+              <div class="bubble user">
+                I want a smaller school, not too preppy, with good aid and outdoorsy people.
+              </div>
+              <div class="bubble">
+                Say less. That gives us a real pattern. Can I throw a curveball?
+              </div>
+              <div class="recommendation" id="proof">
+                <div class="school-row">
+                  <div>
+                    <h3>Lewis & Clark College</h3>
+                    <p class="status">Portland, OR · liberal arts · strong aid profile</p>
+                  </div>
+                  <div class="match">91% fit</div>
+                </div>
+                <div class="reasons">
+                  <div class="reason">Outdoors are part of the rhythm there, not just brochure scenery.</div>
+                  <div class="reason">Small classes could make it easier to find your people early.</div>
+                  <div class="reason">Less status-chasing, more independent and creative energy.</div>
+                  <div class="reason">Real talk: compare aid before you let any school become the dream.</div>
+                </div>
+              </div>
+            </div>
+            <div class="input-row">
+              <div>Ask Sage what's really on your mind...</div>
+              <button class="send" aria-label="Send message">›</button>
+            </div>
+          </aside>
+        </header>
+
+        <section class="sage-scenes" id="meet-sage">
+          <div class="inner sage-strip">
+            <div>
+              <div class="eyebrow"><span class="signal"></span>Meet Sage</div>
+              <h2>One guide. A lot of ways to feel seen.</h2>
+              <p class="wide-copy">
+                Sage is the calm voice in your corner — part older sibling, part friend who already figured it out. However you picture that person, the point is the same: you're not doing this alone.
+              </p>
+              <div class="orb-note">
+                <div class="sage-avatar"><img src="assets/sage-orb.png" alt="" /></div>
+                <p>
+                  In chat, Sage stays simple: a calm little orb, ready when you are.
+                </p>
+              </div>
+            </div>
+
+            <div class="avatar-rail" aria-label="Human Sage avatar set">
+              <div class="human-avatar"><img src="assets/human-sage-01.png" alt="Human Sage avatar portrait" /></div>
+              <div class="human-avatar"><img src="assets/human-sage-02.png" alt="Human Sage avatar portrait" /></div>
+              <div class="human-avatar"><img src="assets/human-sage-03.png" alt="Human Sage avatar portrait" /></div>
+              <div class="human-avatar"><img src="assets/human-sage-04.png" alt="Human Sage avatar portrait" /></div>
+              <div class="human-avatar"><img src="assets/human-sage-05.png" alt="Human Sage avatar portrait" /></div>
+              <div class="human-avatar"><img src="assets/human-sage-06.png" alt="Human Sage avatar portrait" /></div>
+              <div class="human-avatar"><img src="assets/human-sage-07.png" alt="Human Sage avatar portrait" /></div>
+              <div class="human-avatar"><img src="assets/human-sage-08.png" alt="Human Sage avatar portrait" /></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how">
+          <div class="inner">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow"><span class="signal"></span>How Admyt works</div>
+                <h2>How Admyt works</h2>
+              </div>
+              <p>
+                No forms, no pressure, no SAT score required. Start with a real conversation and let Sage help you sort the messy parts into a list that actually feels like yours.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="journey">
+                <article class="step">
+                  <div class="num">1</div>
+                  <h3>Just start talking</h3>
+                  <p>Tell Sage what you're thinking — or that you have no idea where to start. Both are totally fine.</p>
+                </article>
+                <article class="step">
+                  <div class="num">2</div>
+                  <h3>Sage gets to know you</h3>
+                  <p>Sage learns what actually matters: your goals, your budget, and the kind of place you'd feel at home.</p>
+                </article>
+                <article class="step">
+                  <div class="num">3</div>
+                  <h3>Discover schools that fit</h3>
+                  <p>See schools matched to you, including ones you may not know yet that could fit better and cost less.</p>
+                </article>
+                <article class="step">
+                  <div class="num">4</div>
+                  <h3>Run Vibe Check</h3>
+                  <p>Before you fall in love with a school, get the honest read on campus culture and daily life.</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="vibe-section" id="vibe">
+          <div class="inner vibe-layout">
+            <div>
+              <div class="eyebrow"><span class="signal"></span>Vibe Check</div>
+              <h2>Would you actually vibe there?</h2>
+              <p class="wide-copy">
+                A school can look perfect on paper and feel completely wrong in person. Vibe Check helps you see the social scene, culture, and campus life before you commit four years of your life.
+              </p>
+              <div class="voice-card">
+                <div class="human-avatar"><img src="assets/human-sage-03.png" alt="Human Sage avatar portrait" /></div>
+                <p>Real talk belongs here. Not the brochure version — the version that helps you decide if you would actually feel at home.</p>
+              </div>
+            </div>
+            <div class="score-card">
+              <div class="score-head">
+                <span>Sample Vibe Check · Oberlin College</span>
+                <h3>Creative, activist, and proudly unusual.</h3>
+              </div>
+              <div class="meters">
+                <div class="meter">
+                  <div class="meter-top"><span>Creative energy</span><strong>9/10</strong></div>
+                  <div class="bar"><span style="width: 90%"></span></div>
+                </div>
+                <div class="meter">
+                  <div class="meter-top"><span>Traditional school spirit</span><strong>4/10</strong></div>
+                  <div class="bar"><span style="width: 40%"></span></div>
+                </div>
+                <div class="meter">
+                  <div class="meter-top"><span>Finding your people</span><strong>8/10</strong></div>
+                  <div class="bar"><span style="width: 80%"></span></div>
+                </div>
+                <div class="readout">
+                  Real talk: if you want a polished, rah-rah campus, this may feel too niche. If you want classmates who care intensely about art, politics, music, and identity, it could feel like permission to be yourself.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="values" id="trust">
+          <div class="inner">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow"><span class="signal"></span>What we stand for</div>
+                <h2>What we stand for</h2>
+              </div>
+              <p>
+                The right school is the one where you'll thrive. Not the one that scores highest on someone else's list.
+              </p>
+            </div>
+            <div class="value-grid">
+              <article class="value">
+                <div class="dot" style="background: var(--violet)"></div>
+                <h3>Fit beats rank</h3>
+                <p>The right school is the one where you'll show up, plug in, and become yourself.</p>
+              </article>
+              <article class="value">
+                <div class="dot" style="background: var(--teal)"></div>
+                <h3>Everyone deserves a guide</h3>
+                <p>Great college guidance shouldn't cost thousands or depend on which counselor you got.</p>
+              </article>
+              <article class="value">
+                <div class="dot" style="background: var(--coral)"></div>
+                <h3>Affordability is part of fit</h3>
+                <p>A school you can't afford isn't a fit, no matter how good it looks.</p>
+              </article>
+              <article class="value">
+                <div class="dot" style="background: var(--gold)"></div>
+                <h3>Only on your side</h3>
+                <p>We never sell your data. We never take money to promote schools. No sponsored results, ever.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="audience">
+          <div class="inner audience-layout">
+            <div>
+              <div class="eyebrow"><span class="signal"></span>Built for students</div>
+              <h2>Built for you — especially if no one's helped before.</h2>
+              <p class="wide-copy">
+                Maybe you're the first in your family to do this. Maybe you're drowning in everyone else's expectations. Maybe you just need a school you can actually afford. Whoever you are — Admyt is a place to begin.
+              </p>
+              <div class="avatar-mini-row" aria-label="A few human Sage avatars">
+                <div class="human-avatar"><img src="assets/human-sage-01.png" alt="Human Sage avatar portrait" /></div>
+                <div class="human-avatar"><img src="assets/human-sage-05.png" alt="Human Sage avatar portrait" /></div>
+                <div class="human-avatar"><img src="assets/human-sage-07.png" alt="Human Sage avatar portrait" /></div>
+              </div>
+            </div>
+            <div class="quote-stack">
+              <div class="quote-card"><strong>First-gen?</strong> Sage explains the process without assuming you already know the rules.</div>
+              <div class="quote-card"><strong>Overwhelmed?</strong> Hey, take a breath. You do not have to figure it all out today.</div>
+              <div class="quote-card"><strong>Feeling pressured?</strong> Sage helps you separate what sounds impressive from what might actually make you happy.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="final">
+          <div class="inner">
+            <h2>Your future starts with a conversation.</h2>
+            <p>No forms. No pressure. No cost. Just an honest conversation about where you actually belong.</p>
+            <button class="btn primary">Start chatting with Sage</button>
+            <p style="margin-top: 12px; font-size: 13px;">Free forever · No account needed to start</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <a class="brand" href="#"><span class="brand-mark"><img src="assets/sage-orb.png" alt="" /></span><span>admyt</span></a>
+        <div class="footer-links">
+          <a href="#">Find where you fit.</a>
+          <a href="#">About</a>
+          <a href="#">Privacy</a>
+          <a href="#">Contact</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

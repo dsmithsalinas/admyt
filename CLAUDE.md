@@ -27,7 +27,8 @@ The college search process is broken. Built around rankings, stats, and prestige
 Admyt exists because fit matters more than rank. The right school for you is the one where you'll actually show up, plug in, and become who you're supposed to become. That's where Sage comes in. And that's why Vibe Check isn't a feature — it's the thesis.
 
 ## Tech stack
-- **Frontend:** React + Vite + TypeScript + Tailwind CSS
+- **Frontend:** React + Vite + TypeScript
+- **Styling:** Bespoke hand-written CSS design system — `src/styles/global.css` (native CSS `@layer` blocks + component classes like `.app-frame`, `.pill`, `.btn`, `.school-card`, `.mock-card`) and `src/styles/tokens.css` (design tokens / CSS custom properties), plus inline React `style` props. **Not Tailwind** — Tailwind and shadcn/ui were removed during the redesign (see Design system below). Icons via `lucide-react`.
 - **Backend:** Supabase (auth, database, edge functions)
 - **AI:** Anthropic Claude API (model: claude-sonnet-4-6)
 - **API proxy:** Supabase Edge Function at `supabase/functions/chat/index.ts` — all Claude API calls go through here, never directly from the browser
@@ -41,9 +42,9 @@ src/
 
 │   ├── layout/          # Layout.tsx — nav, bottom tab bar, Back to Sage pill
 
-│   ├── sage/            # SageAvatar.tsx, SchoolCard.tsx (inline chat cards)
+│   ├── sage/            # SageAvatar.tsx, SageOrb.tsx, SchoolCard.tsx (inline chat cards), WhatSageKnows.tsx
 
-│   └── ui/              # AuthModal.tsx, ProfileAvatar.tsx
+│   └── ui/              # Admyt{Button,Card,Pill}.tsx (bespoke primitives), Modal.tsx (overlay), AuthModal.tsx, ProfileAvatar.tsx, HeartButton.tsx, ScoreRing.tsx
 
 ├── context/
 
@@ -118,7 +119,8 @@ All tables have Row Level Security enabled. Users can only access their own data
 - **Match score mid:** `#6366F1` (indigo)
 - **Border radius:** 12-16px on cards, generous throughout
 - **Font:** Inter
-- **UI library:** shadcn/ui (not yet installed — on the roadmap)
+- **Implementation:** Bespoke hand-written CSS, NOT a UI library. The full UI was redesigned from HTML mockups (`docs/redesign/`) into a custom CSS system in `src/styles/global.css` (native CSS `@layer` cascade layers — works without any build-time CSS framework) + `src/styles/tokens.css`, plus inline styles. **Tailwind CSS and shadcn/ui were removed** — they had been added but never wired into the Vite build (the `@tailwind` directives shipped as dead text), so shadcn components rendered unstyled. Modals are now the bespoke `Modal.tsx`; form inputs use the `.field` class; buttons use `.btn` / `AdmytButton`. Do not re-introduce Tailwind/shadcn — extend the CSS system instead.
+- **The `y` accent:** indigo (`#818CF8` on dark / `#6366F1` on light) gradient treatment on the wordmark.
 
 ## Navigation
 - **Desktop:** Top nav — logo, Browse link, ProfileAvatar
@@ -132,20 +134,22 @@ All tables have Row Level Security enabled. Users can only access their own data
 - Signed-in users get: persistent Sage conversation, saved schools, saved vibes, preferences
 
 ## Known UX issues (fix in polish pass)
-- Preferences modal fields are hard to see — needs full redesign with better contrast
 - My schools not always populating from Sage chat hearts — needs end-to-end retest
 
+(Resolved: the preferences modal "hard to see" issue was the shadcn inputs rendering unstyled because Tailwind was never wired into the build. AuthModal + the preferences modal were rebuilt on the bespoke `Modal.tsx` + `.field` system.)
+
 ## Roadmap
-### Next (UI polish pass)
-- [ ] Install shadcn/ui
-- [ ] Fix preferences modal UX
-- [ ] Full visual polish — spacing, typography, color consistency
-- [ ] Brand copy throughout — Sage personality, Admyt story woven into UI
+### Done (redesign pass)
+- [x] Full UI redesign from mockups — bespoke CSS design system replaces the old UI
+- [x] Removed Tailwind + shadcn/ui; rebuilt modals on bespoke `Modal.tsx` + `.field`
+- [x] Fixed preferences modal UX (was unstyled shadcn inputs)
+- [x] Brand copy / voice pass across the app
+- [x] Landing/marketing page (pre-auth, tells the Admyt story)
+- [x] Optimized image assets (PNG → WebP)
 
 ### Soon
-- [ ] Brand buildout — Admyt story doc, Sage personality guide
-- [ ] Landing/marketing page (pre-auth, tells the Admyt story)
 - [ ] Returning user recap — Sage greets signed-in users with conversation recap
+- [ ] Deploy to Vercel (link project, confirm env vars, retest Vibe Check save flow)
 
 ### Later
 - [ ] Mobile PWA / App Store submission
