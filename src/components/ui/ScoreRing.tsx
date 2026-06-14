@@ -12,7 +12,7 @@ export default function ScoreRing({ score, size = 46, color = '#6366F1' }: Score
         width: size,
         height: size,
         borderRadius: '50%',
-        background: `conic-gradient(${color} 0% ${score}%, #EEECFB ${score}% 100%)`,
+        background: `conic-gradient(${color} 0% ${score}%, var(--admyt-line) ${score}% 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -24,12 +24,12 @@ export default function ScoreRing({ score, size = 46, color = '#6366F1' }: Score
           width: inner,
           height: inner,
           borderRadius: '50%',
-          background: '#fff',
+          background: 'var(--admyt-paper)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: size * 0.28,
-          fontWeight: 500,
+          fontWeight: 800,
           color,
         }}
       >

@@ -6,33 +6,31 @@ import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
-import ScoreRing from '@/components/ui/ScoreRing'
 import HeartButton from '@/components/ui/HeartButton'
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{
-      background: 'white', border: '1px solid #EEECFB', borderRadius: '14px', padding: '14px 16px',
-      display: 'flex', flexDirection: 'column', gap: '4px', boxShadow: '0 3px 16px rgba(99,102,241,0.06)',
-    }}>
-      <div style={{ fontSize: '11px', color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: '20px', fontWeight: 500, color: '#15151C' }}>{value}</div>
-    </div>
-  )
-}
-
-function ringColor(score: number) {
-  if (score >= 80) return '#6366F1'
-  if (score >= 60) return '#8B5CF6'
-  return '#A8A8BC'
-}
-
 function matchLabel(score: number) {
-  if (score >= 85) return 'Looks like a strong fit'
-  if (score >= 70) return 'Decent fit for you'
-  return 'Might be worth a look'
+  if (score >= 85) return 'Strong fit'
+  if (score >= 70) return 'Worth a close look'
+  return 'Useful comparison'
+}
+
+function fitReasons(college: College, profile: ReturnType<typeof useProfile>['profile']) {
+  const reasons = [
+    profile?.intendedMajor && college.majors.some(m => m.toLowerCase().includes(profile.intendedMajor!.toLowerCase()))
+      ? `${profile.intendedMajor} shows up in its academic mix.`
+      : null,
+    profile?.preferredLocations?.some(loc => college.location.toLowerCase().includes(loc.toLowerCase()) || college.state === loc)
+      ? 'The location lines up with what Sage has heard from you.'
+      : null,
+    college.size ? `The ${college.size} campus size gives you a real environment to compare.` : null,
+  ].filter(Boolean) as string[]
+
+  return reasons.length ? reasons.slice(0, 3) : ['Sage needs a little more about you before this read gets sharp.']
+}
+
+function formatStat(value: string | number | null | undefined, fallback = 'Not listed') {
+  if (value == null || value === '') return fallback
+  return typeof value === 'number' ? value.toLocaleString() : value
 }
 
 export default function CollegeDetail() {
@@ -53,8 +51,7 @@ export default function CollegeDetail() {
   }, [id])
 
   useEffect(() => {
-    if (!college) return
-    if (college.description) return
+    if (!college || college.description) return
 
     async function generateDescription() {
       if (!college) return
@@ -62,31 +59,25 @@ export default function CollegeDetail() {
       try {
         const prompt = `Write a 2-3 sentence description of ${college.name} in an honest, warm, direct voice — like a knowledgeable older sibling giving real talk, not a brochure. Be specific to this school. Base it only on these facts: located in ${college.location}, ${college.type} institution, ${college.size} size, ${college.acceptanceRate ? college.acceptanceRate + '% acceptance rate' : 'acceptance rate unknown'}, top majors include ${college.majors.slice(0, 5).join(', ')}. No hype, no generic phrases like "vibrant campus community." Just honest, specific, useful.`
 
-        const resp = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              messages: [{ role: 'user', content: prompt }],
-              system: 'You write honest, specific, warm college descriptions in 2-3 sentences. No marketing speak. No generic phrases. Real talk only.',
-              max_tokens: 150,
-            }),
-          }
-        )
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: prompt }],
+            system: 'You write honest, specific, warm college descriptions in 2-3 sentences. No marketing speak. No generic phrases. Real talk only.',
+            max_tokens: 150,
+          }),
+        })
 
         const data = await resp.json()
         const description = data?.content?.[0]?.text?.trim()
 
         if (description) {
           setGeneratedDescription(description)
-          await supabase
-            .from('colleges')
-            .update({ description })
-            .eq('id', college.id)
+          await supabase.from('colleges').update({ description }).eq('id', college.id)
           clearCollegeCache()
         }
       } catch (err) {
@@ -101,10 +92,8 @@ export default function CollegeDetail() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 0' }}>
-        {[...Array(4)].map((_, i) => (
-          <div key={i} style={{ height: i === 0 ? '80px' : '60px', borderRadius: '18px', marginBottom: '16px', background: '#F4F3FE', animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
-        ))}
+      <div className="app-frame section-pad">
+        <div className="mock-card" style={{ height: 220, animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
         <style>{`@keyframes skeletonPulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
       </div>
     )
@@ -112,12 +101,9 @@ export default function CollegeDetail() {
 
   if (!college) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem', color: '#8B8B9E' }}>
-        <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎓</div>
-        <div style={{ fontSize: '14px', marginBottom: '16px' }}>School not found.</div>
-        <button onClick={() => navigate('/search')} style={{ fontSize: '13px', color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-          Back to search
-        </button>
+      <div className="app-frame section-pad" style={{ textAlign: 'center' }}>
+        <p className="match-note">School not found.</p>
+        <button className="btn secondary" onClick={() => navigate('/search')}>Back to search</button>
       </div>
     )
   }
@@ -125,130 +111,131 @@ export default function CollegeDetail() {
   const score = scoreCollege(college, profile)
   const tuition = college.tuitionInState ?? college.tuitionOutState
   const isHearted = heartedSchools.has(college.id)
+  const reasons = fitReasons(college, profile)
+  const shortName = getShortName(college.name)
+  const watchOut = [
+    tuition != null && tuition > 45000 ? 'Worth a real look at the cost before you fall for it.' : null,
+    college.acceptanceRate != null && college.acceptanceRate < 25 ? 'Admissions are selective, so keep a balanced list.'
+      : null,
+    'Culture matters here. Run a Vibe Check before this turns into a favorite.',
+  ].filter(Boolean) as string[]
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 0' }}>
-
-      {/* Back */}
-      <button
-        onClick={() => navigate('/search')}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          fontSize: '13px', color: '#8B8B9E', background: 'none', border: 'none',
-          cursor: 'pointer', padding: 0, marginBottom: '1.5rem',
-        }}
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        Back to results
-      </button>
-
-      {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-          {[college.type === 'public' ? 'Public' : 'Private', college.size.charAt(0).toUpperCase() + college.size.slice(1), college.state].map(tag => (
-            <span key={tag} style={{ fontSize: '11.5px', fontWeight: 500, color: '#6366F1', background: '#F4F3FE', borderRadius: '20px', padding: '4px 10px' }}>
-              {tag}
-            </span>
-          ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-          <div>
-            <h1 style={{ fontSize: '26px', fontWeight: 500, color: '#15151C', letterSpacing: '-0.3px', marginBottom: '4px' }}>
-              {college.name}
-            </h1>
-            <div style={{ fontSize: '14px', color: '#8B8B9E' }}>{college.location}</div>
-          </div>
-          <HeartButton
-            active={isHearted}
-            onClick={() => toggleHeart(college)}
-            size={38}
-          />
-        </div>
+    <div className="app-frame">
+      <div className="frame-head">
+        <button className="crumb" onClick={() => navigate('/search')} style={{ border: 0, background: 'transparent', cursor: 'pointer' }}>
+          <span>←</span>
+          <span>Back to results</span>
+        </button>
+        <button className="btn secondary" onClick={() => navigate(`/college/${college.id}/vibe`)}>
+          Run Vibe Check
+        </button>
       </div>
 
-      {/* Match card */}
-      <div style={{
-        background: 'linear-gradient(135deg, #F4F3FE, #FCE7F3)', borderRadius: '18px',
-        padding: '18px 20px', marginBottom: '1.5rem',
-        display: 'flex', alignItems: 'center', gap: '16px',
-      }}>
-        <ScoreRing score={score} size={56} color={ringColor(score)} />
+      <section className="detail-hero">
         <div>
-          <div style={{ fontSize: '13px', fontWeight: 500, color: ringColor(score), marginBottom: '3px' }}>
-            {matchLabel(score)} — {score}%
+          <div className="filters">
+            <span className="pill dark">{college.type === 'public' ? 'Public' : 'Private'}</span>
+            <span className="pill dark">{college.size.charAt(0).toUpperCase() + college.size.slice(1)}</span>
+            <span className="pill dark">{college.state}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#7C6FB0', lineHeight: 1.5 }}>
-            Based on what you've told Sage so far
+          <h1>{college.name}</h1>
+          <p>{college.location}</p>
+          <div className="stat-grid">
+            <div className="stat"><span>Admit rate</span><strong>{college.acceptanceRate != null ? `${college.acceptanceRate}%` : 'TBD'}</strong></div>
+            <div className="stat"><span>Tuition</span><strong>{tuition != null ? `$${Math.round(tuition / 1000)}k` : 'TBD'}</strong></div>
+            <div className="stat"><span>Enrollment</span><strong>{formatStat(college.enrollment)}</strong></div>
           </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', marginBottom: '2rem' }}>
-        {college.acceptanceRate != null && <StatCard label="Acceptance rate" value={`${college.acceptanceRate}%`} />}
-        {college.avgGpa != null && <StatCard label="Avg GPA" value={college.avgGpa.toFixed(2)} />}
-        {tuition != null && <StatCard label="Tuition" value={`$${tuition.toLocaleString()}`} />}
-        {college.avgSat != null && <StatCard label="Avg SAT" value={college.avgSat.toString()} />}
-        {college.enrollment != null && <StatCard label="Enrollment" value={college.enrollment.toLocaleString()} />}
-        {college.graduationRate != null && <StatCard label="Grad rate" value={`${college.graduationRate}%`} />}
-      </div>
+        <aside className="fit-card">
+          <div className="school-head">
+            <div>
+              <span className="mini-title">Sage fit read</span>
+              <h3 style={{ margin: '6px 0', fontSize: 24 }}>{matchLabel(score)}</h3>
+              <p className="match-note">Based on what Sage knows so far. More conversation makes this sharper.</p>
+            </div>
+            <HeartButton active={isHearted} onClick={() => toggleHeart(college)} size={38} />
+          </div>
+          <div className="score" style={{ width: 92, height: 92, marginTop: 18, background: `conic-gradient(var(--admyt-teal) 0 ${score}%, #eeeaf8 ${score}% 100%)` }}>
+            <strong style={{ width: 70, height: 70, fontSize: 24 }}>{score}</strong>
+          </div>
+        </aside>
+      </section>
 
-      {/* Description */}
-      {(college.description || generatedDescription || descriptionLoading) && (
-        <div style={{ background: 'white', border: '1px solid #EEECFB', borderRadius: '16px', padding: '18px', marginBottom: '1.5rem', boxShadow: '0 3px 16px rgba(99,102,241,0.06)' }}>
-          <div style={{ fontSize: '12px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>About</div>
-          {descriptionLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[100, 85, 60].map(w => (
-                <div key={w} style={{ height: '14px', width: `${w}%`, borderRadius: '6px', background: '#F4F3FE', animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
+      <div className="detail-body">
+        <main style={{ display: 'grid', gap: 14 }}>
+          <section className="mock-card section-pad">
+            <span className="mini-title">Real-talk summary</span>
+            {descriptionLoading ? (
+              <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+                {[100, 84, 58].map(w => <div key={w} style={{ height: 12, width: `${w}%`, borderRadius: 999, background: '#eeeaf8' }} />)}
+              </div>
+            ) : (
+              <p className="match-note" style={{ marginTop: 10, fontSize: 15, lineHeight: 1.7 }}>
+                {college.description ?? generatedDescription ?? `${college.name} is a ${college.type} ${college.size} school in ${college.location}. Sage can help you compare the academics, cost, and culture against the kind of place where you'd actually thrive.`}
+              </p>
+            )}
+          </section>
+
+          <div className="two-list">
+            <section className="mock-card section-pad">
+              <span className="mini-title">Could fit because</span>
+              <div className="learn-list" style={{ marginTop: 12 }}>
+                {reasons.map(reason => <div className="suggestion" key={reason}><p>{reason}</p></div>)}
+              </div>
+            </section>
+            <section className="mock-card section-pad">
+              <span className="mini-title">Watch out for</span>
+              <div className="learn-list" style={{ marginTop: 12 }}>
+                {watchOut.map(item => <div className="suggestion" key={item}><p>{item}</p></div>)}
+              </div>
+            </section>
+          </div>
+
+          {college.majors.length > 0 && (
+            <section className="mock-card section-pad">
+              <span className="mini-title">Programs that might matter</span>
+              <div className="filters" style={{ marginTop: 12 }}>
+                {college.majors.map(major => <span className="pill" key={major}>{major}</span>)}
+              </div>
+            </section>
+          )}
+        </main>
+
+        <aside className="sage-panel">
+          <section className="mock-soft-card section-pad">
+            <span className="mini-title">Ask Sage</span>
+            <div className="suggestion-list" style={{ marginTop: 12 }}>
+              {[
+                `Is ${shortName} actually a fit for me?`,
+                `Show me schools like ${shortName} but more affordable.`,
+                `What should I compare against ${shortName}?`,
+              ].map(prompt => (
+                <button className="suggestion" key={prompt} onClick={() => navigate('/chat')} style={{ cursor: 'pointer', textAlign: 'left' }}>
+                  <p>{prompt}</p>
+                </button>
               ))}
             </div>
-          ) : (
-            <p style={{ fontSize: '14px', color: '#3A3A4D', lineHeight: 1.7, margin: 0 }}>{college.description ?? generatedDescription}</p>
-          )}
-        </div>
-      )}
+          </section>
 
-      {/* Majors */}
-      {college.majors.length > 0 && (
-        <div style={{ background: 'white', border: '1px solid #EEECFB', borderRadius: '16px', padding: '18px', marginBottom: '1.5rem', boxShadow: '0 3px 16px rgba(99,102,241,0.06)' }}>
-          <div style={{ fontSize: '12px', fontWeight: 500, color: '#A8A8BC', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Popular majors</div>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {college.majors.map(major => (
-              <span key={major} style={{ fontSize: '12px', fontWeight: 500, color: '#8B5CF6', background: '#F4F3FE', borderRadius: '20px', padding: '5px 12px' }}>
-                {major}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+          <section className="callout">
+            <strong>Vibe Check</strong>
+            <p>Does {shortName}'s culture actually fit your day-to-day life?</p>
+            <button className="btn" onClick={() => navigate(`/college/${college.id}/vibe`)} style={{ marginTop: 14, width: '100%' }}>
+              Check the vibe
+            </button>
+          </section>
 
-      {/* Vibe Check CTA */}
-      <div style={{
-        background: 'linear-gradient(150deg, #6366F1, #8B5CF6 60%, #EC4899)',
-        borderRadius: '18px', padding: '22px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
-      }}>
-        <div>
-          <div style={{ fontSize: '15px', fontWeight: 500, color: '#FFFFFF', marginBottom: '5px' }}>
-            ✨ Vibe Check
-          </div>
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>
-            Does {getShortName(college.name)}'s culture actually fit you? Let's find out.
-          </div>
-        </div>
-        <button
-          onClick={() => navigate(`/college/${college!.id}/vibe`)}
-          style={{
-            flexShrink: 0, background: 'rgba(255,255,255,0.22)', color: 'white',
-            border: '1px solid rgba(255,255,255,0.35)', borderRadius: '12px',
-            padding: '10px 18px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-          }}
-        >
-          Check the vibe
-        </button>
+          <section className="mock-card section-pad">
+            <span className="mini-title">Quick stats</span>
+            <div className="learn-list" style={{ marginTop: 12 }}>
+              <div className="learn-item"><span>Average GPA</span><span>{college.avgGpa?.toFixed(2) ?? 'TBD'}</span></div>
+              <div className="learn-item"><span>Average SAT</span><span>{college.avgSat ?? 'TBD'}</span></div>
+              <div className="learn-item"><span>Graduation rate</span><span>{college.graduationRate != null ? `${college.graduationRate}%` : 'TBD'}</span></div>
+            </div>
+          </section>
+        </aside>
       </div>
     </div>
   )

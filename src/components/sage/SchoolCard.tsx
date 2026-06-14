@@ -7,15 +7,29 @@ import { useChat } from '@/context/ChatContext'
 import type { College } from '@/lib/colleges'
 import ScoreRing from '@/components/ui/ScoreRing'
 import HeartButton from '@/components/ui/HeartButton'
+import AdmytPill from '@/components/ui/AdmytPill'
+import AdmytButton from '@/components/ui/AdmytButton'
 
 function formatTuition(n: number) {
   return `$${(n / 1000).toFixed(0)}k/yr`
 }
 
 function ringColor(score: number) {
-  if (score >= 80) return '#6366F1'
-  if (score >= 60) return '#8B5CF6'
-  return '#A8A8BC'
+  if (score >= 80) return 'var(--admyt-teal)'
+  if (score >= 60) return 'var(--admyt-indigo)'
+  return 'var(--admyt-faint)'
+}
+
+function whyFit(college: College, score: number, profile: ReturnType<typeof useProfile>['profile']) {
+  if (profile?.intendedMajor && college.majors.some(m => m.toLowerCase().includes(profile.intendedMajor!.toLowerCase()))) {
+    return `${profile.intendedMajor} shows up in the programs Sage is watching for you.`
+  }
+  if (profile?.preferredLocations?.some(loc => college.location.toLowerCase().includes(loc.toLowerCase()) || college.state === loc)) {
+    return `It lines up with the place you said you might want to be.`
+  }
+  if (score >= 80) return 'Looks like a strong fit from what Sage knows so far.'
+  if (score >= 60) return 'Worth a closer look — a few things already line up.'
+  return 'A different option to consider while Sage gets to know you.'
 }
 
 export default function SchoolCard({ collegeId }: { collegeId: string }) {
@@ -29,6 +43,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
 
   const score = scoreCollege(college, profile)
   const isHearted = heartedSchools.has(college.id)
+  const fitRead = whyFit(college, score, profile)
 
   function handleHeart(e: React.MouseEvent) {
     e.preventDefault()
@@ -64,11 +79,11 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
 
   return (
     <div style={{
-      background: 'white',
-      border: '1px solid #EEECFB',
-      borderRadius: '18px',
-      padding: '14px',
-      boxShadow: '0 3px 16px rgba(99,102,241,0.06)',
+      background: 'rgba(255,253,250,0.96)',
+      border: '1px solid var(--admyt-line)',
+      borderRadius: '12px',
+      padding: '15px',
+      boxShadow: 'var(--admyt-shadow-small)',
       position: 'relative',
       overflow: 'hidden',
       width: '100%',
@@ -79,7 +94,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: '3px',
-        background: 'linear-gradient(90deg, #6366F1, #8B5CF6, #EC4899)',
+        background: 'var(--admyt-grad)',
       }} />
 
       {/* Header row */}
@@ -91,44 +106,41 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
           }}>
             {college.name}
           </Link>
-          <div style={{ fontSize: '11px', color: '#A8A8BC' }}>{college.location}</div>
+          <div style={{ fontSize: '11px', color: 'var(--admyt-muted)' }}>{college.location}</div>
         </div>
-        <ScoreRing score={score} size={46} color={ringColor(score)} />
+        <div className="score-stack">
+          <ScoreRing score={score} size={46} color={ringColor(score)} />
+          <span className="score-label">Fit Score</span>
+        </div>
       </div>
+
+      <p style={{ fontSize: '12px', color: 'var(--admyt-slate)', lineHeight: 1.55, margin: '0 0 10px' }}>
+        {fitRead}
+      </p>
 
       {/* Chips */}
       {chips.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '10px' }}>
           {chips.map(chip => (
-            <span key={chip} style={{
-              fontSize: '10.5px', fontWeight: 500, color: '#6366F1',
-              background: '#F4F3FE', borderRadius: '20px',
-              padding: '3px 9px',
-            }}>
-              {chip}
-            </span>
+            <AdmytPill key={chip}>{chip}</AdmytPill>
           ))}
           {majorChips.map(major => (
-            <span key={major} style={{
-              fontSize: '10.5px', fontWeight: 500, color: '#8B5CF6',
-              background: '#F4F3FE', borderRadius: '20px',
-              padding: '3px 9px',
-            }}>
-              {major}
-            </span>
+            <AdmytPill key={major} style={{ color: 'var(--admyt-violet)' }}>{major}</AdmytPill>
           ))}
         </div>
       )}
 
       {/* Footer row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to={`/college/${college.id}`} style={{
-          fontSize: '12px', color: '#6366F1', fontWeight: 500,
-          textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px',
-        }}>
-          See full details →
-        </Link>
-        <HeartButton active={isHearted} onClick={handleHeart} size={30} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Link to={`/college/${college.id}`} style={{ textDecoration: 'none' }}>
+            <AdmytButton variant="secondary" style={{ padding: '8px 12px', fontSize: '12px' }}>View school</AdmytButton>
+          </Link>
+          <Link to={`/college/${college.id}/vibe`} style={{ textDecoration: 'none' }}>
+            <AdmytButton variant="secondary" style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--admyt-pink)' }}>Vibe Check</AdmytButton>
+          </Link>
+        </div>
+        <HeartButton active={isHearted} onClick={handleHeart} size={32} />
       </div>
     </div>
   )

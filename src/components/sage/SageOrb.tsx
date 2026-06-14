@@ -1,38 +1,50 @@
+import sageOrb from '@/assets/sage/sage-orb.webp'
+
 interface SageOrbProps {
   size?: number
+  animate?: boolean
 }
 
-export default function SageOrb({ size = 32 }: SageOrbProps) {
-  const dotSize = Math.max(size * 0.16, 5)
-  const fontSize = size * 0.5
-
+export default function SageOrb({ size = 32, animate = false }: SageOrbProps) {
   return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: 'radial-gradient(circle at 35% 30%, #A5B4FC, #6366F1 55%, #7C3AED)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        flexShrink: 0,
-        boxShadow: size >= 60 ? '0 8px 32px rgba(99,102,241,0.35)' : 'none',
-      }}
-    >
-      <span style={{ fontSize, fontWeight: 500, color: '#fff', lineHeight: 1 }}>s</span>
-      <span
+    <>
+      <div
         style={{
-          position: 'absolute',
-          top: size * 0.15,
-          right: size * 0.17,
-          width: dotSize,
-          height: dotSize,
+          width: size,
+          height: size,
           borderRadius: '50%',
-          background: '#F9A8D4',
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          flexShrink: 0,
+          boxShadow: size >= 46 ? 'var(--shadow-orb)' : '0 3px 12px rgba(99, 91, 255, 0.2)',
+          animation: animate ? 'sageOrbFloat 4.8s ease-in-out infinite' : undefined,
+          overflow: 'hidden',
         }}
-      />
-    </div>
+      >
+        <img
+          src={sageOrb}
+          alt=""
+          aria-hidden="true"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            transform: 'scale(1.72)',
+            display: 'block',
+          }}
+        />
+      </div>
+      {animate && (
+        <style>{`
+          @keyframes sageOrbFloat {
+            0%,100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.025); }
+          }
+        `}</style>
+      )}
+    </>
   )
 }

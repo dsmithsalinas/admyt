@@ -1,1 +1,1 @@
-export default function Onboarding() { return <div className="p-8 text-slate-800">Onboarding</div> }
+export default function Onboarding() { return <div style={{ padding: 32, color: 'var(--admyt-slate)' }}>Onboarding</div> }

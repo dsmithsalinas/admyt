@@ -1,5 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import type { CSSProperties } from 'react'
+import { MessageCircle, Search, UserRound } from 'lucide-react'
 import ProfileAvatar from '@/components/ui/ProfileAvatar'
 import SageOrb from '@/components/sage/SageOrb'
 import { useAuth } from '@/context/AuthContext'
@@ -22,59 +24,63 @@ export default function Layout() {
   const isHome = location.pathname === '/chat'
   const [showMobileProfile, setShowMobileProfile] = useState(false)
 
-  const activeTabColor = '#6366F1'
-  const inactiveTabColor = '#94A3B8'
+  const activeTabColor = 'var(--admyt-indigo)'
+  const inactiveTabColor = 'var(--admyt-muted)'
+  const isBrowse = location.pathname === '/search'
+  const isProfile = location.pathname === '/profile'
+  const navLink = (active: boolean): CSSProperties => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '14px',
+    textDecoration: 'none',
+    color: active ? 'var(--admyt-ink)' : 'var(--admyt-muted)',
+    fontWeight: active ? 760 : 500,
+    borderRadius: '8px',
+    padding: '12px',
+    background: active ? 'white' : 'transparent',
+    border: active ? '1px solid var(--admyt-line)' : '1px solid transparent',
+    boxShadow: active ? 'var(--admyt-shadow-small)' : 'none',
+    transition: 'background 0.15s, color 0.15s, box-shadow 0.15s',
+  })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#FCFCFF' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--admyt-paper)' }}>
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
       <nav style={{
-        background: 'white',
-        borderBottom: '1px solid #F0EEFB',
-        padding: '0 24px', height: '54px',
+        background: 'rgba(255, 253, 250, 0.88)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid var(--admyt-line)',
+        padding: '12px clamp(16px, 3vw, 42px)', minHeight: '76px',
         display: 'flex', alignItems: 'center',
         flexShrink: 0, zIndex: 10,
-        boxShadow: '0 1px 8px rgba(99,102,241,0.04)',
+        boxShadow: '0 1px 16px rgba(78,65,150,0.06)',
       }}>
-        <Link to="/chat" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <div style={{
-            width: '32px', height: '32px',
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 3px 10px rgba(99,102,241,0.3)',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 30 30" fill="none">
-              <path d="M15 5 L26 11 L15 17 L4 11 Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-              <path d="M8 14 L8 21 Q8 24 15 24 Q22 24 22 21 L22 14" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round"/>
-              <circle cx="26" cy="11" r="1.5" fill="#F9A8D4"/>
-            </svg>
-          </div>
-          <span style={{ fontSize: '17px', fontWeight: 500, color: '#15151C', letterSpacing: '-0.2px' }}>
-            adm<span style={{
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>y</span>t
+        <Link to="/chat" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <span>
+            <strong style={{ display: 'block', fontSize: '14px', letterSpacing: '.08em', textTransform: 'none', color: 'var(--admyt-ink)', lineHeight: 1 }}>
+              adm<span style={{
+                background: 'var(--admyt-grad)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>y</span>t
+            </strong>
+            <span style={{ display: 'block', color: 'var(--admyt-muted)', fontSize: '12px', marginTop: '4px' }}>
+              find where you fit
+            </span>
           </span>
         </Link>
 
         {!isMobile && (
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '28px' }}>
-            <Link to="/chat" style={{
-              fontSize: '14px', textDecoration: 'none',
-              color: isHome ? '#6366F1' : '#8B8B9E',
-              fontWeight: isHome ? 500 : 400,
-              transition: 'color 0.15s',
-            }}>
-              Chat
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Link to="/chat" style={navLink(isHome)}>
+              <MessageCircle size={16} />
+              Sage
             </Link>
-            <Link to="/search" style={{
-              fontSize: '14px', textDecoration: 'none',
-              color: location.pathname === '/search' ? '#6366F1' : '#8B8B9E',
-              fontWeight: location.pathname === '/search' ? 500 : 400,
-              transition: 'color 0.15s',
-            }}>
+            <Link to="/search" style={navLink(isBrowse)}>
+              <Search size={16} />
               Browse
             </Link>
             <ProfileAvatar />
@@ -85,15 +91,15 @@ export default function Layout() {
       {/* ── Main content ────────────────────────────────────────── */}
       <main style={isHome ? {
         flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        paddingBottom: isMobile ? '60px' : 0,
+        paddingBottom: isMobile ? '70px' : 0,
       } : {
         flex: 1, overflowY: 'auto',
-        paddingBottom: isMobile ? '60px' : 0,
+        paddingBottom: isMobile ? '70px' : 0,
       }}>
         {isHome ? (
           <Outlet />
         ) : (
-          <div style={{ maxWidth: '1024px', margin: '0 auto', padding: '32px 24px' }}>
+          <div style={{ maxWidth: '1060px', margin: '0 auto', padding: isMobile ? '24px 16px' : '36px 24px' }}>
             <Outlet />
           </div>
         )}
@@ -105,21 +111,21 @@ export default function Layout() {
           onClick={() => navigate('/chat')}
           style={{
             position: 'fixed',
-            bottom: isMobile ? '76px' : '24px',
+            bottom: isMobile ? '84px' : '24px',
             right: '20px',
             display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'white',
-            border: '1px solid #EEECFB',
+            background: 'rgba(255, 253, 250, 0.94)',
+            border: '1px solid var(--admyt-line)',
             borderRadius: '100px',
             padding: '7px 14px 7px 7px',
             cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(99,102,241,0.15)',
+            boxShadow: 'var(--admyt-shadow-small)',
             zIndex: 50,
-            fontSize: '13px', fontWeight: 500, color: '#4338CA',
+            fontSize: '13px', fontWeight: 800, color: 'var(--admyt-indigo)',
             transition: 'box-shadow 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 28px rgba(99,102,241,0.25)')}
-          onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.15)')}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--admyt-shadow)')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--admyt-shadow-small)')}
         >
           <SageOrb size={28} />
           Back to Sage
@@ -130,12 +136,13 @@ export default function Layout() {
       {isMobile && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          height: '60px',
-          background: 'white',
-          borderTop: '1px solid #F0EEFB',
+          height: '68px',
+          background: 'rgba(255, 253, 250, 0.94)',
+          backdropFilter: 'blur(16px)',
+          borderTop: '1px solid var(--admyt-line)',
           display: 'flex',
           zIndex: 100,
-          boxShadow: '0 -2px 12px rgba(99,102,241,0.06)',
+          boxShadow: '0 -10px 30px rgba(78,65,150,0.08)',
         }}>
           {/* Chat tab */}
           <Link
@@ -147,13 +154,8 @@ export default function Layout() {
               color: isHome ? activeTabColor : inactiveTabColor,
             }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
-                stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                fill={isHome ? '#EEF2FF' : 'none'}
-              />
-            </svg>
-            <span style={{ fontSize: '10px', fontWeight: isHome ? 600 : 400 }}>Chat</span>
+            <MessageCircle size={22} />
+            <span style={{ fontSize: '10px', fontWeight: isHome ? 800 : 600 }}>Sage</span>
           </Link>
 
           {/* Browse tab */}
@@ -163,14 +165,11 @@ export default function Layout() {
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
               textDecoration: 'none',
-              color: location.pathname === '/search' ? activeTabColor : inactiveTabColor,
+              color: isBrowse ? activeTabColor : inactiveTabColor,
             }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            <span style={{ fontSize: '10px', fontWeight: location.pathname === '/search' ? 600 : 400 }}>Browse</span>
+            <Search size={22} />
+            <span style={{ fontSize: '10px', fontWeight: isBrowse ? 800 : 600 }}>Browse</span>
           </Link>
 
           {/* Profile tab */}
@@ -180,29 +179,26 @@ export default function Layout() {
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
               background: 'none', border: 'none', cursor: 'pointer',
-              color: location.pathname === '/profile' ? activeTabColor : inactiveTabColor,
+              color: isProfile ? activeTabColor : inactiveTabColor,
             }}
           >
             <div style={{
               width: '24px', height: '24px', borderRadius: '50%',
               background: user
-                ? 'linear-gradient(135deg, #6366F1, #8B5CF6)'
-                : '#F4F3FE',
+                ? 'var(--admyt-grad)'
+                : 'var(--admyt-lavender)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: location.pathname === '/profile' && user ? '2px solid #6366F1' : 'none',
+              border: isProfile && user ? '2px solid var(--admyt-indigo)' : '1px solid var(--admyt-line)',
             }}>
               {user ? (
                 <span style={{ fontSize: '11px', color: 'white', fontWeight: 700 }}>
                   {user.email?.charAt(0).toUpperCase()}
                 </span>
               ) : (
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="8" r="4" stroke="#A8A8BC" strokeWidth="1.5"/>
-                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#A8A8BC" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
+                <UserRound size={14} />
               )}
             </div>
-            <span style={{ fontSize: '10px' }}>Profile</span>
+            <span style={{ fontSize: '10px', fontWeight: isProfile ? 800 : 600 }}>Profile</span>
           </button>
         </div>
       )}

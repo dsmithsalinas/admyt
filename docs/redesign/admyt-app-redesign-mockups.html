@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admyt App Redesign Mockups</title>
+  <style>
+    :root {
+      --ink: #171722;
+      --slate: #3c3c4f;
+      --muted: #77768d;
+      --faint: #aaa8bd;
+      --line: #e8e4f6;
+      --paper: #fffdfa;
+      --mist: #f8f6ff;
+      --lavender: #f0ecff;
+      --indigo: #635bff;
+      --violet: #8458f3;
+      --plum: #2a2148;
+      --teal: #21b8a5;
+      --coral: #ff7a66;
+      --pink: #d94f9d;
+      --grad: linear-gradient(135deg, #635bff 0%, #8458f3 48%, #d94f9d 100%);
+      --grad-soft: linear-gradient(135deg, #f2efff 0%, #e9fbf8 54%, #fff0eb 100%);
+      --shadow: 0 18px 50px rgba(78, 65, 150, 0.11);
+      --shadow-small: 0 8px 24px rgba(78, 65, 150, 0.09);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 6%, rgba(33,184,165,.12), transparent 28%),
+        radial-gradient(circle at 86% 4%, rgba(255,122,102,.12), transparent 28%),
+        var(--paper);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr); }
+    .shell > * { min-width: 0; }
+    .rail {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: auto;
+      padding: 12px clamp(16px, 3vw, 42px);
+      border-bottom: 1px solid rgba(232,228,246,.9);
+      background: rgba(255,253,250,.82);
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 0; }
+    .mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: var(--grad);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      box-shadow: 0 12px 30px rgba(99,91,255,.28);
+    }
+    .brand strong { display: block; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+    .brand span { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .nav { display: flex; gap: 8px; min-width: 0; overflow-x: auto; padding-bottom: 2px; }
+    .nav button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .nav button.active {
+      color: var(--ink);
+      background: white;
+      border-color: var(--line);
+      box-shadow: var(--shadow-small);
+    }
+    .nav i {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: var(--grad);
+      font-style: normal;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .rail-note {
+      display: none;
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: white;
+      box-shadow: var(--shadow-small);
+    }
+    .rail-note img { width: 34px; height: 34px; border-radius: 50%; float: left; margin-right: 10px; }
+    .rail-note strong { display: block; font-size: 13px; }
+    .rail-note p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    main { padding: 28px clamp(16px, 3vw, 42px) 46px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .topbar h1 { margin: 0; font-size: clamp(25px, 3vw, 40px); line-height: 1.05; letter-spacing: 0; font-weight: 760; }
+    .topbar p { margin: 8px 0 0; color: var(--muted); font-size: 15px; max-width: 720px; line-height: 1.55; }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 8px 10px;
+      border-radius: 999px;
+      color: var(--slate);
+      white-space: nowrap;
+      box-shadow: var(--shadow-small);
+    }
+    .avatar-dot { width: 32px; height: 32px; border-radius: 50%; background: var(--grad-soft); display: grid; place-items: center; color: var(--indigo); font-weight: 800; }
+    .screen { display: none; animation: fade .22s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .app-frame {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.72);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .frame-head {
+      min-height: 54px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,.82);
+    }
+    .crumb { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--slate);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .pill.teal { color: #087a70; background: #e7fbf8; border-color: #c7f1eb; }
+    .pill.dark { color: white; background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.22); }
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      background: var(--grad);
+      color: white;
+      padding: 10px 14px;
+      font-weight: 740;
+      box-shadow: 0 12px 26px rgba(99,91,255,.22);
+    }
+    .btn.secondary {
+      background: white;
+      color: var(--indigo);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+    .btn.teal { background: linear-gradient(135deg, var(--teal), #44d0be); }
+    .card {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow-small);
+    }
+    .soft-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, white, #fbfaff);
+      border-radius: 8px;
+      box-shadow: var(--shadow-small);
+    }
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+
+    .chat-body {
+      min-height: 670px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      background: linear-gradient(180deg, #fffdfa 0%, #faf8ff 100%);
+    }
+    .conversation { padding: 24px clamp(16px, 3vw, 48px); display: flex; flex-direction: column; gap: 18px; }
+    .sage-row, .me-row { display: flex; gap: 12px; align-items: flex-start; }
+    .me-row { justify-content: flex-end; }
+    .orb {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      object-fit: cover;
+      box-shadow: 0 8px 24px rgba(99,91,255,.22);
+    }
+    .speaker { font-size: 11px; color: var(--faint); font-weight: 800; letter-spacing: .08em; margin-bottom: 6px; }
+    .bubble {
+      max-width: 660px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--slate);
+      border-radius: 8px;
+      padding: 13px 15px;
+      line-height: 1.55;
+      box-shadow: var(--shadow-small);
+    }
+    .bubble.me { background: var(--grad); color: white; border: 0; box-shadow: 0 14px 32px rgba(99,91,255,.25); }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; padding-left: 50px; }
+    .recommendation-grid {
+      padding-left: 50px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .composer {
+      margin-top: auto;
+      display: flex;
+      gap: 10px;
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: var(--shadow-small);
+    }
+    .composer input { border: 0; outline: 0; flex: 1; min-width: 0; color: var(--ink); }
+    .sage-panel {
+      border-left: 1px solid var(--line);
+      background: rgba(255,255,255,.68);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .mini-title { font-size: 12px; color: var(--faint); font-weight: 850; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+    .learn-list { display: grid; gap: 8px; }
+    .learn-item { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding-top: 10px; font-size: 13px; }
+    .learn-item span:first-child { color: var(--muted); }
+    .learn-item span:last-child { color: var(--ink); font-weight: 700; text-align: right; }
+
+    .search-layout { padding: 18px; display: grid; gap: 18px; }
+    .search-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: end;
+      padding: 18px;
+      background: var(--grad-soft);
+      border-bottom: 1px solid var(--line);
+    }
+    .search-box {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 10px;
+      padding: 13px 15px;
+      color: var(--muted);
+      box-shadow: var(--shadow-small);
+    }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .school-card { padding: 16px; display: grid; gap: 13px; position: relative; overflow: hidden; }
+    .school-card:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--indigo), var(--teal), var(--coral)); }
+    .school-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .school-head h3 { margin: 0 0 3px; font-size: 18px; line-height: 1.15; }
+    .school-head p { margin: 0; color: var(--muted); font-size: 13px; }
+    .score {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: conic-gradient(var(--teal) 0 78%, #eeeaf8 78% 100%);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .score strong { background: white; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--indigo); }
+    .match-note { color: var(--muted); line-height: 1.45; font-size: 13px; margin: 0; }
+    .card-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+    .detail-hero {
+      padding: 26px;
+      background: linear-gradient(135deg, #1d1738, #302553 52%, #174d4a);
+      color: white;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 270px;
+      gap: 22px;
+    }
+    .detail-hero h2 { margin: 10px 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1; }
+    .detail-hero p { color: rgba(255,255,255,.78); line-height: 1.55; max-width: 720px; margin: 0; }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+    .stat { border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.09); border-radius: 8px; padding: 12px; }
+    .stat span { display: block; color: rgba(255,255,255,.62); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+    .stat strong { display: block; font-size: 20px; margin-top: 4px; }
+    .fit-card { padding: 18px; background: white; color: var(--ink); border-radius: 8px; box-shadow: 0 20px 48px rgba(0,0,0,.18); }
+    .detail-body { padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; }
+    .section-pad { padding: 18px; }
+    .two-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .callout { padding: 16px; background: var(--grad-soft); border: 1px solid var(--line); border-radius: 8px; }
+    .callout p { margin: 6px 0 0; color: var(--muted); line-height: 1.5; }
+
+    .vibe-setup { padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; }
+    .vibe-banner {
+      padding: 24px;
+      border-radius: 8px;
+      background: var(--grad);
+      color: white;
+      margin-bottom: 16px;
+    }
+    .vibe-banner h2 { margin: 10px 0 6px; font-size: 31px; letter-spacing: 0; }
+    .vibe-banner p { margin: 0; color: rgba(255,255,255,.8); line-height: 1.5; }
+    .dimension-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dimension { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: white; display: grid; gap: 7px; }
+    .dimension.selected { border-color: rgba(33,184,165,.55); background: #f1fffc; }
+    .dimension strong { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+    .dimension p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .check { color: var(--teal); font-weight: 900; }
+    .result-card {
+      padding: 24px;
+      background: linear-gradient(135deg, #191532, #302553);
+      color: white;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 180px;
+      gap: 24px;
+      align-items: center;
+    }
+    .result-card p { color: rgba(255,255,255,.74); line-height: 1.65; margin: 8px 0 0; }
+    .big-score { font-size: 76px; color: #9f7bff; line-height: 1; font-weight: 850; text-align: center; }
+    .big-score span { display: block; font-size: 14px; color: #72d9cb; font-weight: 700; margin-top: 3px; }
+    .bar { height: 8px; background: #eeeaf8; border-radius: 999px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--indigo), var(--teal)); }
+
+    .profile-layout { padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; }
+    .profile-hero { padding: 22px; background: var(--grad-soft); display: flex; gap: 16px; align-items: center; }
+    .profile-hero img { width: 62px; height: 62px; border-radius: 50%; }
+    .profile-hero h2 { margin: 0 0 4px; font-size: 25px; }
+    .profile-hero p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .timeline { display: grid; gap: 10px; }
+    .saved-row { padding: 13px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+    .saved-row h3 { margin: 0 0 4px; font-size: 15px; }
+    .saved-row p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .suggestion-list { display: grid; gap: 10px; }
+    .suggestion { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+    .suggestion img { width: 28px; height: 28px; border-radius: 50%; flex: 0 0 auto; }
+    .suggestion p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 13px; }
+
+    .notes {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .note { padding: 16px; }
+    .note h3 { margin: 0 0 8px; font-size: 15px; }
+    .note p { margin: 0; color: var(--muted); line-height: 1.5; font-size: 13px; }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .rail { position: static; height: auto; padding: 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { margin-bottom: 12px; }
+      .nav { display: flex; max-width: 100%; overflow-x: auto; padding-bottom: 4px; }
+      .nav button { flex: 0 0 auto; }
+      .rail-note { display: none; }
+      .topbar { align-items: flex-start; }
+      .chat-body, .detail-body, .vibe-setup, .profile-layout { grid-template-columns: 1fr; }
+      .sage-panel { border-left: 0; border-top: 1px solid var(--line); }
+      .detail-hero { grid-template-columns: 1fr; }
+      .grid-3, .grid-4, .notes { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      main { padding: 18px 12px 34px; }
+      .topbar { flex-direction: column; }
+      .user-chip { width: 100%; justify-content: space-between; }
+      .recommendation-grid { padding-left: 0; grid-template-columns: 1fr; }
+      .grid-2, .grid-3, .grid-4, .dimension-grid, .notes, .two-list, .stat-grid { grid-template-columns: 1fr; }
+      .search-hero { grid-template-columns: 1fr; }
+      .conversation { padding: 18px 12px; }
+      .suggestions { padding-left: 0; }
+      .result-card { grid-template-columns: 1fr; }
+      .big-score { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand">
+        <div class="mark">a</div>
+        <div>
+          <strong>Prototype controls</strong>
+          <span>not proposed app navigation</span>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Mockup screens">
+        <button class="active" data-screen="chat"><i>S</i> Chat</button>
+        <button data-screen="browse"><i>B</i> Browse</button>
+        <button data-screen="detail"><i>D</i> School Detail state</button>
+        <button data-screen="vibe"><i>V</i> Vibe Check state</button>
+        <button data-screen="profile"><i>P</i> Profile</button>
+      </nav>
+      <div class="rail-note">
+        <img src="assets/sage-orb.png" alt="Sage orb" />
+        <strong>Sage stays central.</strong>
+        <p>The orb is the in-app identity. Human Sage assets can support landing, social, and campaigns.</p>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h1>Admyt product redesign</h1>
+          <p>Mockups for the logged-in experience, using the new brand direction and making Sage the driver of every path.</p>
+        </div>
+        <div class="user-chip"><span class="avatar-dot">D</span><span>Student profile</span></div>
+      </div>
+
+      <section class="screen active" id="chat">
+        <div class="app-frame">
+          <div class="frame-head">
+            <div class="crumb"><img class="orb" src="assets/sage-orb.png" alt="Sage orb" /> <strong>Chat with Sage</strong></div>
+            <div class="filters"><span class="pill teal">Sage is learning</span><button class="btn secondary">Save thread</button></div>
+          </div>
+          <div class="chat-body">
+            <div class="conversation">
+              <div class="sage-row">
+                <img class="orb" src="assets/sage-orb.png" alt="Sage orb" />
+                <div>
+                  <div class="speaker">SAGE</div>
+                  <div class="bubble">Tell me what is on your mind about college right now. You can be specific, messy, excited, overwhelmed - all of that is useful.</div>
+                </div>
+              </div>
+              <div class="me-row"><div class="bubble me">I want a city school, but I do not want to feel swallowed by it.</div></div>
+              <div class="sage-row">
+                <img class="orb" src="assets/sage-orb.png" alt="Sage orb" />
+                <div>
+                  <div class="speaker">SAGE</div>
+                  <div class="bubble">That is a real preference, not a contradiction. You might be looking for city access with a campus that still gives you an anchor. Want me to find a few schools like that?</div>
+                </div>
+              </div>
+              <div class="suggestions">
+                <button class="pill">Find schools like that</button>
+                <button class="pill">Run a Vibe Check</button>
+                <button class="pill">Ask about NYC schools</button>
+              </div>
+              <div class="recommendation-grid">
+                <div class="soft-card school-card">
+                  <div class="school-head"><div><h3>Fordham University</h3><p>Bronx, NY</p></div><div class="score"><strong>82</strong></div></div>
+                  <p class="match-note">City access with a more defined campus feel. Strong if you want New York without fully losing the college bubble.</p>
+                  <div class="filters"><span class="pill">Private</span><span class="pill">Medium</span><span class="pill teal">Urban anchor</span></div>
+                  <div class="card-actions"><button class="btn secondary">View school</button><button class="btn teal">Vibe Check</button></div>
+                </div>
+                <div class="soft-card school-card">
+                  <div class="school-head"><div><h3>Northeastern University</h3><p>Boston, MA</p></div><div class="score"><strong>79</strong></div></div>
+                  <p class="match-note">Very city-connected and career-focused. Better if co-op energy sounds exciting, not exhausting.</p>
+                  <div class="filters"><span class="pill">Private</span><span class="pill">Large</span><span class="pill teal">Career energy</span></div>
+                  <div class="card-actions"><button class="btn secondary">View school</button><button class="btn teal">Vibe Check</button></div>
+                </div>
+              </div>
+              <div class="composer">
+                <input value="" placeholder="Ask Sage anything about fit, cost, culture, or where to start" aria-label="Ask Sage" />
+                <button class="btn">Send</button>
+              </div>
+            </div>
+            <aside class="sage-panel">
+              <div class="card section-pad">
+                <div class="mini-title">What Sage knows</div>
+                <div class="learn-list">
+                  <div class="learn-item"><span>Setting</span><span>City, but grounded</span></div>
+                  <div class="learn-item"><span>Major pull</span><span>Fashion, media</span></div>
+                  <div class="learn-item"><span>Cost sensitivity</span><span>Needs clarity</span></div>
+                  <div class="learn-item"><span>Vibe</span><span>Warm, not huge</span></div>
+                </div>
+              </div>
+              <div class="callout">
+                <strong>Design shift</strong>
+                <p>Chat becomes the home base. Browse, details, and profile all route back to Sage instead of feeling like separate product islands.</p>
+              </div>
+              <div class="card section-pad">
+                <div class="mini-title">Suggested next step</div>
+                <p class="match-note">Run a Vibe Check on one city school and one campus-first school to compare the feeling, not just the stats.</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="browse">
+        <div class="app-frame">
+          <div class="search-hero">
+            <div>
+              <span class="pill teal">994 schools match your vibe</span>
+              <h2 style="margin:12px 0 8px;font-size:32px">Browse with Sage beside you.</h2>
+              <p class="match-note">Search is still fast, but every result explains why it may or may not fit the student.</p>
+            </div>
+            <button class="btn">Ask Sage to narrow this</button>
+          </div>
+          <div class="search-layout">
+            <div class="search-box">Search by school name, city, state, major, or "NYC but warmer"</div>
+            <div class="filters">
+              <button class="pill teal">Best fit first</button><button class="pill">City/urban</button><button class="pill">Medium</button><button class="pill">Under $25k</button><button class="pill">Fashion/media</button><button class="pill">More filters</button>
+            </div>
+            <div class="grid-3">
+              <div class="card school-card">
+                <div class="school-head"><div><h3>Georgia State University</h3><p>Atlanta, GA</p></div><div class="score"><strong>76</strong></div></div>
+                <p class="match-note">Big-city, self-directed, diverse. Great if Atlanta itself feels like part of the campus.</p>
+                <div class="filters"><span class="pill">Public</span><span class="pill">$9k/yr</span><span class="pill teal">Diversity</span></div>
+                <div class="card-actions"><button class="btn secondary">Details</button><button class="btn teal">Vibe Check</button></div>
+              </div>
+              <div class="card school-card">
+                <div class="school-head"><div><h3>University of North Texas</h3><p>Denton, TX</p></div><div class="score"><strong>74</strong></div></div>
+                <p class="match-note">Creative, affordable, and a little off-center. Strong if music and arts energy matter.</p>
+                <div class="filters"><span class="pill">Public</span><span class="pill">$11k/yr</span><span class="pill teal">Creative</span></div>
+                <div class="card-actions"><button class="btn secondary">Details</button><button class="btn teal">Vibe Check</button></div>
+              </div>
+              <div class="card school-card">
+                <div class="school-head"><div><h3>Portland State University</h3><p>Portland, OR</p></div><div class="score"><strong>71</strong></div></div>
+                <p class="match-note">Urban and independent. Better for students who like building their own social world.</p>
+                <div class="filters"><span class="pill">Public</span><span class="pill">$12k/yr</span><span class="pill teal">City access</span></div>
+                <div class="card-actions"><button class="btn secondary">Details</button><button class="btn teal">Vibe Check</button></div>
+              </div>
+            </div>
+            <div class="callout">
+              <strong>Recommendation</strong>
+              <p>Replace generic match cards with "why this fits" cards. The score should start the conversation, not end it.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="detail">
+        <div class="app-frame">
+          <div class="detail-hero">
+            <div>
+              <span class="pill dark">School detail</span>
+              <h2>Georgia State University</h2>
+              <p>An urban school where Atlanta is the real campus. This can be a strong fit for students who want independence, diversity, and city access, but it may feel thin if you want a classic residential college bubble.</p>
+              <div class="stat-grid">
+                <div class="stat"><span>Type</span><strong>Public</strong></div>
+                <div class="stat"><span>Tuition</span><strong>$9k</strong></div>
+                <div class="stat"><span>Admit rate</span><strong>61%</strong></div>
+              </div>
+            </div>
+            <div class="fit-card">
+              <div class="mini-title">Your fit read</div>
+              <div class="big-score" style="font-size:64px;text-align:left">76<span>solid fit</span></div>
+              <p class="match-note">Sage thinks this is worth a serious look if you want a real city school and do not need a big campus bubble.</p>
+              <div class="filters" style="margin-top:14px"><button class="btn teal">Run Vibe Check</button><button class="btn secondary">Save</button></div>
+            </div>
+          </div>
+          <div class="detail-body">
+            <div class="card section-pad">
+              <div class="mini-title">What to know before you fall in love</div>
+              <div class="two-list">
+                <div class="callout"><strong>Could fit because...</strong><p>Diversity, Atlanta access, affordability, and a practical academic feel line up with what Sage has learned.</p></div>
+                <div class="callout"><strong>Watch out for...</strong><p>The social life can be commuter-flavored. Students who want constant campus energy may feel gaps.</p></div>
+              </div>
+              <h3 style="margin:22px 0 10px">Programs that might matter</h3>
+              <div class="filters"><span class="pill teal">Communication</span><span class="pill teal">Media studies</span><span class="pill teal">Business</span><span class="pill">Public policy</span></div>
+            </div>
+            <aside class="sage-panel" style="border:0">
+              <div class="card section-pad">
+                <div class="mini-title">Ask Sage</div>
+                <div class="suggestion-list">
+                  <button class="pill">Would I feel lonely here?</button>
+                  <button class="pill">Compare this to NYU</button>
+                  <button class="pill">What is the social scene like?</button>
+                </div>
+              </div>
+              <div class="card section-pad">
+                <div class="mini-title">Quick glance</div>
+                <div class="learn-list">
+                  <div class="learn-item"><span>Campus feel</span><span>Urban</span></div>
+                  <div class="learn-item"><span>Student rhythm</span><span>Independent</span></div>
+                  <div class="learn-item"><span>Cost story</span><span>Strong</span></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="vibe">
+        <div class="app-frame">
+          <div class="frame-head">
+            <div class="crumb"><img class="orb" src="assets/sage-orb.png" alt="Sage orb" /> <strong>Vibe Check</strong></div>
+            <button class="btn secondary">Back to Georgia State</button>
+          </div>
+          <div class="vibe-setup">
+            <div>
+              <div class="vibe-banner">
+                <span class="pill dark">Not the brochure version</span>
+                <h2>Would you actually fit at Georgia State?</h2>
+                <p>Pick what matters. Sage will give you the useful read: the good, the weird, and the stuff students usually find out too late.</p>
+              </div>
+              <div class="dimension-grid">
+                <div class="dimension selected"><strong>Social scene <span class="check">Selected</span></strong><p>How easy it is to meet people and find your people outside class.</p></div>
+                <div class="dimension selected"><strong>Diversity and inclusion <span class="check">Selected</span></strong><p>Whether the community feels genuinely broad and welcoming.</p></div>
+                <div class="dimension selected"><strong>Arts and creativity <span class="check">Selected</span></strong><p>Music, design, film, and creative energy around campus and the city.</p></div>
+                <div class="dimension"><strong>Greek life <span>Optional</span></strong><p>How much fraternities and sororities shape the social world.</p></div>
+                <div class="dimension selected"><strong>Outdoor access <span class="check">Selected</span></strong><p>Green space, parks, hiking, and breathing room nearby.</p></div>
+                <div class="dimension"><strong>Academic intensity <span>Optional</span></strong><p>The day-to-day academic pressure and study culture.</p></div>
+              </div>
+            </div>
+            <aside class="sage-panel" style="border:0">
+              <div class="card section-pad">
+                <div class="mini-title">Selected</div>
+                <div class="big-score" style="font-size:52px;text-align:left">4<span>dimensions</span></div>
+                <p class="match-note">Keep this focused. A shorter Vibe Check can be more useful than asking about everything at once.</p>
+                <button class="btn teal" style="width:100%;margin-top:16px">Run my Vibe Check</button>
+              </div>
+              <div class="callout"><strong>Design shift</strong><p>The selector becomes calmer and more modular. It should feel like choosing what matters, not completing a form.</p></div>
+            </aside>
+          </div>
+          <div style="padding:0 18px 18px">
+            <div class="result-card card">
+              <div>
+                <div class="mini-title" style="color:#8e83ff">Your fit score</div>
+                <h2 style="margin:0;font-size:27px">Georgia State is a strong maybe, with one real caveat.</h2>
+                <p>Atlanta is the differentiator. If you want city energy, diversity, and practical access, this could work. If you are picturing a tight residential campus where everyone is always around, Sage would slow you down a bit.</p>
+              </div>
+              <div class="big-score">76<span>/ 100</span></div>
+            </div>
+            <div class="grid-4" style="margin-top:14px">
+              <div class="card section-pad"><strong>Social scene <span style="float:right;color:var(--indigo)">6/10</span></strong><div class="bar" style="margin:12px 0"><span style="width:60%"></span></div><p class="match-note">Active, but scattered because the city does some of the heavy lifting.</p></div>
+              <div class="card section-pad"><strong>Diversity <span style="float:right;color:var(--teal)">9/10</span></strong><div class="bar" style="margin:12px 0"><span style="width:90%"></span></div><p class="match-note">A real strength, not just a talking point.</p></div>
+              <div class="card section-pad"><strong>Creativity <span style="float:right;color:var(--indigo)">8/10</span></strong><div class="bar" style="margin:12px 0"><span style="width:80%"></span></div><p class="match-note">Atlanta gives students access to a serious creative ecosystem.</p></div>
+              <div class="card section-pad"><strong>Outdoor access <span style="float:right;color:var(--coral)">5/10</span></strong><div class="bar" style="margin:12px 0"><span style="width:50%"></span></div><p class="match-note">Possible, but not the main reason to choose this school.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="profile">
+        <div class="app-frame">
+          <div class="profile-hero">
+            <img src="assets/sage-orb.png" alt="Sage orb" />
+            <div>
+              <h2>Your Admyt profile</h2>
+              <p>This is less of an account page and more of a living memory for Sage: saved schools, past Vibe Checks, preferences, and what Sage has learned.</p>
+            </div>
+          </div>
+          <div class="profile-layout">
+            <div class="timeline">
+              <div class="card section-pad">
+                <div class="mini-title">What Sage knows</div>
+                <div class="grid-3">
+                  <div class="callout"><strong>Location</strong><p>City access, not isolated.</p></div>
+                  <div class="callout"><strong>Academic pull</strong><p>Fashion, media, business.</p></div>
+                  <div class="callout"><strong>Vibe</strong><p>Warm, diverse, grounded.</p></div>
+                </div>
+              </div>
+              <div class="card section-pad">
+                <div class="mini-title">Saved schools</div>
+                <div class="saved-row soft-card"><div><h3>Georgia State University</h3><p>Saved after Vibe Check. Strong city and diversity fit.</p></div><button class="btn secondary">View</button></div>
+                <div class="saved-row soft-card"><div><h3>University of North Texas</h3><p>Creative, affordable, and worth comparing.</p></div><button class="btn secondary">View</button></div>
+              </div>
+              <div class="card section-pad">
+                <div class="mini-title">Saved Vibe Checks</div>
+                <div class="saved-row soft-card"><div><h3>Georgia State</h3><p>76 fit score. Strong maybe, with commuter-campus caveat.</p></div><div class="score"><strong>76</strong></div></div>
+              </div>
+            </div>
+            <aside class="sage-panel" style="border:0">
+              <div class="card section-pad">
+                <div class="mini-title">Profile strength</div>
+                <div class="bar"><span style="width:72%"></span></div>
+                <p class="match-note" style="margin-top:10px">Tell Sage more about budget and support needs to make recommendations sharper.</p>
+              </div>
+              <div class="card section-pad">
+                <div class="mini-title">Sage nudges</div>
+                <div class="suggestion-list">
+                  <div class="suggestion"><img src="assets/sage-orb.png" alt="" /><p>Want me to compare your saved schools by social fit instead of rankings?</p></div>
+                  <div class="suggestion"><img src="assets/sage-orb.png" alt="" /><p>You have city schools saved. Add one campus-first school as a useful contrast.</p></div>
+                  <div class="suggestion"><img src="assets/sage-orb.png" alt="" /><p>Your budget preference is still fuzzy. That can change the whole list.</p></div>
+                </div>
+              </div>
+              <button class="btn teal" style="width:100%">Chat with Sage</button>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <div class="notes">
+        <div class="note card"><h3>1. Make chat the product center</h3><p>Every page should have a visible path back to Sage with context carried forward.</p></div>
+        <div class="note card"><h3>2. Scores need explanations</h3><p>Use fit scores as entry points, always paired with honest reasons and caveats.</p></div>
+        <div class="note card"><h3>3. Use human Sages sparingly in-app</h3><p>Keep the orb as the interface identity. Save human avatars for landing, social, onboarding, and campaigns.</p></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll(".nav button");
+    const screens = document.querySelectorAll(".screen");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        buttons.forEach((item) => item.classList.remove("active"));
+        screens.forEach((screen) => screen.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(button.dataset.screen).classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>

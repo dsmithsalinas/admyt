@@ -3,9 +3,6 @@
  * Handles college matching, vibe analysis, and admit odds
  */
 
-const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
-const MODEL = 'claude-sonnet-4-20250514'
-
 interface Message {
   role: 'user' | 'assistant'
   content: string
@@ -16,17 +13,19 @@ async function callClaude(
   messages: Message[],
   maxTokens = 1000
 ): Promise<string> {
-  const response = await fetch(CLAUDE_API_URL, {
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    },
     body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
       system: systemPrompt,
       messages,
+      max_tokens: maxTokens,
     }),
   })
-  if (!response.ok) throw new Error(`Claude API error: ${response.statusText}`)
+  if (!response.ok) throw new Error(`Admyt chat function error: ${response.statusText}`)
   const data = await response.json()
   return data.content[0]?.text ?? ''
 }
