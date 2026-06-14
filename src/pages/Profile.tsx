@@ -209,12 +209,12 @@ export default function Profile() {
   return (
     <div className="app-frame">
       <section className="profile-hero">
-        <div style={{ width: 64, height: 64, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--admyt-grad)', color: 'white', fontWeight: 850, fontSize: 24 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--admyt-grad)', color: 'white', fontWeight: 850, fontSize: 24, flexShrink: 0 }}>
           {user ? initials : <SageOrb size={52} />}
         </div>
-        <div style={{ flex: 1 }}>
-          <h1>{user ? 'Your Admyt profile' : "This becomes Sage's memory."}</h1>
-          <p>{user ? user.email : 'Save your schools, Vibe Checks, conversation, and preferences so Sage can pick up where you left off.'}</p>
+        <div style={{ flex: 1, minWidth: user ? 0 : 200 }}>
+          <h1 style={user ? undefined : { fontSize: 'clamp(18px, 5vw, 24px)' }}>{user ? 'Your Admyt profile' : "This becomes Sage's memory."}</h1>
+          <p style={user ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : undefined}>{user ? user.email : 'Save your schools, Vibe Checks, conversation, and preferences so Sage can pick up where you left off.'}</p>
         </div>
         {!user && <button className="btn" onClick={() => setShowAuthModal(true)}>Create a free account</button>}
       </section>

@@ -69,6 +69,7 @@ function SageHeroAnimation() {
       gridColumn: '1 / -1',
       position: 'relative',
       minHeight: '188px',
+      maxWidth: '100%',
       overflow: 'hidden',
       border: '1px solid var(--admyt-line)',
       borderRadius: '22px',
@@ -80,7 +81,7 @@ function SageHeroAnimation() {
         {cutouts.slice(0, 2).map(cutout => (
           <img key={cutout.src} src={cutout.src} alt="" aria-hidden="true" className="sage-hero-cutout" style={{ width: 'clamp(76px, 9vw, 118px)', height: 'clamp(88px, 10vw, 132px)', objectFit: 'contain', filter: 'drop-shadow(0 16px 20px rgba(46,37,111,.15))', animationDelay: cutout.delay }} />
         ))}
-        <div style={{ position: 'relative', display: 'grid', placeItems: 'center', flex: '0 0 clamp(110px, 13vw, 154px)', width: 'clamp(110px, 13vw, 154px)', height: 'clamp(110px, 13vw, 154px)' }}>
+        <div className="hero-orb-wrap" style={{ position: 'relative', display: 'grid', placeItems: 'center', flex: '0 0 clamp(110px, 13vw, 154px)', width: 'clamp(110px, 13vw, 154px)', height: 'clamp(110px, 13vw, 154px)' }}>
           <div className="hero-pulse" />
           <div className="hero-pulse hero-pulse-two" />
           <div className="hero-pulse hero-pulse-three" />
@@ -218,7 +219,7 @@ export default function Landing() {
           <SageHeroAnimation />
         </div>
 
-        <div ref={heroTextRef} style={{ textAlign: 'left' }}>
+        <div ref={heroTextRef} className="landing-hero-text" style={{ textAlign: 'left', wordBreak: 'break-word' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '10px',
             color: '#4b3dcc', fontSize: '12px', fontWeight: 760, letterSpacing: '0.12em',
@@ -228,7 +229,7 @@ export default function Landing() {
             The y is for you
           </div>
 
-          <h1 style={{
+          <h1 className="landing-hero-title" style={{
             fontSize: 'clamp(48px, 7vw, 78px)', fontWeight: 820, color: 'var(--admyt-ink)',
             letterSpacing: '-.04em', margin: '0 0 24px',
             lineHeight: .96,
@@ -243,7 +244,7 @@ export default function Landing() {
             College isn't about the rankings. It's about finding the place where you'll actually thrive. Admyt helps you discover schools that match who you are — not just your GPA.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div className="landing-hero-cta-row" style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
             <CTAButton onClick={goToChat} large />
             <button
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
@@ -506,11 +507,24 @@ export default function Landing() {
             min-height: auto !important;
             width: min(100% - 32px, 720px) !important;
           }
+          .landing-hero-title { font-size: 36px !important; }
         }
         @media (max-width: 720px) {
           .landing-sage-section { grid-template-columns: 1fr !important; }
           .landing-sage-section > img { order: 2; max-width: 240px !important; }
           .sage-hero-cutout { width: 68px !important; height: 68px !important; }
+        }
+        @media (max-width: 639px) {
+          .landing-hero-text { padding: 0 16px !important; }
+          .landing-hero-title { font-size: 28px !important; }
+          /* Flanking student avatars are decorative — hide on small screens */
+          .sage-hero-cutout { display: none !important; }
+          /* Shrink the orb (size set via inline style) by scaling the wrapper */
+          .hero-orb-wrap { transform: scale(0.74); }
+          .landing-hero-cta-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
         }
         .sage-hero-cutout {
           animation: sageHeroFloat 5s ease-in-out infinite;
