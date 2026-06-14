@@ -65,14 +65,11 @@ export default function Home() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'radial-gradient(circle at 12% 6%, rgba(33,184,165,.12), transparent 28%), radial-gradient(circle at 86% 4%, rgba(255,122,102,.12), transparent 28%), var(--admyt-paper)', padding: '28px clamp(16px, 3vw, 42px)' }}>
       <div style={{ flex: 1, overflow: 'hidden', maxWidth: '1120px', width: '100%', margin: '0 auto', border: '1px solid var(--admyt-line)', borderRadius: '12px', background: 'rgba(255,255,255,.72)', boxShadow: 'var(--admyt-shadow)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ minHeight: '54px', borderBottom: '1px solid var(--admyt-line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 16px', background: 'rgba(255,255,255,.82)' }}>
+        <div style={{ minHeight: '54px', borderBottom: '1px solid var(--admyt-line)', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(255,255,255,.82)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--admyt-muted)', fontSize: '13px', fontWeight: 760 }}>
             <SageOrb size={30} />
             Chat with Sage
           </div>
-          <button onClick={() => setShowAuthModal(true)} style={{ border: '1px solid var(--admyt-line)', background: 'white', color: 'var(--admyt-indigo)', borderRadius: '8px', padding: '10px 14px', fontWeight: 740, boxShadow: 'none' }}>
-            Save chat
-          </button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         <div className="sage-home-grid" style={{ minHeight: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 330px', gap: 0, alignItems: 'stretch', background: 'linear-gradient(180deg, #fffdfa 0%, #faf8ff 100%)' }}>
