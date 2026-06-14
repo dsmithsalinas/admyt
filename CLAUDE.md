@@ -148,8 +148,9 @@ All tables have Row Level Security enabled. Users can only access their own data
 - [x] Optimized image assets (PNG → WebP)
 
 ### Soon
+- [ ] Scheduled production smoke tests — recommended: GitHub Actions cron (`.github/workflows/smoke.yml`) running *shallow* checks against `youradmyt.vercel.app`: HTTP 200 + correct `<title>`, the `/assets/index-*.js` bundle serves, and the Supabase REST endpoint is reachable; fail the run (email alert) on any miss. Optional: compare the live bundle hash to the latest `main` build to catch a silently-failed deploy. Start daily, tighten to hourly if wanted. (Alternative: a `/schedule` Claude cloud routine that only pings on failure. A *deep* synthetic Playwright check — load app, assert Sage chat / school page / Vibe Check render — can be layered on later.)
+- [ ] Live end-to-end verification of production (especially the Vibe Check save flow) at `youradmyt.vercel.app`
 - [ ] Returning user recap — Sage greets signed-in users with conversation recap
-- [ ] Deploy to Vercel (link project, confirm env vars, retest Vibe Check save flow)
 
 ### Later
 - [ ] Mobile PWA / App Store submission
