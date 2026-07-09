@@ -16,3 +16,9 @@ create policy "deadlines are publicly readable"
   on public.college_deadlines
   for select
   using (true);
+
+-- A raw CREATE TABLE grants no privileges to the PostgREST roles (unlike the
+-- dashboard Table Editor). Without these, both the anon read and the edge
+-- function's service-role writes fail with 42501 permission denied.
+grant select on public.college_deadlines to anon, authenticated;
+grant select, insert, update on public.college_deadlines to service_role;

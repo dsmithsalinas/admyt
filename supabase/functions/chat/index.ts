@@ -96,6 +96,8 @@ async function fetchCollege(id: string): Promise<College | null> {
 // college_deadlines and shared: the first user to heart a school triggers one
 // web search; everyone else reads the cached row. Refreshed lazily (~10 months).
 const DEADLINE_FRESH_MS = 300 * 24 * 60 * 60 * 1000
+// Empty/failed lookups retry weekly instead of being trusted for ~10 months.
+const DEADLINE_EMPTY_RETRY_MS = 7 * 24 * 60 * 60 * 1000
 
 async function getDeadlineRow(collegeId: string): Promise<{ deadlines: unknown; updated_at: string } | null> {
   const url = env('SUPABASE_URL')
@@ -125,21 +127,36 @@ async function saveDeadline(collegeId: string, deadlines: unknown) {
 }
 
 function parseDeadlines(text: string): { rounds: unknown[]; rolling?: boolean; cycle?: string; source_url?: string } | null {
-  try {
-    const obj = JSON.parse(text.replace(/```json|```/g, '').trim())
-    if (obj && Array.isArray(obj.rounds)) return obj
-  } catch { /* not valid JSON */ }
-  return null
+  const cleaned = text.replace(/```json/gi, '').replace(/```/g, '')
+  const tryParse = (s: string) => {
+    try {
+      const obj = JSON.parse(s)
+      if (obj && Array.isArray(obj.rounds)) return obj
+    } catch { /* not valid JSON */ }
+    return null
+  }
+  // Whole string first, then the first {...} object (web-search replies often
+  // wrap the JSON in a sentence or citations).
+  const whole = tryParse(cleaned.trim())
+  if (whole) return whole
+  const match = cleaned.match(/\{[\s\S]*\}/)
+  return match ? tryParse(match[0]) : null
 }
 
 async function handleDeadline(body: { collegeId?: unknown }): Promise<Response> {
   const college = await fetchCollege(String(body.collegeId ?? ''))
   if (!college) return json({ error: 'college_not_found' }, 404)
 
-  // Serve from the shared cache when fresh — no web search, no cost.
+  // Serve from the shared cache when fresh — no web search, no cost. A real
+  // result is trusted for ~10 months; an empty one is retried within a week.
   const cached = await getDeadlineRow(college.id)
-  if (cached && Date.now() - new Date(cached.updated_at).getTime() < DEADLINE_FRESH_MS) {
-    return json({ deadlines: cached.deadlines, cached: true })
+  if (cached) {
+    const age = Date.now() - new Date(cached.updated_at).getTime()
+    const dl = cached.deadlines as { rounds?: unknown[]; rolling?: boolean } | null
+    const hasContent = !!dl && (dl.rolling === true || (Array.isArray(dl.rounds) && dl.rounds.length > 0))
+    if (age < (hasContent ? DEADLINE_FRESH_MS : DEADLINE_EMPTY_RETRY_MS)) {
+      return json({ deadlines: cached.deadlines, cached: true })
+    }
   }
 
   const built = buildDeadlinePrompt(college)
