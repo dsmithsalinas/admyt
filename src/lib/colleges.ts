@@ -87,11 +87,23 @@ export function clearCollegeCache() {
   cachedColleges = null
 }
 
+// Human label for a school's ownership type. `private_np` is College Scorecard
+// ownership 3 — private FOR-PROFIT — so surface that rather than calling it
+// "Private" like the nonprofits.
+export function typeLabel(type: College['type']): string {
+  if (type === 'public') return 'Public'
+  if (type === 'private_np') return 'For-profit'
+  return 'Private'
+}
+
 export function getShortName(name: string): string {
   let s = name
 
   // Specific multi-word prefixes first
   s = s.replace(/^The University of /, 'U of ')
+  // UC campuses before the generic "University of" rule, or the hyphen truncation
+  // below collapses every campus (UCLA, Berkeley, San Diego…) to "U of California".
+  s = s.replace(/^University of California[-,]\s*/, 'UC ')
   s = s.replace(/^University of /, 'U of ')
   s = s.replace(/^California State Polytechnic University[- ]/, 'Cal Poly ')
   s = s.replace(/^California State University[- ]/, 'Cal State ')

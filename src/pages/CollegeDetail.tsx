@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getCollege, getShortName } from '@/lib/colleges'
+import { getCollege, getShortName, typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
@@ -136,7 +136,7 @@ export default function CollegeDetail() {
       <section className="detail-hero">
         <div>
           <div className="filters">
-            <span className="pill dark">{college.type === 'public' ? 'Public' : 'Private'}</span>
+            <span className="pill dark">{typeLabel(college.type)}</span>
             <span className="pill dark">{college.size.charAt(0).toUpperCase() + college.size.slice(1)}</span>
             <span className="pill dark">{college.state}</span>
           </div>

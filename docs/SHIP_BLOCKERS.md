@@ -52,6 +52,17 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 
 ## High tier
 
+## Medium tier
+
+Mostly pure code (live on next Vercel deploy). One needs an edge redeploy:
+
+- **#12 edge-function abuse guards** ⚠️ needs `supabase functions deploy chat`. Clamps `max_tokens` (≤2048) and rejects oversized payloads (>1MB) / absurd message counts (>1000). Full per-IP rate limiting still a follow-up (needs a store).
+- **#13** API/edge errors no longer get persisted as permanent "Sage" messages — `callEdge` throws so the error stays transient. ✅ code only.
+- **#14** A re-run Vibe Check can be saved again (the `saved` flag resets on each new result). ✅ code only.
+- **#15** Email signup that requires confirmation now shows a "check your email" state instead of silently closing. Behavior depends on your Supabase Auth "Confirm email" setting. ✅ code only.
+- **#16** For-profit schools (`private_np`) now labeled "For-profit" instead of "Private" in Browse + detail. ✅ code only.
+- **#17** UC campuses shorten correctly (UCLA → "UC Los Angeles") instead of all collapsing to "U of California". ✅ code only.
+
 ### #6/#7 Sage's learned profile evaporated on reload / new PREFS wiped old ones ⚠️ code + SQL
 - **Code:** the chat-learned profile now persists to localStorage (guests +
   instant hydration) and to a `sage_profile` jsonb column on `user_preferences`

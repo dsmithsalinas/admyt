@@ -4,6 +4,7 @@ import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege, hasEnoughProfileForScore } from '@/lib/matchScore'
+import { typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import HeartButton from '@/components/ui/HeartButton'
 
@@ -51,12 +52,12 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
   const { heartedSchools, toggleHeart } = useChatContext()
   const isHearted = heartedSchools.has(college.id)
   const tuition = college.tuitionInState ?? college.tuitionOutState
-  const typeLabel = college.type === 'public' ? 'Public' : 'Private'
+  const typeChip = typeLabel(college.type)
   const sizeLabel = college.size.charAt(0).toUpperCase() + college.size.slice(1)
   const fitRead = whyFit(college, score, profile)
 
   const chips = [
-    typeLabel, sizeLabel,
+    typeChip, sizeLabel,
     college.acceptanceRate != null ? `${college.acceptanceRate}% admit` : null,
     tuition != null ? `$${(tuition / 1000).toFixed(0)}k/yr` : null,
   ].filter(Boolean) as string[]

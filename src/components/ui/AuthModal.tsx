@@ -16,6 +16,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [confirmSent, setConfirmSent] = useState(false)
 
   const headline = trigger === 'vibecheck'
     ? 'Save your Vibe Check'
@@ -29,13 +30,17 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
     if (!email || !password) return
     setLoading(true)
     setError(null)
-    const fn = mode === 'signup' ? signUpWithEmail : signInWithEmail
-    const err = await fn(email, password)
-    if (err) {
-      setError(err)
+    if (mode === 'signup') {
+      const { error, needsEmailConfirmation } = await signUpWithEmail(email, password)
       setLoading(false)
+      if (error) setError(error)
+      else if (needsEmailConfirmation) setConfirmSent(true)
+      else onSuccess()
     } else {
-      onSuccess()
+      const err = await signInWithEmail(email, password)
+      setLoading(false)
+      if (err) setError(err)
+      else onSuccess()
     }
   }
 
@@ -66,6 +71,21 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
         </p>
       </div>
 
+      {confirmSent ? (
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--admyt-slate)' }}>
+            Check your email — we sent a confirmation link to <strong>{email}</strong>. Click it to finish setting up your account, then come back and sign in.
+          </p>
+          <button
+            className="btn"
+            onClick={() => { setConfirmSent(false); setMode('signin'); setPassword('') }}
+            style={{ width: '100%', height: 42, marginTop: 16, borderRadius: 999 }}
+          >
+            Back to sign in
+          </button>
+        </div>
+      ) : (
+      <>
       <button
         onClick={signInWithGoogle}
         className="btn secondary"
@@ -133,6 +153,8 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
           {mode === 'signup' ? 'Sign in' : 'Sign up'}
         </button>
       </div>
+      </>
+      )}
 
       <div style={{ textAlign: 'center', marginTop: 12 }}>
         <button

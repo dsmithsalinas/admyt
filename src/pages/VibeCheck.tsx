@@ -5,7 +5,7 @@ import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useAuth } from '@/context/AuthContext'
 import AuthModal from '@/components/ui/AuthModal'
-import { saveVibeCheck, getSavedVibe } from '@/lib/savedVibes'
+import { saveVibeCheck } from '@/lib/savedVibes'
 
 interface VibeDimension {
   key: string
@@ -74,10 +74,6 @@ export default function VibeCheck() {
     getCollege(id).then(data => { setCollege(data); setCollegeLoading(false) })
   }, [id])
 
-  useEffect(() => {
-    if (!user || !result || !college) return
-    getSavedVibe(user.id, college.id).then(existing => { if (existing) setSaved(true) })
-  }, [user, result, college])
 
   function toggleDimension(key: string) {
     setSelected(prev => {
@@ -113,6 +109,7 @@ export default function VibeCheck() {
     setLoading(true)
     setError(null)
     setResult(null)
+    setSaved(false)
     const selectedDims = VIBE_DIMENSIONS.filter(d => selected.has(d.key))
     const systemPrompt = `You are Admyt's Vibe Check feature. Analyze the social scene, campus culture, and student life at a college for a specific set of dimensions chosen by the student.\n\nYou must respond with ONLY valid JSON — no preamble, no explanation, no markdown. The JSON must match this exact structure:\n{\n  "dimensions": [\n    { "key": "social", "label": "Social scene", "emoji": "🎉", "score": 7, "summary": "One honest sentence about this dimension at this specific school." }\n  ],\n  "overallSummary": "2-3 sentence honest summary of the overall vibe and whether it fits this student.",\n  "fitScore": 75\n}\n\nOnly include the dimensions the student selected. Scores are 1-10. fitScore is 1-100. Be honest, specific, and avoid generic talking points. Base your analysis on real knowledge of the school.`
     const userMessage = `College: ${college.name} in ${college.location}\nStudent interests: ${profile?.careerGoals?.join(', ') || 'not specified'}\nStudent location preference: ${profile?.preferredLocations?.join(', ') || 'not specified'}\nIntended major: ${profile?.intendedMajor || 'not specified'}\n\nDimensions to analyze:\n${selectedDims.map(d => `- ${d.key}: ${d.label} — ${d.description}`).join('\n')}\n\nPlease generate a vibe check for only these dimensions.`

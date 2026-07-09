@@ -90,8 +90,13 @@ async function callEdge(msgs: { role: string; content: string }[], colleges: Col
     },
     body: JSON.stringify({ system: buildSagePrompt(colleges, profile), messages: msgs }),
   })
+  // Throw on failure so the caller's catch shows a transient error instead of
+  // persisting an error string to chat_messages as a real Sage turn.
+  if (!resp.ok) throw new Error(`chat function error: ${resp.status}`)
   const data = await resp.json()
-  return data.content?.[0]?.text ?? "Sorry, something went wrong. Try again?"
+  const text = data.content?.[0]?.text
+  if (typeof text !== 'string' || !text) throw new Error('empty chat response')
+  return text
 }
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
