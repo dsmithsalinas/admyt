@@ -96,7 +96,7 @@ async function callEdge(msgs: { role: string; content: string }[], colleges: Col
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth()
-  const { profile: sageProfile, setProfile } = useProfile()
+  const { profile: sageProfile, setProfile, clearProfile } = useProfile()
   const { colleges } = useColleges()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
@@ -123,12 +123,33 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   collegesRef.current = colleges
 
   useEffect(() => {
-    if (authLoading || !user) return
+    if (authLoading) return
+    const prevId = loadedForRef.current
+
+    // Signed out, or switched to a different account: wipe the previous user's
+    // session from memory so it can't linger on screen or leak into the next
+    // account's context/persistence.
+    if (prevId && (!user || user.id !== prevId)) {
+      setMessages([])
+      setHeartedSchools(new Set())
+      setHeartActionCount(0)
+      clearProfile()
+      sageProfileRef.current = null
+      recapSentRef.current = false
+      loadedForRef.current = null
+    }
+
+    if (!user) return
     if (loadedForRef.current === user.id) return
+    // Only a genuine guest→sign-in (no prior signed-in user) carries local
+    // session state up; an account switch must not migrate the old user's data.
+    const wasGuest = !prevId
     loadedForRef.current = user.id
-    // Capture any guest-session state (chat + hearts) so signing in preserves it
-    // instead of the server load blowing it away.
-    loadUserData(user.id, messagesRef.current, heartedSchoolsRef.current)
+    loadUserData(
+      user.id,
+      wasGuest ? messagesRef.current : [],
+      wasGuest ? heartedSchoolsRef.current : new Set<string>(),
+    )
   }, [user, authLoading])
 
   // Persist guest-session chat + hearts under the freshly signed-in user so the

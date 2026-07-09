@@ -20,9 +20,8 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const isHome = location.pathname === '/chat'
-  const [showMobileProfile, setShowMobileProfile] = useState(false)
 
   const activeTabColor = 'var(--admyt-indigo)'
   const inactiveTabColor = 'var(--admyt-muted)'
@@ -201,41 +200,6 @@ export default function Layout() {
             <span style={{ fontSize: '10px', fontWeight: isProfile ? 800 : 600 }}>Profile</span>
           </button>
         </div>
-      )}
-
-      {/* Mobile profile popover (signed-in) */}
-      {isMobile && showMobileProfile && user && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 98 }}
-            onClick={() => setShowMobileProfile(false)}
-          />
-          <div style={{
-            position: 'fixed', bottom: '68px', right: '12px',
-            background: 'white', border: '1px solid #EEECFB',
-            borderRadius: '14px', padding: '14px',
-            minWidth: '200px', zIndex: 99,
-            boxShadow: '0 8px 32px rgba(99,102,241,0.15)',
-          }}>
-            <div style={{ fontSize: '11px', color: '#A8A8BC', marginBottom: '4px' }}>Signed in as</div>
-            <div style={{ fontSize: '13px', color: '#15151C', fontWeight: 500, marginBottom: '12px' }}>
-              {user.email}
-            </div>
-            <button
-              onClick={() => { signOut(); setShowMobileProfile(false) }}
-              style={{
-                width: '100%', textAlign: 'left',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '13px', color: '#8B8B9E', padding: '6px 8px',
-                borderRadius: '8px', transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#F4F3FE')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-            >
-              Sign out
-            </button>
-          </div>
-        </>
       )}
 
     </div>

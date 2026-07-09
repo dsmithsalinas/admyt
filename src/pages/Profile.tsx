@@ -147,7 +147,7 @@ function PreferencesModal({ prefs, onSave, onClose }: { prefs: UserPreferences; 
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const { profile: sageProfile } = useProfile()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPrefsModal, setShowPrefsModal] = useState(false)
@@ -216,7 +216,9 @@ export default function Profile() {
           <h1 style={user ? undefined : { fontSize: 'clamp(18px, 5vw, 24px)' }}>{user ? 'Your Admyt profile' : "This becomes Sage's memory."}</h1>
           <p style={user ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : undefined}>{user ? user.email : 'Save your schools, Vibe Checks, conversation, and preferences so Sage can pick up where you left off.'}</p>
         </div>
-        {!user && <button className="btn" onClick={() => setShowAuthModal(true)}>Create a free account</button>}
+        {user
+          ? <button className="btn secondary" onClick={() => signOut()}>Sign out</button>
+          : <button className="btn" onClick={() => setShowAuthModal(true)}>Create a free account</button>}
       </section>
 
       <div className="profile-layout">
