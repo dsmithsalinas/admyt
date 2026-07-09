@@ -56,22 +56,15 @@ export default function CollegeDetail() {
       if (!college) return
       setDescriptionLoading(true)
       try {
-        const prompt = `Write a 2-3 sentence description of ${college.name} in an honest, warm, direct voice — like a knowledgeable older sibling giving real talk, not a brochure. Be specific to this school. Base it only on these facts: located in ${college.location}, ${college.type} institution, ${college.size} size, ${college.acceptanceRate ? college.acceptanceRate + '% acceptance rate' : 'acceptance rate unknown'}, top majors include ${college.majors.slice(0, 5).join(', ')}. No hype, no generic phrases like "vibrant campus community." Just honest, specific, useful.`
-
+        // The edge function builds the prompt from the college id, generates the
+        // description, and caches it server-side (service role).
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: prompt }],
-            system: 'You write honest, specific, warm college descriptions in 2-3 sentences. No marketing speak. No generic phrases. Real talk only.',
-            max_tokens: 150,
-            // The edge function persists this server-side (service role) so the
-            // description is cached without exposing writes to the colleges table.
-            cacheDescription: { collegeId: college.id },
-          }),
+          body: JSON.stringify({ type: 'description', collegeId: college.id }),
         })
 
         if (!resp.ok) throw new Error(`chat function error: ${resp.status}`)

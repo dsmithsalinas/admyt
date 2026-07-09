@@ -61,6 +61,12 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 - **#22** The "save this conversation" banner counts only visible messages (hidden `[HEARTED]` events no longer trip the threshold).
 - **#23** AuthModal guards against Enter-key double-submit; `Modal` now traps focus (focus moves in on open, Tab cycles inside, focus restores on close).
 
+## Anti-abuse hardening (post-audit)
+
+- **Per-IP rate limiting** — Postgres-backed sliding window (40 req/60s, tunable), verified live. Migrations `20260709_rate_limit.sql` + optional `20260709_rate_limit_cleanup.sql`.
+- **Server-side prompt construction** ⚠️ needs `supabase functions deploy chat`. The edge function now builds every prompt itself, keyed by a `type` field (`sage` | `vibe` | `description`), and **never accepts a client-supplied `system`** — so the endpoint can't be used as a general-purpose Claude proxy. Catalog is fetched + cached server-side (10-min TTL); clients send only `{type, ...}` (no more 180KB catalog over the wire). Prompt logic lives in `supabase/functions/chat/prompt.ts`, verified byte-identical to the old client builder.
+  - Clean cutover: redeploy the function right after the client deploys, then hard-refresh once (pre-launch, so the brief window is a non-issue).
+
 ## Medium tier
 
 Mostly pure code (live on next Vercel deploy). One needs an edge redeploy:

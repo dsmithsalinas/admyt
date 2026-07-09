@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { buildSagePrompt, type SageProfile } from '@/lib/sagePrompt'
+import { type SageProfile } from '@/lib/sagePrompt'
 import { useAuth } from './AuthContext'
 import { useProfile, type StudentProfile } from './ProfileContext'
 import { useColleges } from './CollegeContext'
@@ -81,14 +81,16 @@ function mergeLearnedProfile(
   }
 }
 
-async function callEdge(msgs: { role: string; content: string }[], colleges: College[], profile?: SageProfile): Promise<string> {
+async function callEdge(msgs: { role: string; content: string }[], profile?: SageProfile): Promise<string> {
   const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({ system: buildSagePrompt(colleges, profile), messages: msgs }),
+    // The edge function builds the system prompt from `type` — it never accepts a
+    // client-supplied system, so it can't be used as a general-purpose Claude proxy.
+    body: JSON.stringify({ type: 'sage', messages: msgs, profile }),
   })
   // Throw on failure so the caller's catch shows a transient error instead of
   // persisting an error string to chat_messages as a real Sage turn.
@@ -311,7 +313,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         { role: 'user', content: '[RECAP]' },
       ]
       const profile = await getLatestProfile()
-      const raw = await callEdge(apiMsgs, collegesRef.current, profile)
+      const raw = await callEdge(apiMsgs, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
       const msg: ChatMessage = {
         id: crypto.randomUUID(), role: 'assistant', content,
@@ -384,7 +386,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
 
       const profile = await getLatestProfile()
-      const raw = await callEdge(apiMsgs, collegesRef.current, profile)
+      const raw = await callEdge(apiMsgs, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
 
       const assistantMsg: ChatMessage = {
@@ -422,7 +424,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     try {
       const profile = await getLatestProfile()
-      const raw = await callEdge(nextMessages.map(m => ({ role: m.role, content: m.content })), collegesRef.current, profile)
+      const raw = await callEdge(nextMessages.map(m => ({ role: m.role, content: m.content })), profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(), role: 'assistant', content,

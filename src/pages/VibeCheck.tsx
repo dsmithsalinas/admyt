@@ -110,15 +110,20 @@ export default function VibeCheck() {
     setError(null)
     setResult(null)
     setSaved(false)
-    const selectedDims = VIBE_DIMENSIONS.filter(d => selected.has(d.key))
-    const systemPrompt = `You are Admyt's Vibe Check feature. Analyze the social scene, campus culture, and student life at a college for a specific set of dimensions chosen by the student.\n\nYou must respond with ONLY valid JSON — no preamble, no explanation, no markdown. The JSON must match this exact structure:\n{\n  "dimensions": [\n    { "key": "social", "label": "Social scene", "emoji": "🎉", "score": 7, "summary": "One honest sentence about this dimension at this specific school." }\n  ],\n  "overallSummary": "2-3 sentence honest summary of the overall vibe and whether it fits this student.",\n  "fitScore": 75\n}\n\nOnly include the dimensions the student selected. Scores are 1-10. fitScore is 1-100. Be honest, specific, and avoid generic talking points. Base your analysis on real knowledge of the school.`
-    const userMessage = `College: ${college.name} in ${college.location}\nStudent interests: ${profile?.careerGoals?.join(', ') || 'not specified'}\nStudent location preference: ${profile?.preferredLocations?.join(', ') || 'not specified'}\nIntended major: ${profile?.intendedMajor || 'not specified'}\n\nDimensions to analyze:\n${selectedDims.map(d => `- ${d.key}: ${d.label} — ${d.description}`).join('\n')}\n\nPlease generate a vibe check for only these dimensions.`
     try {
+      // The edge function owns the Vibe Check prompt; we send only the college id,
+      // the selected dimension keys, and the student profile.
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: userMessage }] }),
+        body: JSON.stringify({
+          type: 'vibe',
+          collegeId: college.id,
+          dimensionKeys: Array.from(selected),
+          profile: profile ?? undefined,
+        }),
       })
+      if (!resp.ok) throw new Error(`vibe request failed: ${resp.status}`)
       const data = await resp.json()
       const text = data.content?.[0]?.text ?? ''
       const parsed: VibeResult = JSON.parse(text.replace(/```json|```/g, '').trim())
