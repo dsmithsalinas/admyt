@@ -65,17 +65,23 @@ function selectCatalog(colleges: College[], limit: number): College[] {
   return picked
 }
 
-export function buildSagePrompt(colleges: College[], profile?: SageProfile): string {
-  const catalog = selectCatalog(colleges, 200).map(c => ({
+// A system prompt content block. The static block is marked with cache_control so
+// Anthropic prompt-caches it; the tiny per-student profile block is left uncached.
+export type SystemBlock = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }
+
+export function buildSagePrompt(colleges: College[], profile?: SageProfile): SystemBlock[] {
+  // Full recommendable catalog — every eligible 4-year school, not a 200-cap. The
+  // per-school payload is kept lean because this whole block is prompt-cached, so
+  // sending ~700 schools on every call stays cheap after the first request.
+  const catalog = selectCatalog(colleges, colleges.length).map(c => ({
     id: c.id,
     name: c.name,
     location: c.location,
-    state: c.state,
     type: c.type,
     size: c.size,
     acceptanceRate: c.acceptanceRate,
     tuition: c.tuitionInState ?? c.tuitionOutState,
-    majors: c.majors.slice(0, 5),
+    majors: c.majors.slice(0, 3),
   }))
 
   // Build known-profile section from both preference sources
@@ -94,11 +100,13 @@ export function buildSagePrompt(colleges: College[], profile?: SageProfile): str
   if (goals.length) knownFacts.push(`- Career goals: ${goals.join(', ')}`)
   if (maxTuition) knownFacts.push(`- Max tuition: $${maxTuition.toLocaleString()}/yr`)
 
+  // Kept as a separate, uncached block: it changes as Sage learns about the
+  // student, and folding it into the cached block would bust the cache every time.
   const profileSection = knownFacts.length
-    ? `\n\nWhat you already know about this student (do NOT ask about these again — use them to guide recommendations from the start):\n${knownFacts.join('\n')}`
+    ? `What you already know about this student (do NOT ask about these again — use them to guide recommendations from the start):\n${knownFacts.join('\n')}`
     : ''
 
-  return `You are Sage — the AI college advisor inside Admyt. You're the senior who just graduated: the older sibling who went through the whole confusing college search, learned from it, and genuinely wants this student to get it right. You're on their side, always.${profileSection}
+  const staticPrompt = `You are Sage — the AI college advisor inside Admyt. You're the senior who just graduated: the older sibling who went through the whole confusing college search, learned from it, and genuinely wants this student to get it right. You're on their side, always.
 
 You are Sage, the AI advisor built into Admyt. You and Admyt are the same thing — never refer to "the Admyt team" or "the Admyt developers" as separate from yourself. You are the product.
 
@@ -132,7 +140,7 @@ Example of how Sage sounds:
 - "Can I throw a curveball? You probably haven't heard of this one, but hear me out."
 - "No rush, there's no wrong answer here. We'll figure it out together."
 
-Your goals, woven naturally into conversation — never call this "onboarding": learn where they might want to study, what they want to study or do, and what matters most to them. Skip anything already covered in the student profile above. Ask one thing at a time.
+Your goals, woven naturally into conversation — never call this "onboarding": learn where they might want to study, what they want to study or do, and what matters most to them. Skip anything the student profile section already covers. Ask one thing at a time.
 
 Early in the conversation (within the first few exchanges), ask once whether they'd like you to proactively suggest schools as ideas come up, or only when they ask. Respect their answer for the rest of the conversation.
 
@@ -157,4 +165,13 @@ System events arrive as user messages in brackets:
 
 Catalog:
 ${JSON.stringify(catalog)}`
+
+  // Static block (instructions + catalog) is identical across all users and turns,
+  // so cache_control lets Anthropic reuse it cheaply. The student profile, if any,
+  // rides in a separate trailing block that stays out of the cache.
+  const blocks: SystemBlock[] = [
+    { type: 'text', text: staticPrompt, cache_control: { type: 'ephemeral' } },
+  ]
+  if (profileSection) blocks.push({ type: 'text', text: profileSection })
+  return blocks
 }
