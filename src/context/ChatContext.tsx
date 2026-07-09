@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { buildSagePrompt, type SageProfile } from '@/lib/sagePrompt'
 import { useAuth } from './AuthContext'
-import { useProfile } from './ProfileContext'
+import { useProfile, type StudentProfile } from './ProfileContext'
 import { useColleges } from './CollegeContext'
 import type { College } from '@/lib/colleges'
 
@@ -47,6 +47,38 @@ function parseResponse(raw: string): { content: string; schoolIds?: string[]; pr
   }
 
   return { content: content.trim(), schoolIds, prefs }
+}
+
+// Case-insensitive union that preserves the existing order and appends anything new.
+function unionCI(a: string[] = [], b: string[] = []): string[] {
+  const out = [...a]
+  const seen = new Set(a.map(s => s.toLowerCase()))
+  for (const item of b) {
+    if (item && !seen.has(item.toLowerCase())) {
+      out.push(item)
+      seen.add(item.toLowerCase())
+    }
+  }
+  return out
+}
+
+// Merge newly learned preferences into the existing profile instead of replacing
+// it — so a later PREFS that omits a field (or sends an empty array) can't wipe
+// what Sage already knew.
+function mergeLearnedProfile(
+  prev: StudentProfile | null,
+  incoming: { preferredLocations?: string[]; careerGoals?: string[]; intendedMajor?: string },
+): StudentProfile {
+  const base = prev ?? { preferredLocations: [], careerGoals: [], intendedMajor: undefined, complete: false }
+  const locs = (incoming.preferredLocations ?? []).filter(Boolean)
+  const goals = (incoming.careerGoals ?? []).filter(Boolean)
+  const major = typeof incoming.intendedMajor === 'string' ? incoming.intendedMajor.trim() : ''
+  return {
+    preferredLocations: locs.length ? unionCI(base.preferredLocations, locs) : base.preferredLocations,
+    careerGoals: goals.length ? unionCI(base.careerGoals, goals) : base.careerGoals,
+    intendedMajor: major || base.intendedMajor,
+    complete: true,
+  }
 }
 
 async function callEdge(msgs: { role: string; content: string }[], colleges: College[], profile?: SageProfile): Promise<string> {
@@ -170,7 +202,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const [msgRes, heartRes, prefsRes] = await Promise.all([
         supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
         supabase.from('hearted_schools').select('college_id').eq('user_id', userId),
-        supabase.from('user_preferences').select('heart_action_count').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_preferences').select('heart_action_count,sage_profile').eq('user_id', userId).maybeSingle(),
       ])
 
       const serverHearts = new Set<string>((heartRes.data ?? []).map((h: { college_id: string }) => h.college_id))
@@ -179,6 +211,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       if (prefsRes.data) {
         setHeartActionCount(prefsRes.data.heart_action_count ?? 0)
+      }
+
+      // Restore the chat-learned profile. The server copy is authoritative (it
+      // syncs across devices); if the account has none yet, push up whatever this
+      // device already knows (e.g. a guest who just signed in).
+      const dbProfile = (prefsRes.data?.sage_profile ?? null) as StudentProfile | null
+      if (dbProfile) {
+        setProfile(dbProfile)
+        sageProfileRef.current = dbProfile
+      } else if (sageProfileRef.current) {
+        supabase.from('user_preferences').upsert(
+          { user_id: userId, sage_profile: sageProfileRef.current },
+          { onConflict: 'user_id' },
+        )
       }
 
       // Persist any guest-session chat/hearts under this user before we settle state.
@@ -236,18 +282,32 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Persist the chat-learned profile to Supabase for signed-in users (guests are
+  // covered by ProfileContext's localStorage mirror).
+  function persistLearnedProfile(p: StudentProfile) {
+    if (!user) return
+    supabase.from('user_preferences').upsert(
+      { user_id: user.id, sage_profile: p },
+      { onConflict: 'user_id' },
+    )
+  }
+
   function applyPrefs(prefs: Record<string, unknown>) {
-    const locs = prefs.preferredLocations
-    const goals = prefs.careerGoals
-    const major = prefs.intendedMajor
-    if (locs || goals || major) {
-      setProfile({
-        preferredLocations: Array.isArray(locs) ? (locs as string[]) : [],
-        careerGoals: Array.isArray(goals) ? (goals as string[]) : [],
-        intendedMajor: typeof major === 'string' && major ? major : undefined,
-        complete: true,
-      })
+    const incoming = {
+      preferredLocations: Array.isArray(prefs.preferredLocations) ? (prefs.preferredLocations as string[]) : undefined,
+      careerGoals: Array.isArray(prefs.careerGoals) ? (prefs.careerGoals as string[]) : undefined,
+      intendedMajor: typeof prefs.intendedMajor === 'string' ? prefs.intendedMajor : undefined,
     }
+    const hasSignal =
+      incoming.preferredLocations?.some(Boolean) ||
+      incoming.careerGoals?.some(Boolean) ||
+      !!incoming.intendedMajor?.trim()
+    if (!hasSignal) return
+
+    const merged = mergeLearnedProfile(sageProfileRef.current, incoming)
+    setProfile(merged)
+    sageProfileRef.current = merged
+    persistLearnedProfile(merged)
   }
 
   async function persistMsg(msg: ChatMessage, userId: string) {

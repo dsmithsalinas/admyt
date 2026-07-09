@@ -47,3 +47,18 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 - [ ] `supabase functions deploy chat`
 - [ ] Push to `main` (Vercel auto-deploys `vercel.json`)
 - [ ] Smoke-test: hard-refresh `/search`, save a guest conversation, browse to USC
+
+---
+
+## High tier
+
+### #6/#7 Sage's learned profile evaporated on reload / new PREFS wiped old ones ⚠️ code + SQL
+- **Code:** the chat-learned profile now persists to localStorage (guests +
+  instant hydration) and to a `sage_profile` jsonb column on `user_preferences`
+  (authoritative, cross-device) loaded in `loadUserData`. `applyPrefs` now *merges*
+  incoming preferences (case-insensitive union for arrays, non-empty major wins)
+  instead of replacing — so a later PREFS with empty arrays can't wipe what Sage knew.
+- **Run the SQL:** open Supabase → SQL Editor → run
+  `supabase/migrations/20260708_sage_profile.sql` (adds the `sage_profile` column).
+  Until you run it, guests/reload still work via localStorage; only cross-device
+  sync for signed-in users is inactive.
