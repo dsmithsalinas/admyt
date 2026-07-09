@@ -3,6 +3,7 @@ import {
   buildSagePrompt,
   buildVibePrompt,
   buildDescriptionPrompt,
+  buildDeadlinePrompt,
   mapRow,
   type College,
   type SageProfile,
@@ -90,6 +91,93 @@ async function fetchCollege(id: string): Promise<College | null> {
   return rows[0] ? mapRow(rows[0]) : null
 }
 
+// ── Application deadlines ────────────────────────────────────────────────────
+// Deadlines are per-school, not per-user, so they're cached once in
+// college_deadlines and shared: the first user to heart a school triggers one
+// web search; everyone else reads the cached row. Refreshed lazily (~10 months).
+const DEADLINE_FRESH_MS = 300 * 24 * 60 * 60 * 1000
+
+async function getDeadlineRow(collegeId: string): Promise<{ deadlines: unknown; updated_at: string } | null> {
+  const url = env('SUPABASE_URL')
+  const key = env('SUPABASE_SERVICE_ROLE_KEY')
+  const resp = await fetch(
+    `${url}/rest/v1/college_deadlines?college_id=eq.${encodeURIComponent(collegeId)}&select=deadlines,updated_at&limit=1`,
+    { headers: { apikey: key, Authorization: `Bearer ${key}` } },
+  )
+  if (!resp.ok) return null
+  const rows = await resp.json()
+  return rows[0] ?? null
+}
+
+async function saveDeadline(collegeId: string, deadlines: unknown) {
+  const url = env('SUPABASE_URL')
+  const key = env('SUPABASE_SERVICE_ROLE_KEY')
+  await fetch(`${url}/rest/v1/college_deadlines`, {
+    method: 'POST',
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify({ college_id: collegeId, deadlines, updated_at: new Date().toISOString() }),
+  })
+}
+
+function parseDeadlines(text: string): { rounds: unknown[]; rolling?: boolean; cycle?: string; source_url?: string } | null {
+  try {
+    const obj = JSON.parse(text.replace(/```json|```/g, '').trim())
+    if (obj && Array.isArray(obj.rounds)) return obj
+  } catch { /* not valid JSON */ }
+  return null
+}
+
+async function handleDeadline(body: { collegeId?: unknown }): Promise<Response> {
+  const college = await fetchCollege(String(body.collegeId ?? ''))
+  if (!college) return json({ error: 'college_not_found' }, 404)
+
+  // Serve from the shared cache when fresh — no web search, no cost.
+  const cached = await getDeadlineRow(college.id)
+  if (cached && Date.now() - new Date(cached.updated_at).getTime() < DEADLINE_FRESH_MS) {
+    return json({ deadlines: cached.deadlines, cached: true })
+  }
+
+  const built = buildDeadlinePrompt(college)
+  const tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 5 }]
+  let messages: unknown[] = [{ role: 'user', content: built.userMessage }]
+  let data: { content?: { type: string; text?: string }[]; stop_reason?: string } | null = null
+
+  // The web-search server tool runs a loop; if it pauses (pause_turn) re-send to continue.
+  for (let guard = 0; guard < 4; guard++) {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': env('ANTHROPIC_API_KEY'),
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1500, system: built.system, tools, messages }),
+    })
+    data = await resp.json()
+    if (!resp.ok) {
+      console.error('Deadline lookup upstream error:', resp.status, JSON.stringify(data))
+      return json({ error: 'upstream_error', status: resp.status }, 502)
+    }
+    if (data?.stop_reason === 'pause_turn') {
+      messages = [...messages, { role: 'assistant', content: data.content }]
+      continue
+    }
+    break
+  }
+
+  const text = (data?.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim()
+  const parsed = parseDeadlines(text)
+  const deadlines = parsed ?? { rounds: [], rolling: false, cycle: '', source_url: '' }
+  // Cache the result (even empty) so we don't re-search this school within the window.
+  await saveDeadline(college.id, deadlines)
+  return json({ deadlines })
+}
+
 // Persist a generated college description with the service-role key (RLS blocks
 // anonymous writes to `colleges`).
 async function cacheCollegeDescription(collegeId: string, description: string) {
@@ -121,6 +209,12 @@ serve(async (req) => {
 
     const body = JSON.parse(rawBody)
     const type = body?.type
+
+    // Deadlines are fully self-contained (cache + web search + store) — they don't
+    // share the single-shot Anthropic call the other types fall through to.
+    if (type === 'deadline') {
+      return await handleDeadline(body)
+    }
 
     // Build the prompt server-side by request type. The endpoint never accepts a
     // client-supplied system prompt, so it can't be used as a general Claude proxy.

@@ -217,3 +217,25 @@ export function buildDescriptionPrompt(college: College): { system: string; user
   const userMessage = `Write a 2-3 sentence description of ${college.name} in an honest, warm, direct voice — like a knowledgeable older sibling giving real talk, not a brochure. Be specific to this school. Base it only on these facts: located in ${college.location}, ${college.type} institution, ${college.size} size, ${college.acceptanceRate ? college.acceptanceRate + '% acceptance rate' : 'acceptance rate unknown'}, top majors include ${college.majors.slice(0, 5).join(', ')}. No hype, no generic phrases like "vibrant campus community." Just honest, specific, useful.`
   return { system, userMessage }
 }
+
+export function buildDeadlinePrompt(college: College): { system: string; userMessage: string } {
+  const system = 'You research U.S. college undergraduate first-year application deadlines using web search of the school\'s official admissions website. You respond with ONLY a JSON object — no preamble, no explanation, no markdown code fences.'
+  const userMessage = `Find the undergraduate first-year application deadlines for ${college.name} in ${college.location}, for the current or upcoming admissions cycle. Search the school's official admissions website.
+
+Respond with ONLY this JSON object:
+{
+  "rounds": [
+    { "type": "Early Decision" | "Early Decision II" | "Early Action" | "Restrictive Early Action" | "Regular Decision" | "Priority" | "Transfer", "date": "YYYY-MM-DD" }
+  ],
+  "rolling": false,
+  "cycle": "YYYY-YYYY",
+  "source_url": "https://<official admissions page you used>"
+}
+
+Rules:
+- Only include rounds you can find an actual date for on an official source. Do not guess or infer dates.
+- If the school uses rolling admission with no fixed deadline, set "rolling": true and "rounds": [].
+- "cycle" is the admissions cycle these dates apply to (e.g. "2025-2026").
+- If you cannot find reliable official deadlines, return {"rounds": [], "rolling": false, "cycle": "", "source_url": ""}.`
+  return { system, userMessage }
+}

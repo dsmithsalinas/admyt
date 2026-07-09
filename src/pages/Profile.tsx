@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
@@ -6,6 +6,14 @@ import { supabase } from '@/lib/supabase'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
 import SageOrb from '@/components/sage/SageOrb'
+import {
+  ensureDeadline,
+  getCachedDeadlines,
+  upcomingWithin,
+  roundLabel,
+  formatDeadlineDate,
+  type CollegeDeadlines,
+} from '@/lib/deadlines'
 
 interface SavedVibe {
   id: string
@@ -155,6 +163,7 @@ export default function Profile() {
   const [hearts, setHearts] = useState<HeartedSchool[]>([])
   const [vibes, setVibes] = useState<SavedVibe[]>([])
   const [prefs, setPrefs] = useState<UserPreferences>({ preferred_states: [], max_tuition: null, preferred_majors: [] })
+  const [deadlines, setDeadlines] = useState<Record<string, CollegeDeadlines>>({})
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -169,6 +178,30 @@ export default function Profile() {
       setLoading(false)
     })
   }, [user])
+
+  // Load cached deadlines for the hearted schools, then fetch any that are missing
+  // (first time a school is favorited) so they're populated for next time.
+  useEffect(() => {
+    if (!user || hearts.length === 0) { setDeadlines({}); return }
+    let cancelled = false
+    const ids = hearts.map(h => h.college_id)
+    getCachedDeadlines(ids).then(map => {
+      if (cancelled) return
+      setDeadlines(map)
+      ids.filter(id => !map[id]).forEach(id => {
+        ensureDeadline(id).then(d => {
+          if (!cancelled && d) setDeadlines(prev => ({ ...prev, [id]: d }))
+        })
+      })
+    })
+    return () => { cancelled = true }
+  }, [user, hearts])
+
+  const nameById = useMemo(
+    () => Object.fromEntries(hearts.map(h => [h.college_id, h.college_name])),
+    [hearts],
+  )
+  const upcoming = useMemo(() => upcomingWithin(60, deadlines, nameById), [deadlines, nameById])
 
   async function handleUnheart(collegeId: string) {
     if (!user) return
@@ -248,6 +281,39 @@ export default function Profile() {
             </div>
           </section>
 
+          {user && (
+            <section className="mock-card section-pad">
+              <div className="school-head">
+                <span className="mini-title">Upcoming deadlines</span>
+                <span className="pill">Next 60 days</span>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                {upcoming.length ? (
+                  <div className="learn-list">
+                    {upcoming.map(u => (
+                      <div className="learn-item" key={`${u.collegeId}-${u.type}-${u.date}`}>
+                        <span>
+                          {u.collegeName} · {roundLabel(u.type)}
+                          {u.sourceUrl && (
+                            <a href={u.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 11, color: 'var(--admyt-indigo)' }}>
+                              source
+                            </a>
+                          )}
+                        </span>
+                        <span>{formatDeadlineDate(u.date)} · {u.daysAway === 0 ? 'today' : `${u.daysAway}d`}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="match-note">Nothing due in the next 60 days. Heart schools and I'll track their application dates here.</p>
+                )}
+                <p className="match-note" style={{ marginTop: 10, fontSize: 12 }}>
+                  Dates are gathered from each school's site — always confirm on their official admissions page before you rely on them.
+                </p>
+              </div>
+            </section>
+          )}
+
           <section className="mock-card section-pad">
             <div className="school-head">
               <span className="mini-title">My Schools</span>
@@ -259,6 +325,19 @@ export default function Profile() {
                   <div>
                     <h3>{h.college_name}</h3>
                     <p>Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                    {(() => {
+                      const d = deadlines[h.college_id]
+                      if (!d) return null
+                      if (d.rolling) return <div className="filters" style={{ marginTop: 6 }}><span className="pill">Rolling admissions</span></div>
+                      if (!d.rounds?.length) return null
+                      return (
+                        <div className="filters" style={{ marginTop: 6 }}>
+                          {d.rounds.slice(0, 4).map(r => (
+                            <span className="pill" key={`${r.type}-${r.date}`}>{roundLabel(r.type)} · {formatDeadlineDate(r.date)}</span>
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </div>
                   <div className="filters">
                     <button className="pill teal" onClick={() => navigate(`/college/${h.college_id}`)}>View</button>
