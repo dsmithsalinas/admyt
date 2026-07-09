@@ -65,7 +65,9 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 
 Mostly pure code (live on next Vercel deploy). One needs an edge redeploy:
 
-- **#12 edge-function abuse guards** ⚠️ needs `supabase functions deploy chat`. Clamps `max_tokens` (≤2048) and rejects oversized payloads (>1MB) / absurd message counts (>1000). Full per-IP rate limiting still a follow-up (needs a store).
+- **#12 edge-function abuse guards** ⚠️ needs SQL + `supabase functions deploy chat`. Clamps `max_tokens` (≤2048), rejects oversized payloads (>1MB) / absurd message counts, and now **per-IP rate limits** (40 req/60s, tunable) via a Postgres-backed atomic counter.
+  - Run `supabase/migrations/20260709_rate_limit.sql` (creates `rate_limits` + `check_rate_limit()`), then redeploy the function.
+  - Fails open (never blocks legit traffic if the limiter errors). Limit is generous for shared school/library IPs; tune `RATE_LIMIT` / `RATE_WINDOW_SECONDS` in the function.
 - **#13** API/edge errors no longer get persisted as permanent "Sage" messages — `callEdge` throws so the error stays transient. ✅ code only.
 - **#14** A re-run Vibe Check can be saved again (the `saved` flag resets on each new result). ✅ code only.
 - **#15** Email signup that requires confirmation now shows a "check your email" state instead of silently closing. Behavior depends on your Supabase Auth "Confirm email" setting. ✅ code only.

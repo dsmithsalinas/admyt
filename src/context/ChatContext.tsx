@@ -92,6 +92,7 @@ async function callEdge(msgs: { role: string; content: string }[], colleges: Col
   })
   // Throw on failure so the caller's catch shows a transient error instead of
   // persisting an error string to chat_messages as a real Sage turn.
+  if (resp.status === 429) throw new Error('rate_limited')
   if (!resp.ok) throw new Error(`chat function error: ${resp.status}`)
   const data = await resp.json()
   const text = data.content?.[0]?.text
@@ -393,10 +394,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages(prev => [...prev, assistantMsg])
       if (prefs) applyPrefs(prefs)
       if (user) await persistMsg(assistantMsg, user.id)
-    } catch {
+    } catch (e) {
+      const rateLimited = e instanceof Error && e.message === 'rate_limited'
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(), role: 'assistant',
-        content: "Hmm, something went wrong. Try sending that again.",
+        content: rateLimited
+          ? "Whoa, you're going faster than I can keep up — give it a few seconds and try again."
+          : "Hmm, something went wrong. Try sending that again.",
       }])
     } finally {
       setLoading(false)

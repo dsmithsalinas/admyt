@@ -5,6 +5,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Per-IP rate limit. Generous by default because students may share a school/library
+// IP; tune these two numbers to trade abuse-resistance against shared-network use.
+const RATE_LIMIT = 40
+const RATE_WINDOW_SECONDS = 60
+
+// Returns true when the caller has exceeded the limit. Fails OPEN (returns false)
+// on any misconfiguration or error so the limiter can never take the app down.
+async function isRateLimited(req: Request): Promise<boolean> {
+  const url = Deno.env.get('SUPABASE_URL')
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !serviceKey) return false
+
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim()
+  if (!ip) return false
+
+  try {
+    const resp = await fetch(`${url}/rest/v1/rpc/check_rate_limit`, {
+      method: 'POST',
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_key: `ip:${ip}`, p_limit: RATE_LIMIT, p_window_seconds: RATE_WINDOW_SECONDS }),
+    })
+    if (!resp.ok) return false
+    const allowed = await resp.json()
+    return allowed === false
+  } catch {
+    return false
+  }
+}
+
 // Persist a generated college description using the service-role key. RLS blocks
 // anonymous writes to `colleges`, so description caching has to happen here on
 // the server rather than from the browser.
@@ -31,9 +64,16 @@ serve(async (req) => {
   }
 
   try {
+    // Per-IP rate limit first — cheapest guard, and it uses only headers.
+    if (await isRateLimited(req)) {
+      return new Response(JSON.stringify({ error: 'rate_limited' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(RATE_WINDOW_SECONDS) },
+      })
+    }
+
     // Cost-amplification guards. This function runs on the public anon key, so cap
-    // what a single call can cost even though full per-IP rate limiting (which needs
-    // a store) is a separate follow-up.
+    // what a single call can cost.
     const raw = await req.text()
     // ~1MB covers the full catalog system prompt plus a very long conversation,
     // while still blocking multi-megabyte abuse.
