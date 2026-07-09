@@ -27,7 +27,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
     : "It's free. Save your schools, your Vibe Checks, and your conversation with Sage."
 
   async function handleEmailSubmit() {
-    if (!email || !password) return
+    if (!email || !password || loading) return
     setLoading(true)
     setError(null)
     if (mode === 'signup') {

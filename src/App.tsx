@@ -9,7 +9,6 @@ import Home from '@/pages/Home'
 import Landing from '@/pages/Landing'
 import Search from '@/pages/Search'
 import CollegeDetail from '@/pages/CollegeDetail'
-import Onboarding from '@/pages/Onboarding'
 import VibeCheck from '@/pages/VibeCheck'
 import Profile from '@/pages/Profile'
 import SageOrb from '@/components/sage/SageOrb'
@@ -40,7 +39,6 @@ export default function App() {
           <ChatProvider>
             <Routes>
               <Route path="/" element={<RootRoute />} />
-              <Route path="/onboarding" element={<Onboarding />} />
               <Route element={<Layout />}>
                 <Route path="/chat" element={<Home />} />
                 <Route path="/search" element={<Search />} />

@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 
 interface ModalProps {
   onClose: () => void
@@ -14,6 +14,8 @@ interface ModalProps {
  * Closes on backdrop click and Escape, and locks body scroll while open.
  */
 export default function Modal({ onClose, children, panelStyle, labelledBy }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -27,9 +29,43 @@ export default function Modal({ onClose, children, panelStyle, labelledBy }: Mod
     }
   }, [onClose])
 
+  // Focus trap: move focus into the dialog on open and keep Tab cycling inside it.
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+    const prevFocused = document.activeElement as HTMLElement | null
+    const focusables = () => Array.from(
+      panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    )
+    focusables()[0]?.focus()
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const items = focusables()
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    panel.addEventListener('keydown', onKeyDown)
+    return () => {
+      panel.removeEventListener('keydown', onKeyDown)
+      prevFocused?.focus?.()
+    }
+  }, [])
+
   return (
     <div className="admyt-overlay" onClick={onClose}>
       <div
+        ref={panelRef}
         className="admyt-modal-panel"
         style={panelStyle}
         onClick={e => e.stopPropagation()}

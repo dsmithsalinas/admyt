@@ -193,7 +193,7 @@ export default function Home() {
       </div>
 
       <div style={{ flexShrink: 0, maxWidth: '1120px', width: '100%', margin: '0 auto', background: 'rgba(255,253,250,0.9)', border: '1px solid var(--admyt-line)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 16px', backdropFilter: 'blur(14px)' }}>
-        {!user && messages.length >= 4 && (
+        {!user && messages.filter(m => !m.metadata?.hidden).length >= 4 && (
           <div style={{
             maxWidth: '680px', margin: '0 auto 10px',
             background: 'var(--admyt-grad-soft)', border: '1px solid var(--admyt-line)',

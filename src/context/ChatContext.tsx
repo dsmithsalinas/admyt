@@ -113,6 +113,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const heartedSchoolsRef = useRef<Set<string>>(new Set())
   heartedSchoolsRef.current = heartedSchools
   const [heartActionCount, setHeartActionCount] = useState(0)
+  const heartActionCountRef = useRef(0)
+  heartActionCountRef.current = heartActionCount
   const [proactivePref] = useState<'yes' | 'no' | null>(null)
   const [userPrefs, setUserPrefs] = useState<{ preferred_states: string[]; max_tuition: number | null; preferred_majors: string[] } | null>(null)
   const userPrefsRef = useRef<typeof userPrefs>(null)
@@ -450,7 +452,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!isHearted) {
-      const newCount = heartActionCount + 1
+      // Read/advance through the ref so two fast hearts don't both read the same
+      // stale count and collapse into one increment.
+      const newCount = heartActionCountRef.current + 1
+      heartActionCountRef.current = newCount
       setHeartActionCount(newCount)
       if (user) {
         supabase.from('user_preferences').upsert({ user_id: user.id, heart_action_count: newCount }, { onConflict: 'user_id' })

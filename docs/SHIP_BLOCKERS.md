@@ -52,6 +52,15 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 
 ## High tier
 
+## Low / polish tier ✅ code only
+
+- **#18** Defined the missing `--admyt-gold` token (the landing "What we stand for" 4th dot was invisible).
+- **#19** Not a bug — the `.fade-up` scroll-animation CSS exists in tokens.css. (Audit miscall, no change.)
+- **#20** Removed dead code: `src/types/index.ts`, `src/data/sampleColleges.ts`, the `Onboarding` page + route, the unused `src/lib/claude.ts`, and the unused `@anthropic-ai/sdk` dependency.
+- **#21** `toggleHeart` advances the heart count through a ref, so two fast hearts don't collapse into one increment.
+- **#22** The "save this conversation" banner counts only visible messages (hidden `[HEARTED]` events no longer trip the threshold).
+- **#23** AuthModal guards against Enter-key double-submit; `Modal` now traps focus (focus moves in on open, Tab cycles inside, focus restores on close).
+
 ## Medium tier
 
 Mostly pure code (live on next Vercel deploy). One needs an edge redeploy:
