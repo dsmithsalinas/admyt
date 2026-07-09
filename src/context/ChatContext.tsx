@@ -101,6 +101,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
   const [initializing, setInitializing] = useState(false)
+  // A recap that's been decided on but is waiting for the college catalog to load
+  // before firing — otherwise Sage gets an empty catalog and invents school IDs.
+  const [recapPending, setRecapPending] = useState<{ userId: string; history: ChatMessage[] } | null>(null)
   const [heartedSchools, setHeartedSchools] = useState<Set<string>>(new Set())
   const heartedSchoolsRef = useRef<Set<string>>(new Set())
   heartedSchoolsRef.current = heartedSchools
@@ -136,6 +139,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       clearProfile()
       sageProfileRef.current = null
       recapSentRef.current = false
+      setRecapPending(null)
       loadedForRef.current = null
     }
 
@@ -151,6 +155,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       wasGuest ? heartedSchoolsRef.current : new Set<string>(),
     )
   }, [user, authLoading])
+
+  // Fire a deferred recap once the college catalog is available, so Sage never
+  // builds its system prompt (and picks school IDs) against an empty catalog.
+  useEffect(() => {
+    if (!recapPending || colleges.length === 0) return
+    const { userId, history } = recapPending
+    setRecapPending(null)
+    sendRecap(history, userId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recapPending, colleges])
 
   // Persist guest-session chat + hearts under the freshly signed-in user so the
   // "Save this conversation" promise actually holds.
@@ -256,18 +270,24 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }) => ({ id: m.id, role: m.role, content: m.content, metadata: m.metadata ?? undefined }))
 
       // Server history first, then any guest messages not already on the server.
-      const serverIds = new Set(serverMsgs.map(m => m.id))
-      const merged = [...serverMsgs, ...localMessages.filter(m => !serverIds.has(m.id))]
-      if (merged.length > 0) setMessages(merged)
+      // Merge server history with whatever is on screen now — guest session plus
+      // anything sent while this load was in flight — de-duped by id. The
+      // functional form reads the latest state, so a message the user sent
+      // mid-load isn't clobbered.
+      setMessages(prev => {
+        const ids = new Set(serverMsgs.map(m => m.id))
+        return [...serverMsgs, ...prev.filter(m => !ids.has(m.id))]
+      })
 
       // Recap only for genuinely returning users (existing server history),
-      // not for a guest who just signed in mid-conversation.
+      // not for a guest who just signed in mid-conversation. Defer the actual
+      // send until the catalog is loaded (handled by the effect below).
       if (serverMsgs.length > 0) {
         const sessionKey = `sage_recap_sent_${userId}`
         if (!recapSentRef.current && !sessionStorage.getItem(sessionKey)) {
           recapSentRef.current = true
           sessionStorage.setItem(sessionKey, '1')
-          sendRecap(merged, userId)
+          setRecapPending({ userId, history: serverMsgs })
         }
       }
     } finally {
@@ -283,7 +303,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         { role: 'user', content: '[RECAP]' },
       ]
       const profile = await getLatestProfile()
-      const raw = await callEdge(apiMsgs, colleges, profile)
+      const raw = await callEdge(apiMsgs, collegesRef.current, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
       const msg: ChatMessage = {
         id: crypto.randomUUID(), role: 'assistant', content,
@@ -356,7 +376,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
 
       const profile = await getLatestProfile()
-      const raw = await callEdge(apiMsgs, colleges, profile)
+      const raw = await callEdge(apiMsgs, collegesRef.current, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
 
       const assistantMsg: ChatMessage = {
@@ -391,7 +411,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     try {
       const profile = await getLatestProfile()
-      const raw = await callEdge(nextMessages.map(m => ({ role: m.role, content: m.content })), colleges, profile)
+      const raw = await callEdge(nextMessages.map(m => ({ role: m.role, content: m.content })), collegesRef.current, profile)
       const { content, schoolIds, prefs } = parseResponse(raw)
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(), role: 'assistant', content,

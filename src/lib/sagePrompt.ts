@@ -27,8 +27,46 @@ export interface SageProfile {
   preferredMajors?: string[]
 }
 
+// Sage's recommendable catalog. The raw list is enrollment-descending, so a naive
+// top-N is dominated by online mega-universities and for-profits and buries small
+// schools — for a fit-over-rank product that's exactly wrong. Drop for-profits and
+// online-scale privates, then round-robin across size tiers so small and medium
+// schools (liberal-arts colleges and the like) actually make it in.
+// 2-year / open-enrollment schools by name — Admyt is for students choosing a
+// 4-year college, so these shouldn't be in Sage's recommendable set.
+const TWO_YEAR_RE = /\b(community|technical|junior|vocational)\b.*\bcollege\b|\bcollege\b.*\btechnical\b|technical institute/i
+
+function selectCatalog(colleges: College[], limit: number): College[] {
+  const eligible = colleges.filter(c =>
+    c.type !== 'private_np' &&
+    !(c.type === 'private' && (c.enrollment ?? 0) > 50000) &&
+    !TWO_YEAR_RE.test(c.name),
+  )
+
+  const buckets: Record<College['size'], College[]> = { small: [], medium: [], large: [] }
+  for (const c of eligible) (buckets[c.size] ?? buckets.medium).push(c)
+
+  const order: College['size'][] = ['small', 'medium', 'large']
+  // Prefer schools that report an acceptance rate. It's the best proxy we have for
+  // a selective 4-year (vs. an open-enrollment community/online school, which the
+  // dataset is full of and whose names don't always give them away). Stable sort
+  // keeps the enrollment-desc order within each rank.
+  for (const size of order) {
+    buckets[size].sort((a, b) => (a.acceptanceRate != null ? 0 : 1) - (b.acceptanceRate != null ? 0 : 1))
+  }
+
+  const picked: College[] = []
+  let i = 0
+  while (picked.length < limit && (buckets.small.length || buckets.medium.length || buckets.large.length)) {
+    const next = buckets[order[i % order.length]].shift()
+    if (next) picked.push(next)
+    i++
+  }
+  return picked
+}
+
 export function buildSagePrompt(colleges: College[], profile?: SageProfile): string {
-  const catalog = colleges.slice(0, 200).map(c => ({
+  const catalog = selectCatalog(colleges, 200).map(c => ({
     id: c.id,
     name: c.name,
     location: c.location,
