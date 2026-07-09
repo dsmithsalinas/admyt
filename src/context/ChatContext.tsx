@@ -25,6 +25,10 @@ interface ChatContextType {
   heartedSchools: Set<string>
   toggleHeart: (college: College) => void
   proactivePref: 'yes' | 'no' | null
+  // A guest just hearted their first school this session — prompt them to make
+  // an account so it actually saves. Rendered once at the app shell (Layout).
+  authNudgeOpen: boolean
+  dismissAuthNudge: () => void
 }
 
 const ChatContext = createContext<ChatContextType | null>(null)
@@ -123,6 +127,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [heartActionCount, setHeartActionCount] = useState(0)
   const heartActionCountRef = useRef(0)
   heartActionCountRef.current = heartActionCount
+  // One gentle sign-up nudge per guest session, fired on their first new heart.
+  // The ref survives route changes (provider never unmounts) so navigating
+  // between hearts doesn't re-trigger it; a refresh resets it, which is fine —
+  // that's also when their in-memory hearts are lost.
+  const [authNudgeOpen, setAuthNudgeOpen] = useState(false)
+  const heartNudgeShownRef = useRef(false)
   const [proactivePref] = useState<'yes' | 'no' | null>(null)
   const [userPrefs, setUserPrefs] = useState<{ preferred_states: string[]; max_tuition: number | null; preferred_majors: string[] } | null>(null)
   const userPrefsRef = useRef<typeof userPrefs>(null)
@@ -470,6 +480,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setHeartActionCount(newCount)
       if (user) {
         supabase.from('user_preferences').upsert({ user_id: user.id, heart_action_count: newCount }, { onConflict: 'user_id' })
+      } else if (!heartNudgeShownRef.current) {
+        // Guest just saved their first heart of the session. Let them know it
+        // won't stick without an account — without blocking the heart itself,
+        // and without nagging on every subsequent heart.
+        heartNudgeShownRef.current = true
+        setAuthNudgeOpen(true)
       }
       // Notify Sage for first 3 hearts only; unhearting never notifies
       if (newCount <= 3 && !loading) {
@@ -478,10 +494,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  function dismissAuthNudge() {
+    setAuthNudgeOpen(false)
+  }
+
   return (
     <ChatContext.Provider value={{
       messages, sendMessage, loading, initializing,
       heartedSchools, toggleHeart, proactivePref,
+      authNudgeOpen, dismissAuthNudge,
     }}>
       {children}
     </ChatContext.Provider>

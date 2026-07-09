@@ -6,7 +6,7 @@ import SageOrb from '@/components/sage/SageOrb'
 interface AuthModalProps {
   onClose: () => void
   onSuccess: () => void
-  trigger?: 'vibecheck' | 'general'
+  trigger?: 'vibecheck' | 'general' | 'heart'
 }
 
 export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: AuthModalProps) {
@@ -20,10 +20,14 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
 
   const headline = trigger === 'vibecheck'
     ? 'Save your Vibe Check'
+    : trigger === 'heart'
+    ? 'Save this school'
     : 'Find where you fit'
 
   const subline = trigger === 'vibecheck'
     ? "Create a free account so you can come back to these results — and keep building your list."
+    : trigger === 'heart'
+    ? "Hearting helps Sage learn your taste. Make a free account so your schools are still here when you come back."
     : "It's free. Save your schools, your Vibe Checks, and your conversation with Sage."
 
   async function handleEmailSubmit() {

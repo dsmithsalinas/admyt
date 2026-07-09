@@ -4,7 +4,9 @@ import type { CSSProperties } from 'react'
 import { MessageCircle, Search, UserRound } from 'lucide-react'
 import ProfileAvatar from '@/components/ui/ProfileAvatar'
 import SageOrb from '@/components/sage/SageOrb'
+import AuthModal from '@/components/ui/AuthModal'
 import { useAuth } from '@/context/AuthContext'
+import { useChat } from '@/context/ChatContext'
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -21,6 +23,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const { user } = useAuth()
+  const { authNudgeOpen, dismissAuthNudge } = useChat()
   const isHome = location.pathname === '/chat'
 
   const activeTabColor = 'var(--admyt-indigo)'
@@ -200,6 +203,15 @@ export default function Layout() {
             <span style={{ fontSize: '10px', fontWeight: isProfile ? 800 : 600 }}>Profile</span>
           </button>
         </div>
+      )}
+
+      {/* ── Guest heart → sign-up nudge (one per session) ───────── */}
+      {authNudgeOpen && (
+        <AuthModal
+          trigger="heart"
+          onClose={dismissAuthNudge}
+          onSuccess={dismissAuthNudge}
+        />
       )}
 
     </div>
