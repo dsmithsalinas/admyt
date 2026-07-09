@@ -218,9 +218,11 @@ export function buildDescriptionPrompt(college: College): { system: string; user
   return { system, userMessage }
 }
 
-export function buildDeadlinePrompt(college: College): { system: string; userMessage: string } {
+export function buildDeadlinePrompt(college: College, today: string): { system: string; userMessage: string } {
   const system = 'You research U.S. college undergraduate first-year application deadlines using web search of the school\'s official admissions website. You respond with ONLY a JSON object — no preamble, no explanation, no markdown code fences.'
-  const userMessage = `Find the undergraduate first-year application deadlines for ${college.name} in ${college.location}, for the current or upcoming admissions cycle. Search the school's official admissions website.
+  const userMessage = `Today's date is ${today}. Find the undergraduate first-year application deadlines for ${college.name} in ${college.location} for the UPCOMING admissions cycle — the next cycle whose deadlines have not yet passed as of today. Search the school's official admissions website.
+
+Critical: every date you return MUST be in the future relative to ${today}. Admissions sites often still show a past cycle's archived dates — do not use those. Find the current/upcoming cycle's dates. If you can only find dates that have already passed, treat that as "not found."
 
 Respond with ONLY this JSON object:
 {
@@ -233,9 +235,9 @@ Respond with ONLY this JSON object:
 }
 
 Rules:
-- Only include rounds you can find an actual date for on an official source. Do not guess or infer dates.
+- Only include rounds with an actual future-dated deadline from an official source. Do not guess or infer dates.
 - If the school uses rolling admission with no fixed deadline, set "rolling": true and "rounds": [].
-- "cycle" is the admissions cycle these dates apply to (e.g. "2025-2026").
-- If you cannot find reliable official deadlines, return {"rounds": [], "rolling": false, "cycle": "", "source_url": ""}.`
+- "cycle" is the admissions cycle these dates apply to (e.g. "2026-2027").
+- If you cannot find reliable upcoming official deadlines, return {"rounds": [], "rolling": false, "cycle": "", "source_url": ""}.`
   return { system, userMessage }
 }

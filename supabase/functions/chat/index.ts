@@ -159,7 +159,8 @@ async function handleDeadline(body: { collegeId?: unknown }): Promise<Response> 
     }
   }
 
-  const built = buildDeadlinePrompt(college)
+  const today = new Date().toISOString().slice(0, 10)
+  const built = buildDeadlinePrompt(college, today)
   const tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 5 }]
   let messages: unknown[] = [{ role: 'user', content: built.userMessage }]
   let data: { content?: { type: string; text?: string }[]; stop_reason?: string } | null = null
@@ -190,6 +191,13 @@ async function handleDeadline(body: { collegeId?: unknown }): Promise<Response> 
   const text = (data?.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim()
   const parsed = parseDeadlines(text)
   const deadlines = parsed ?? { rounds: [], rolling: false, cycle: '', source_url: '' }
+  // Guard: never surface a past-dated deadline even if the model returns one from
+  // an archived cycle page. Dates are ISO (YYYY-MM-DD), so a string compare works.
+  if (Array.isArray(deadlines.rounds)) {
+    deadlines.rounds = (deadlines.rounds as { date?: string }[]).filter(
+      r => typeof r.date === 'string' && r.date >= today,
+    )
+  }
   // Cache the result (even empty) so we don't re-search this school within the window.
   await saveDeadline(college.id, deadlines)
   return json({ deadlines })

@@ -202,6 +202,7 @@ export default function Profile() {
     [hearts],
   )
   const upcoming = useMemo(() => upcomingWithin(60, deadlines, nameById), [deadlines, nameById])
+  const todayISO = new Date().toISOString().slice(0, 10)
 
   async function handleUnheart(collegeId: string) {
     if (!user) return
@@ -329,10 +330,11 @@ export default function Profile() {
                       const d = deadlines[h.college_id]
                       if (!d) return null
                       if (d.rolling) return <div className="filters" style={{ marginTop: 6 }}><span className="pill">Rolling admissions</span></div>
-                      if (!d.rounds?.length) return null
+                      const future = (d.rounds ?? []).filter(r => r.date >= todayISO)
+                      if (!future.length) return null
                       return (
                         <div className="filters" style={{ marginTop: 6 }}>
-                          {d.rounds.slice(0, 4).map(r => (
+                          {future.slice(0, 4).map(r => (
                             <span className="pill" key={`${r.type}-${r.date}`}>{roundLabel(r.type)} · {formatDeadlineDate(r.date)}</span>
                           ))}
                         </div>
