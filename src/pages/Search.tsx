@@ -7,6 +7,11 @@ import { scoreCollege, hasEnoughProfileForScore } from '@/lib/matchScore'
 import type { College } from '@/lib/colleges'
 import HeartButton from '@/components/ui/HeartButton'
 
+// Top of the tuition slider. Above the most expensive school in the catalog
+// (~$72k), so parking the slider here means "no tuition limit" rather than
+// silently filtering out the priciest schools.
+const TUITION_MAX = 80000
+
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' }, { abbr: 'AR', name: 'Arkansas' },
   { abbr: 'AZ', name: 'Arizona' }, { abbr: 'CA', name: 'California' }, { abbr: 'CO', name: 'Colorado' },
@@ -143,7 +148,7 @@ export default function Search() {
   const [selectedState, setSelectedState] = useState('')
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedType, setSelectedType] = useState('')
-  const [maxTuition, setMaxTuition] = useState(70000)
+  const [maxTuition, setMaxTuition] = useState(TUITION_MAX)
   const [selectedMajor, setSelectedMajor] = useState('')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
 
@@ -157,18 +162,18 @@ export default function Search() {
         if (selectedSize && c.size !== selectedSize) return false
         if (selectedType && c.type !== selectedType) return false
         const tuition = c.tuitionInState ?? c.tuitionOutState
-        if (tuition != null && tuition > maxTuition) return false
+        if (maxTuition < TUITION_MAX && tuition != null && tuition > maxTuition) return false
         if (selectedMajor && !c.majors.includes(selectedMajor)) return false
         return true
       })
       .sort((a, b) => scoreCollege(b, profile) - scoreCollege(a, profile))
   }, [colleges, query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor, profile])
 
-  const activeFilters = [selectedState, selectedSize, selectedType, selectedMajor].filter(Boolean).length + (maxTuition < 70000 ? 1 : 0)
+  const activeFilters = [selectedState, selectedSize, selectedType, selectedMajor].filter(Boolean).length + (maxTuition < TUITION_MAX ? 1 : 0)
 
   function clearFilters() {
     setSelectedState(''); setSelectedSize(''); setSelectedType('')
-    setMaxTuition(70000); setSelectedMajor(''); setQuery('')
+    setMaxTuition(TUITION_MAX); setSelectedMajor(''); setQuery('')
   }
 
   const selectStyle = {
@@ -209,8 +214,8 @@ export default function Search() {
             {type === '' ? 'Any type' : type.charAt(0).toUpperCase() + type.slice(1)}
           </button>
         ))}
-        {maxTuition < 70000 && <button className="pill teal" onClick={() => setMaxTuition(70000)}>Under ${(maxTuition / 1000).toFixed(0)}k</button>}
-        <button onClick={() => setShowMoreFilters(v => !v)} className={`pill ${showMoreFilters || !!(selectedState || selectedMajor || maxTuition < 70000) ? 'teal' : ''}`}>
+        {maxTuition < TUITION_MAX && <button className="pill teal" onClick={() => setMaxTuition(TUITION_MAX)}>Under ${(maxTuition / 1000).toFixed(0)}k</button>}
+        <button onClick={() => setShowMoreFilters(v => !v)} className={`pill ${showMoreFilters || !!(selectedState || selectedMajor || maxTuition < TUITION_MAX) ? 'teal' : ''}`}>
           {showMoreFilters ? 'Hide filters' : 'More filters'}
         </button>
         {activeFilters > 0 && (
@@ -238,10 +243,10 @@ export default function Search() {
           </div>
           <div>
             <label className="mini-title" style={{ display: 'block' }}>
-              Max tuition - ${maxTuition.toLocaleString()}/yr
+              Max tuition - {maxTuition < TUITION_MAX ? `$${maxTuition.toLocaleString()}/yr` : 'No limit'}
             </label>
             <input
-              type="range" min={5000} max={70000} step={1000}
+              type="range" min={5000} max={TUITION_MAX} step={1000}
               value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))}
               style={{ width: '100%', accentColor: '#6366F1' }}
             />

@@ -70,6 +70,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [initializing, setInitializing] = useState(false)
   const [heartedSchools, setHeartedSchools] = useState<Set<string>>(new Set())
+  const heartedSchoolsRef = useRef<Set<string>>(new Set())
+  heartedSchoolsRef.current = heartedSchools
   const [heartActionCount, setHeartActionCount] = useState(0)
   const [proactivePref] = useState<'yes' | 'no' | null>(null)
   const [userPrefs, setUserPrefs] = useState<{ preferred_states: string[]; max_tuition: number | null; preferred_majors: string[] } | null>(null)
@@ -83,13 +85,53 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Always-current snapshot of messages for use inside async callbacks
   const messagesRef = useRef<ChatMessage[]>([])
   messagesRef.current = messages
+  // Current catalog snapshot — needed to look up school names when migrating
+  // guest hearts on sign-in, since the effect may run before colleges settle.
+  const collegesRef = useRef<College[]>([])
+  collegesRef.current = colleges
 
   useEffect(() => {
     if (authLoading || !user) return
     if (loadedForRef.current === user.id) return
     loadedForRef.current = user.id
-    loadUserData(user.id)
+    // Capture any guest-session state (chat + hearts) so signing in preserves it
+    // instead of the server load blowing it away.
+    loadUserData(user.id, messagesRef.current, heartedSchoolsRef.current)
   }, [user, authLoading])
+
+  // Persist guest-session chat + hearts under the freshly signed-in user so the
+  // "Save this conversation" promise actually holds.
+  async function migrateGuestData(userId: string, localMessages: ChatMessage[], localHearts: Set<string>, serverHearts: Set<string>) {
+    if (localMessages.length > 0) {
+      try {
+        await supabase.from('chat_messages').insert(
+          localMessages.map(m => ({
+            id: m.id, user_id: userId, role: m.role,
+            content: m.content, metadata: m.metadata ?? null,
+          })),
+        )
+      } catch (e) {
+        console.error('Failed to migrate guest conversation:', e)
+      }
+    }
+
+    const heartsToInsert = [...localHearts].filter(id => !serverHearts.has(id))
+    if (heartsToInsert.length > 0) {
+      const rows = heartsToInsert
+        .map(id => {
+          const c = collegesRef.current.find(col => col.id === id)
+          return c ? { user_id: userId, college_id: c.id, college_name: c.name } : null
+        })
+        .filter(Boolean) as { user_id: string; college_id: string; college_name: string }[]
+      if (rows.length > 0) {
+        try {
+          await supabase.from('hearted_schools').insert(rows)
+        } catch (e) {
+          console.error('Failed to migrate guest hearts:', e)
+        }
+      }
+    }
+  }
 
   // Fetches a fresh copy of user_preferences from Supabase (if signed in) and
   // merges with the chat-learned profile. Called before every Claude API call so
@@ -122,31 +164,43 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     return snapshot
   }
 
-  async function loadUserData(userId: string) {
+  async function loadUserData(userId: string, localMessages: ChatMessage[], localHearts: Set<string>) {
     setInitializing(true)
     try {
       const [msgRes, heartRes, prefsRes] = await Promise.all([
         supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
         supabase.from('hearted_schools').select('college_id').eq('user_id', userId),
-        supabase.from('user_prefs').select('heart_action_count').eq('user_id', userId).single(),
+        supabase.from('user_preferences').select('heart_action_count').eq('user_id', userId).maybeSingle(),
       ])
 
-      if (heartRes.data) {
-        setHeartedSchools(new Set(heartRes.data.map((h: { college_id: string }) => h.college_id)))
-      }
+      const serverHearts = new Set<string>((heartRes.data ?? []).map((h: { college_id: string }) => h.college_id))
+      // Merge guest hearts with anything already saved on the server.
+      setHeartedSchools(new Set<string>([...serverHearts, ...localHearts]))
+
       if (prefsRes.data) {
         setHeartActionCount(prefsRes.data.heart_action_count ?? 0)
       }
-      if (msgRes.data && msgRes.data.length > 0) {
-        const loaded: ChatMessage[] = msgRes.data.map((m: {
-          id: string; role: 'user' | 'assistant'; content: string; metadata?: { schoolIds?: string[] }
-        }) => ({ id: m.id, role: m.role, content: m.content, metadata: m.metadata ?? undefined }))
-        setMessages(loaded)
+
+      // Persist any guest-session chat/hearts under this user before we settle state.
+      await migrateGuestData(userId, localMessages, localHearts, serverHearts)
+
+      const serverMsgs: ChatMessage[] = (msgRes.data ?? []).map((m: {
+        id: string; role: 'user' | 'assistant'; content: string; metadata?: { schoolIds?: string[]; hidden?: boolean }
+      }) => ({ id: m.id, role: m.role, content: m.content, metadata: m.metadata ?? undefined }))
+
+      // Server history first, then any guest messages not already on the server.
+      const serverIds = new Set(serverMsgs.map(m => m.id))
+      const merged = [...serverMsgs, ...localMessages.filter(m => !serverIds.has(m.id))]
+      if (merged.length > 0) setMessages(merged)
+
+      // Recap only for genuinely returning users (existing server history),
+      // not for a guest who just signed in mid-conversation.
+      if (serverMsgs.length > 0) {
         const sessionKey = `sage_recap_sent_${userId}`
         if (!recapSentRef.current && !sessionStorage.getItem(sessionKey)) {
           recapSentRef.current = true
           sessionStorage.setItem(sessionKey, '1')
-          sendRecap(loaded, userId)
+          sendRecap(merged, userId)
         }
       }
     } finally {
@@ -293,7 +347,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const newCount = heartActionCount + 1
       setHeartActionCount(newCount)
       if (user) {
-        supabase.from('user_prefs').upsert({ user_id: user.id, heart_action_count: newCount })
+        supabase.from('user_preferences').upsert({ user_id: user.id, heart_action_count: newCount }, { onConflict: 'user_id' })
       }
       // Notify Sage for first 3 hearts only; unhearting never notifies
       if (newCount <= 3 && !loading) {

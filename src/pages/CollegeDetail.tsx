@@ -1,8 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getCollege, getShortName, clearCollegeCache } from '@/lib/colleges'
+import { getCollege, getShortName } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
-import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
@@ -69,16 +68,18 @@ export default function CollegeDetail() {
             messages: [{ role: 'user', content: prompt }],
             system: 'You write honest, specific, warm college descriptions in 2-3 sentences. No marketing speak. No generic phrases. Real talk only.',
             max_tokens: 150,
+            // The edge function persists this server-side (service role) so the
+            // description is cached without exposing writes to the colleges table.
+            cacheDescription: { collegeId: college.id },
           }),
         })
 
+        if (!resp.ok) throw new Error(`chat function error: ${resp.status}`)
         const data = await resp.json()
         const description = data?.content?.[0]?.text?.trim()
 
         if (description) {
           setGeneratedDescription(description)
-          await supabase.from('colleges').update({ description }).eq('id', college.id)
-          clearCollegeCache()
         }
       } catch (err) {
         console.error('Failed to generate description:', err)
