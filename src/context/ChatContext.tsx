@@ -36,7 +36,12 @@ function parseResponse(raw: string): { content: string; schoolIds?: string[]; pr
 
   const schoolsMatch = content.match(/SHOW_SCHOOLS:(\[.*?\])/)
   if (schoolsMatch) {
-    try { schoolIds = JSON.parse(schoolsMatch[1]) } catch { /* keep undefined */ }
+    try {
+      const parsed = JSON.parse(schoolsMatch[1])
+      // De-dupe: Sage occasionally repeats an id, which collides React keys and
+      // renders the same school card twice.
+      if (Array.isArray(parsed)) schoolIds = [...new Set(parsed.map(String))]
+    } catch { /* keep undefined */ }
     content = content.replace(schoolsMatch[0], '')
   }
 
