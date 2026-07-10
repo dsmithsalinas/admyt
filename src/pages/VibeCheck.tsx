@@ -7,6 +7,13 @@ import { useAuth } from '@/context/AuthContext'
 import AuthModal from '@/components/ui/AuthModal'
 import { saveVibeCheck } from '@/lib/savedVibes'
 import { useSavedVibes } from '@/context/SavedVibesContext'
+import {
+  GUEST_VIBES_MAX_RUNS,
+  getGuestVibeRuns,
+  getGuestVibeRunForCollege,
+  saveGuestVibeRun,
+  type GuestVibeRun,
+} from '@/lib/guestVibes'
 
 interface VibeDimension {
   key: string
@@ -74,6 +81,98 @@ function DimensionResult({ dim }: { dim: VibeDimension }) {
         <span style={{ width: `${dim.score * 10}%` }} />
       </div>
     </div>
+  )
+}
+
+function ScoreBar({ score }: { score: number }) {
+  return (
+    <div className="bar" style={{ marginTop: 8 }}>
+      <span style={{ width: `${Math.max(0, Math.min(score, 10)) * 10}%` }} />
+    </div>
+  )
+}
+
+function CompareDimensionRow({ current, compare }: { current: VibeDimension; compare?: VibeDimension }) {
+  const canonical = canonicalDimension(current.key, current)
+
+  return (
+    <div className="mock-soft-card section-pad">
+      <span className="mini-title">{canonical.emoji} {canonical.label}</span>
+      <div className="grid-2" style={{ gap: 12, marginTop: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+        <div>
+          <strong style={{ color: current.score >= 8 ? 'var(--admyt-teal)' : 'var(--admyt-indigo)', fontSize: 20 }}>
+            {current.score}/10
+          </strong>
+          <ScoreBar score={current.score} />
+          <p className="match-note" style={{ marginTop: 8 }}>{current.summary}</p>
+        </div>
+        <div>
+          {compare ? (
+            <>
+              <strong style={{ color: compare.score >= 8 ? 'var(--admyt-teal)' : 'var(--admyt-indigo)', fontSize: 20 }}>
+                {compare.score}/10
+              </strong>
+              <ScoreBar score={compare.score} />
+              <p className="match-note" style={{ marginTop: 8 }}>{compare.summary}</p>
+            </>
+          ) : (
+            <p className="match-note">You did not check this dimension for the other school yet.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VibeCompareView({
+  currentRun,
+  compareRun,
+  compareOptions,
+  onCompareChange,
+}: {
+  currentRun: GuestVibeRun
+  compareRun: GuestVibeRun
+  compareOptions: GuestVibeRun[]
+  onCompareChange: (runId: string) => void
+}) {
+  const compareDimensions = new Map(compareRun.result.dimensions.map(dim => [dim.key, dim]))
+
+  return (
+    <section className="mock-card section-pad" aria-label="Compare Vibe Checks">
+      <div className="school-head" style={{ alignItems: 'flex-start', gap: 16 }}>
+        <div>
+          <span className="mini-title">Compare with another school</span>
+          <h2 style={{ margin: '8px 0 6px', color: 'var(--admyt-ink)' }}>Put the reads side by side</h2>
+          <p className="match-note">Pick a recent Vibe Check and compare the parts of campus life you checked.</p>
+        </div>
+        <label style={{ display: 'grid', gap: 6, minWidth: 220 }}>
+          <span className="mini-title">Compare against</span>
+          <select className="field" value={compareRun.id} onChange={event => onCompareChange(event.target.value)}>
+            {compareOptions.map(run => (
+              <option key={run.id} value={run.id}>{run.collegeName}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="grid-2" style={{ gap: 12, marginTop: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        {[currentRun, compareRun].map(run => (
+          <div className="mock-soft-card section-pad" key={run.id}>
+            <span className="mini-title">{run.collegeName}</span>
+            <div style={{ color: 'var(--admyt-ink)', fontSize: 34, fontWeight: 800, marginTop: 8 }}>
+              {run.result.fitScore}<span style={{ color: 'var(--admyt-muted)', fontSize: 16, marginLeft: 4 }}>/ 100</span>
+            </div>
+            <p className="match-note" style={{ marginTop: 8 }}>{run.result.overallSummary}</p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+        {currentRun.result.dimensions.map(dim => (
+          <CompareDimensionRow key={dim.key} current={dim} compare={compareDimensions.get(dim.key)} />
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -148,11 +247,22 @@ export default function VibeCheck() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [college, setCollege] = useState<College | null>(null)
   const [collegeLoading, setCollegeLoading] = useState(true)
+  const [guestVibeRuns, setGuestVibeRuns] = useState<GuestVibeRun[]>([])
+  const [compareRunId, setCompareRunId] = useState('')
 
   useEffect(() => {
     if (!id) return
     setCollegeLoading(true)
     getCollege(id).then(data => { setCollege(data); setCollegeLoading(false) })
+    const persistedRuns = getGuestVibeRuns()
+    setGuestVibeRuns(persistedRuns)
+    const persistedRun = getGuestVibeRunForCollege(id)
+    if (persistedRun) {
+      setResult(persistedRun.result)
+      setSelected(new Set(persistedRun.result.dimensions.map(dim => dim.key)))
+      setError(null)
+      setSaved(false)
+    }
   }, [id])
 
   const selectedDimensions = VIBE_DIMENSIONS.filter(dim => selected.has(dim.key))
@@ -308,14 +418,21 @@ export default function VibeCheck() {
       const finalOverall = streamedOverall as VibeOverall | null
       if (!finalOverall) throw new Error('vibe stream ended without an overall result')
 
-      setResult({
+      const finalResult = {
         dimensions: runSelectedDimensions
           .map(dim => streamedDimensions.get(dim.key))
           .filter((dim): dim is VibeDimension => Boolean(dim)),
         overallSummary: finalOverall.overallSummary,
         fitScore: finalOverall.fitScore,
         scoreRationale: finalOverall.scoreRationale,
-      })
+      }
+
+      setResult(finalResult)
+      setGuestVibeRuns(saveGuestVibeRun({
+        collegeId: college.id,
+        collegeName: college.name,
+        result: finalResult,
+      }))
     } catch (err) {
       setError("Hmm, something didn't work. Try it again in a second.")
       console.error(err)
@@ -340,6 +457,17 @@ export default function VibeCheck() {
 
   const schoolFirst = getShortName(college.name)
   const allSelected = selected.size === VIBE_DIMENSIONS.length
+  const currentRun = result
+    ? guestVibeRuns.find(run => run.collegeId === college.id) ?? {
+      id: `current-${college.id}`,
+      collegeId: college.id,
+      collegeName: college.name,
+      createdAt: new Date().toISOString(),
+      result,
+    }
+    : null
+  const compareOptions = currentRun ? guestVibeRuns.filter(run => run.collegeId !== currentRun.collegeId) : []
+  const compareRun = compareOptions.find(run => run.id === compareRunId) ?? compareOptions[0] ?? null
 
   return (
     <div className="app-frame">
@@ -462,6 +590,15 @@ export default function VibeCheck() {
                     )
                 })}
             </div>
+
+            {currentRun && compareRun && (
+              <VibeCompareView
+                currentRun={currentRun}
+                compareRun={compareRun}
+                compareOptions={compareOptions}
+                onCompareChange={setCompareRunId}
+              />
+            )}
           </main>
 
           <aside className="sage-panel">
@@ -484,6 +621,20 @@ export default function VibeCheck() {
                 </section>
 
                 {saveError && <div className="callout" style={{ color: '#B42318' }}>{saveError}</div>}
+
+                <section className="callout">
+                  <strong>Compare with another school</strong>
+                  <p>
+                    {compareOptions.length > 0
+                      ? `Your last ${Math.min(guestVibeRuns.length, GUEST_VIBES_MAX_RUNS)} Vibe Checks are saved on this device so you can compare them.`
+                      : `Run one more Vibe Check and Sage can compare your recent reads side by side.`}
+                  </p>
+                  {!user && (
+                    <button className="btn secondary" onClick={() => setShowAuthModal(true)} style={{ marginTop: 14, width: '100%' }}>
+                      Sign up to keep comparing
+                    </button>
+                  )}
+                </section>
 
                 <section className="mock-card section-pad">
                   <span className="mini-title">Next moves</span>
