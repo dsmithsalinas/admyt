@@ -19,6 +19,7 @@ interface VibeResult {
   dimensions: VibeDimension[]
   overallSummary: string
   fitScore: number
+  scoreRationale?: string
 }
 
 const VIBE_DIMENSIONS = [
@@ -28,6 +29,7 @@ const VIBE_DIMENSIONS = [
   { key: 'political', label: 'Political & activist culture', emoji: '✊', description: 'Activism, organizing, protest culture, and civic involvement.' },
   { key: 'greekLife', label: 'Greek life', emoji: '🏛️', description: 'How central fraternities and sororities are to social life.' },
   { key: 'diversity', label: 'Diversity & inclusion', emoji: '🌍', description: 'Racial, cultural, socioeconomic, and identity-based diversity.' },
+  { key: 'identity', label: 'Identity & belonging', emoji: '🫂', description: 'Whether students of your identity — LGBTQ+, religious, cultural, first-gen — find their people and feel they belong.' },
   { key: 'outdoor', label: 'Outdoor & nature access', emoji: '🏔️', description: 'Nature, hiking, outdoor recreation, and campus green space.' },
   { key: 'academic', label: 'Academic intensity', emoji: '📚', description: 'How rigorous and competitive the academic culture feels day to day.' },
   { key: 'community', label: 'Local community atmosphere', emoji: '🏘️', description: 'The relationship between campus and the surrounding town or city.' },
@@ -315,6 +317,11 @@ export default function VibeCheck() {
                 <span className="mini-title" style={{ color: 'var(--admyt-teal)' }}>Your fit score</span>
                 <h1 style={{ color: 'white', margin: '10px 0 0' }}>{schoolFirst}'s real read</h1>
                 <p>{result.overallSummary}</p>
+                {result.scoreRationale && (
+                  <p className="match-note" style={{ color: 'rgba(255,255,255,.72)', marginTop: 10 }}>
+                    {result.scoreRationale}
+                  </p>
+                )}
               </div>
               <div className="big-score">{result.fitScore}<span>/ 100</span></div>
             </section>
