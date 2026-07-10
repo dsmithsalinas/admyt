@@ -45,6 +45,30 @@ function whyFit(college: College, score: number, profile: ReturnType<typeof useP
   return 'Good for comparison while your preferences get sharper.'
 }
 
+function getPreferredMajorTerms(profile: ReturnType<typeof useProfile>['profile']) {
+  const p = profile as (typeof profile & { preferredMajors?: string[]; preferred_majors?: string[] })
+  return [
+    p?.intendedMajor,
+    ...(p?.preferredMajors ?? []),
+    ...(p?.preferred_majors ?? []),
+  ]
+    .filter((term): term is string => typeof term === 'string' && term.trim().length > 0)
+    .map(term => term.toLowerCase())
+}
+
+function orderMajorsForProfile(majors: string[], profile: ReturnType<typeof useProfile>['profile']) {
+  const preferredMajors = getPreferredMajorTerms(profile)
+  return majors
+    .map((major, index) => ({ major, index }))
+    .sort((a, b) => {
+      const aMatch = preferredMajors.some(term => a.major.toLowerCase().includes(term) || term.includes(a.major.toLowerCase()))
+      const bMatch = preferredMajors.some(term => b.major.toLowerCase().includes(term) || term.includes(b.major.toLowerCase()))
+      if (aMatch !== bMatch) return aMatch ? -1 : 1
+      return a.index - b.index
+    })
+    .map(item => item.major)
+}
+
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
   const score = scoreCollege(college, profile)
   const showScore = hasEnoughProfileForScore(profile)
@@ -62,18 +86,7 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
     tuition != null ? `$${(tuition / 1000).toFixed(0)}k/yr` : null,
   ].filter(Boolean) as string[]
 
-  const keywords = [
-    ...(profile?.careerGoals ?? []),
-    ...(profile?.intendedMajor ? [profile.intendedMajor] : []),
-  ].map(k => k.toLowerCase())
-
-  const sortedMajors = [...college.majors].sort((a, b) => {
-    const aMatch = keywords.some(k => a.toLowerCase().includes(k) || k.includes(a.toLowerCase()))
-    const bMatch = keywords.some(k => b.toLowerCase().includes(k) || k.includes(b.toLowerCase()))
-    return (bMatch ? 1 : 0) - (aMatch ? 1 : 0)
-  })
-
-  const majorChips = sortedMajors.slice(0, 2).map(m =>
+  const majorChips = orderMajorsForProfile(college.majors, profile).slice(0, 2).map(m =>
     m.length > 28 ? m.slice(0, 27) + '…' : m
   )
 

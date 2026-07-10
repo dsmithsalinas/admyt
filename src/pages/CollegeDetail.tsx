@@ -27,6 +27,30 @@ function fitReasons(college: College, profile: ReturnType<typeof useProfile>['pr
   return reasons.length ? reasons.slice(0, 3) : ['Sage needs a little more about you before this read gets sharp.']
 }
 
+function getPreferredMajorTerms(profile: ReturnType<typeof useProfile>['profile']) {
+  const p = profile as (typeof profile & { preferredMajors?: string[]; preferred_majors?: string[] })
+  return [
+    p?.intendedMajor,
+    ...(p?.preferredMajors ?? []),
+    ...(p?.preferred_majors ?? []),
+  ]
+    .filter((term): term is string => typeof term === 'string' && term.trim().length > 0)
+    .map(term => term.toLowerCase())
+}
+
+function orderMajorsForProfile(majors: string[], profile: ReturnType<typeof useProfile>['profile']) {
+  const preferredMajors = getPreferredMajorTerms(profile)
+  return majors
+    .map((major, index) => ({ major, index }))
+    .sort((a, b) => {
+      const aMatch = preferredMajors.some(term => a.major.toLowerCase().includes(term) || term.includes(a.major.toLowerCase()))
+      const bMatch = preferredMajors.some(term => b.major.toLowerCase().includes(term) || term.includes(b.major.toLowerCase()))
+      if (aMatch !== bMatch) return aMatch ? -1 : 1
+      return a.index - b.index
+    })
+    .map(item => item.major)
+}
+
 function formatStat(value: string | number | null | undefined, fallback = 'Not listed') {
   if (value == null || value === '') return fallback
   return typeof value === 'number' ? value.toLocaleString() : value
@@ -106,6 +130,7 @@ export default function CollegeDetail() {
   const tuition = college.tuitionInState ?? college.tuitionOutState
   const isHearted = heartedSchools.has(college.id)
   const reasons = fitReasons(college, profile)
+  const orderedMajors = orderMajorsForProfile(college.majors, profile)
   const shortName = getShortName(college.name)
   const watchOut = [
     tuition != null && tuition > 45000 ? 'Worth a real look at the cost before you fall for it.' : null,
@@ -187,11 +212,11 @@ export default function CollegeDetail() {
             </section>
           </div>
 
-          {college.majors.length > 0 && (
+          {orderedMajors.length > 0 && (
             <section className="mock-card section-pad">
               <span className="mini-title">Programs that might matter</span>
               <div className="filters" style={{ marginTop: 12 }}>
-                {college.majors.map(major => <span className="pill" key={major}>{major}</span>)}
+                {orderedMajors.map(major => <span className="pill" key={major}>{major}</span>)}
               </div>
             </section>
           )}

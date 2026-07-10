@@ -24,6 +24,10 @@ const FIELDS = [
   'school.locale',
   'school.ownership',
   'school.institution_level',
+  'school.religious_affiliation',
+  'school.carnegie_size_setting',
+  'school.degrees_awarded.highest',
+  'school.degrees_awarded.predominant',
   'school.operating',
   'latest.student.size',
   'latest.admissions.admission_rate.overall',
@@ -48,18 +52,60 @@ function getType(ownership) {
   return 'private_np'
 }
 
+function normalizeProgramTitle(title) {
+  return title
+    .replace(/,.*$/, '')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim()
+}
+
+function isDegreeProgram(program) {
+  // Keep associate's (level 2) and bachelor's (level 3) degree programs, so both
+  // 2-year and 4-year schools surface the majors students would actually enroll in.
+  const credentialLevel = program?.credential?.level
+  const credentialTitle = String(program?.credential?.title ?? '').toLowerCase()
+  return credentialLevel === 2 || credentialLevel === 3
+    || credentialTitle.includes('associate') || credentialTitle.includes('bachelor')
+}
+
+function getProgramShare(program) {
+  const candidates = [
+    program?.degrees_awarded?.share,
+    program?.degrees_awarded?.percent,
+    program?.awards?.share,
+    program?.awards?.percent,
+    program?.share,
+    program?.percentage,
+    program?.percent,
+  ]
+
+  const share = candidates.find(value => typeof value === 'number' && Number.isFinite(value))
+  return typeof share === 'number' ? share : null
+}
+
 function getMajors(programs) {
   if (!programs || !Array.isArray(programs)) return []
   const seen = new Set()
-  return programs
-    .filter(p => p?.title && p?.code)
-    .map(p => {
-      const title = p.title
-        .replace(/,.*$/, '')
-        .replace(/\b\w/g, c => c.toUpperCase())
-        .trim()
-      return title
-    })
+  const degreePrograms = programs
+    .filter(p => p?.title && p?.code && isDegreeProgram(p))
+    .map(p => ({
+      title: normalizeProgramTitle(p.title),
+      share: getProgramShare(p),
+    }))
+
+  const hasDegreeShare = degreePrograms.some(p => p.share != null)
+  const orderedPrograms = degreePrograms.sort((a, b) => {
+    if (hasDegreeShare) {
+      const shareDelta = (b.share ?? -1) - (a.share ?? -1)
+      if (shareDelta !== 0) return shareDelta
+    }
+    // College Scorecard's cip_4_digit payload may omit degree-awarded share;
+    // when it does, alphabetical order is the only deterministic non-CIP fallback.
+    return a.title.localeCompare(b.title)
+  })
+
+  return orderedPrograms
+    .map(p => p.title)
     .filter(title => {
       if (seen.has(title)) return false
       seen.add(title)
@@ -75,7 +121,7 @@ async function fetchPage(page, perPage = 100) {
     per_page: perPage,
     page,
     'school.operating': 1,
-    _sort: 'latest.student.size:desc',
+    'school.degrees_awarded.highest__range': '2..4',
   })
 
   const res = await fetch(`${BASE_URL}?${params}`)
@@ -88,12 +134,17 @@ async function run() {
 
   const allColleges = []
   const perPage = 100
-  const targetCount = 1000
-  const pages = Math.ceil(targetCount / perPage)
+  let total = null
+  let pages = 1
 
   for (let page = 0; page < pages; page++) {
     console.log(`Fetching page ${page + 1} of ${pages}...`)
     const data = await fetchPage(page, perPage)
+    if (total == null) {
+      total = data?.metadata?.total ?? 0
+      pages = Math.ceil(total / perPage)
+      console.log(`College Scorecard reports ${total} matching colleges.`)
+    }
     const results = data?.results ?? []
     if (results.length === 0) break
 
@@ -117,6 +168,9 @@ async function run() {
         zip: r['school.zip'] ?? null,
         url: r['school.school_url'] ?? null,
         locale: String(r['school.locale'] ?? ''),
+        religious_affiliation: r['school.religious_affiliation'] ?? null,
+        setting: r['school.carnegie_size_setting'] ?? null,
+        degrees_predominant: r['school.degrees_awarded.predominant'] ?? null,
         type: getType(r['school.ownership']),
         size: getSize(enrollment),
         enrollment: enrollment ?? null,
