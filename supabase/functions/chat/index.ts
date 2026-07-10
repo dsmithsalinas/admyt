@@ -216,6 +216,65 @@ async function cacheCollegeDescription(collegeId: string, description: string) {
   })
 }
 
+function streamAnthropicText(response: Response): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+  const reader = response.body?.getReader()
+
+  return new ReadableStream({
+    async start(controller) {
+      if (!reader) {
+        controller.close()
+        return
+      }
+
+      let buffer = ''
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+
+          for (const rawLine of lines) {
+            const line = rawLine.trim()
+            if (!line.startsWith('data:')) continue
+
+            const payload = line.slice(5).trim()
+            if (!payload || payload === '[DONE]') continue
+
+            let event: {
+              type?: string
+              delta?: { type?: string; text?: string }
+            }
+            try {
+              event = JSON.parse(payload)
+            } catch {
+              continue
+            }
+
+            if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+              controller.enqueue(encoder.encode(event.delta.text ?? ''))
+            }
+            if (event.type === 'message_stop') {
+              controller.close()
+              return
+            }
+          }
+        }
+        controller.close()
+      } catch (err) {
+        console.error('Anthropic stream error:', err)
+        controller.error(err)
+      } finally {
+        reader.releaseLock()
+      }
+    },
+  })
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -263,6 +322,31 @@ serve(async (req) => {
       const built = buildVibePrompt(college, dimensionKeys, body.profile as SageProfile | undefined)
       system = built.system
       messages = [{ role: 'user', content: built.userMessage }]
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': env('ANTHROPIC_API_KEY'),
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: Math.min(maxTokens, 2048),
+          system,
+          messages,
+          stream: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        console.error('Anthropic API error:', response.status, JSON.stringify(data))
+        return json({ error: 'upstream_error', status: response.status }, 502)
+      }
+
+      return new Response(streamAnthropicText(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' },
+      })
     } else if (type === 'description') {
       const college = await fetchCollege(String(body.collegeId ?? ''))
       if (!college) return json({ error: 'college_not_found' }, 404)

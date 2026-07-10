@@ -22,6 +22,12 @@ interface VibeResult {
   scoreRationale?: string
 }
 
+type VibeOverall = Pick<VibeResult, 'overallSummary' | 'fitScore' | 'scoreRationale'>
+
+type VibeStreamMessage =
+  | ({ t: 'dim' } & VibeDimension)
+  | ({ t: 'overall' } & VibeOverall)
+
 const VIBE_DIMENSIONS = [
   { key: 'social', label: 'Social scene', emoji: '🎉', description: 'Parties, hangouts, campus events, and how easy it is to meet people.' },
   { key: 'athletics', label: 'Athletics & school spirit', emoji: '🏈', description: 'How much sports and school pride shape campus energy.' },
@@ -118,6 +124,9 @@ export default function VibeCheck() {
   const [selected, setSelected] = useState<Set<string>>(new Set(DEFAULT_VIBE_DIMENSION_KEYS))
   const [result, setResult] = useState<VibeResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [streaming, setStreaming] = useState(false)
+  const [streamingDimensions, setStreamingDimensions] = useState<VibeDimension[]>([])
+  const [streamingOverall, setStreamingOverall] = useState<VibeOverall | null>(null)
   const [loadingStep, setLoadingStep] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -176,7 +185,75 @@ export default function VibeCheck() {
 
   async function runVibeCheck() {
     if (selected.size === 0 || !college) return
+    const runSelectedDimensions = VIBE_DIMENSIONS.filter(dim => selected.has(dim.key))
+    const runDimensionKeys = runSelectedDimensions.map(dim => dim.key)
+    const streamedDimensions = new Map<string, VibeDimension>()
+    let streamedOverall: VibeOverall | null = null
+    let buffer = ''
+
+    const upsertStreamedDimension = (dim: VibeDimension) => {
+      streamedDimensions.set(dim.key, dim)
+      setStreamingDimensions(
+        runSelectedDimensions
+          .map(selectedDim => streamedDimensions.get(selectedDim.key))
+          .filter((selectedDim): selectedDim is VibeDimension => Boolean(selectedDim)),
+      )
+    }
+
+    const handleMessage = (message: VibeStreamMessage) => {
+      if (message.t === 'dim') {
+        upsertStreamedDimension({
+          key: message.key,
+          label: message.label,
+          emoji: message.emoji,
+          score: message.score,
+          summary: message.summary,
+        })
+        return
+      }
+
+      streamedOverall = {
+        overallSummary: message.overallSummary,
+        fitScore: message.fitScore,
+        scoreRationale: message.scoreRationale,
+      }
+      setStreamingOverall(streamedOverall)
+    }
+
+    const parseLine = (line: string) => {
+      const parsed = JSON.parse(line) as VibeStreamMessage
+      handleMessage(parsed)
+    }
+
+    const consumeText = (text: string) => {
+      buffer += text
+      while (true) {
+        const newlineIndex = buffer.indexOf('\n')
+        if (newlineIndex === -1) return
+
+        const rawLine = buffer.slice(0, newlineIndex)
+        const rest = buffer.slice(newlineIndex + 1)
+        const line = rawLine.trim()
+
+        if (!line) {
+          buffer = rest
+          continue
+        }
+
+        try {
+          parseLine(line)
+          buffer = rest
+        } catch {
+          buffer = `${rawLine}\n${rest}`
+          return
+        }
+      }
+    }
+
     setLoading(true)
+    setStreaming(false)
+    setStreamingDimensions([])
+    setStreamingOverall(null)
     setError(null)
     setResult(null)
     setSaved(false)
@@ -189,20 +266,45 @@ export default function VibeCheck() {
         body: JSON.stringify({
           type: 'vibe',
           collegeId: college.id,
-          dimensionKeys: Array.from(selected),
+          dimensionKeys: runDimensionKeys,
           profile: profile ?? undefined,
         }),
       })
       if (!resp.ok) throw new Error(`vibe request failed: ${resp.status}`)
-      const data = await resp.json()
-      const text = data.content?.[0]?.text ?? ''
-      const parsed: VibeResult = JSON.parse(text.replace(/```json|```/g, '').trim())
-      setResult(parsed)
+
+      if (!resp.body) {
+        setStreaming(true)
+        consumeText(`${await resp.text()}\n`)
+      } else {
+        const reader = resp.body.getReader()
+        const decoder = new TextDecoder()
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          setStreaming(true)
+          consumeText(decoder.decode(value, { stream: true }))
+        }
+        consumeText(decoder.decode())
+      }
+
+      if (buffer.trim()) parseLine(buffer.trim())
+      const finalOverall = streamedOverall as VibeOverall | null
+      if (!finalOverall) throw new Error('vibe stream ended without an overall result')
+
+      setResult({
+        dimensions: runSelectedDimensions
+          .map(dim => streamedDimensions.get(dim.key))
+          .filter((dim): dim is VibeDimension => Boolean(dim)),
+        overallSummary: finalOverall.overallSummary,
+        fitScore: finalOverall.fitScore,
+        scoreRationale: finalOverall.scoreRationale,
+      })
     } catch (err) {
       setError("Hmm, something didn't work. Try it again in a second.")
       console.error(err)
     } finally {
       setLoading(false)
+      setStreaming(false)
     }
   }
 
@@ -232,7 +334,7 @@ export default function VibeCheck() {
         <span className="pill teal">Vibe Check</span>
       </div>
 
-      {!result && !loading && (
+      {!result && !loading && !streaming && (
         <div className="vibe-setup">
           <main>
             <section className="vibe-banner">
@@ -289,7 +391,7 @@ export default function VibeCheck() {
         </div>
       )}
 
-      {loading && (
+      {loading && !streaming && (
         <div className="vibe-setup">
           <section className="result-card mock-card" style={{ gridColumn: '1 / -1' }}>
             <div>
@@ -307,7 +409,7 @@ export default function VibeCheck() {
         </div>
       )}
 
-      {result && (
+      {(result || streaming) && (
         <div className="vibe-setup">
           <main style={{ display: 'grid', gap: 14 }}>
             <ProfileLensChips profile={profile} />
@@ -316,49 +418,76 @@ export default function VibeCheck() {
               <div>
                 <span className="mini-title" style={{ color: 'var(--admyt-teal)' }}>Your fit score</span>
                 <h1 style={{ color: 'white', margin: '10px 0 0' }}>{schoolFirst}'s real read</h1>
-                <p>{result.overallSummary}</p>
-                {result.scoreRationale && (
+                <p>{result?.overallSummary ?? streamingOverall?.overallSummary ?? 'Sage is reading the dimensions you picked. The full fit score will land after the dimension cards finish.'}</p>
+                {(result?.scoreRationale ?? streamingOverall?.scoreRationale) && (
                   <p className="match-note" style={{ color: 'rgba(255,255,255,.72)', marginTop: 10 }}>
-                    {result.scoreRationale}
+                    {result?.scoreRationale ?? streamingOverall?.scoreRationale}
                   </p>
                 )}
               </div>
-              <div className="big-score">{result.fitScore}<span>/ 100</span></div>
+              <div className="big-score">
+                {result?.fitScore ?? streamingOverall?.fitScore ?? '...'}<span>/ 100</span>
+              </div>
             </section>
 
             <div className="grid-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
-              {result.dimensions.map(dim => <DimensionResult key={dim.key} dim={dim} />)}
+              {result
+                ? result.dimensions.map(dim => <DimensionResult key={dim.key} dim={dim} />)
+                : selectedDimensions.map(dim => {
+                  const streamed = streamingDimensions.find(streamedDim => streamedDim.key === dim.key)
+                  return streamed
+                    ? <DimensionResult key={dim.key} dim={streamed} />
+                    : (
+                      <div className="mock-card section-pad" key={dim.key}>
+                        <LoadingDimensionRow dim={dim} />
+                      </div>
+                    )
+                })}
             </div>
           </main>
 
           <aside className="sage-panel">
-            <section className="callout">
-              <strong>{saved ? 'Saved to your profile' : user ? 'Save this read' : "Don't lose this"}</strong>
-              <p>{saved ? 'You can find it from Profile whenever you need it.' : 'Save this Vibe Check so Sage can use it later.'}</p>
-              {user ? (
-                !saved && (
-                  <button className="btn" onClick={handleSave} disabled={saveLoading} style={{ marginTop: 14, width: '100%' }}>
-                    {saveLoading ? 'Saving...' : 'Save results'}
-                  </button>
-                )
-              ) : (
-                <button className="btn" onClick={() => setShowAuthModal(true)} style={{ marginTop: 14, width: '100%' }}>
-                  Save results
-                </button>
-              )}
-            </section>
+            {result ? (
+              <>
+                <section className="callout">
+                  <strong>{saved ? 'Saved to your profile' : user ? 'Save this read' : "Don't lose this"}</strong>
+                  <p>{saved ? 'You can find it from Profile whenever you need it.' : 'Save this Vibe Check so Sage can use it later.'}</p>
+                  {user ? (
+                    !saved && (
+                      <button className="btn" onClick={handleSave} disabled={saveLoading} style={{ marginTop: 14, width: '100%' }}>
+                        {saveLoading ? 'Saving...' : 'Save results'}
+                      </button>
+                    )
+                  ) : (
+                    <button className="btn" onClick={() => setShowAuthModal(true)} style={{ marginTop: 14, width: '100%' }}>
+                      Save results
+                    </button>
+                  )}
+                </section>
 
-            {saveError && <div className="callout" style={{ color: '#B42318' }}>{saveError}</div>}
+                {saveError && <div className="callout" style={{ color: '#B42318' }}>{saveError}</div>}
 
-            <section className="mock-card section-pad">
-              <span className="mini-title">Next moves</span>
-              <div className="suggestion-list" style={{ marginTop: 12 }}>
-                <button className="suggestion" onClick={() => { setResult(null); setError(null); setSaved(false) }}><p>Change what I'm checking</p></button>
-                <button className="suggestion" onClick={runVibeCheck}><p>Run it again</p></button>
-                <button className="suggestion" onClick={() => navigate('/chat')}><p>Ask Sage about this result</p></button>
-                <button className="suggestion" onClick={() => navigate(`/college/${id}`)}><p>Back to {schoolFirst}</p></button>
-              </div>
-            </section>
+                <section className="mock-card section-pad">
+                  <span className="mini-title">Next moves</span>
+                  <div className="suggestion-list" style={{ marginTop: 12 }}>
+                    <button className="suggestion" onClick={() => { setResult(null); setError(null); setSaved(false) }}><p>Change what I'm checking</p></button>
+                    <button className="suggestion" onClick={runVibeCheck}><p>Run it again</p></button>
+                    <button className="suggestion" onClick={() => navigate('/chat')}><p>Ask Sage about this result</p></button>
+                    <button className="suggestion" onClick={() => navigate(`/college/${id}`)}><p>Back to {schoolFirst}</p></button>
+                  </div>
+                </section>
+              </>
+            ) : (
+              <section className="callout">
+                <strong>Building your read</strong>
+                <p>{loadingStatus}</p>
+                <div className="vibe-loading-list" style={{ marginTop: 12 }}>
+                  {selectedDimensions.map(dim => (
+                    <LoadingDimensionRow key={dim.key} dim={dim} />
+                  ))}
+                </div>
+              </section>
+            )}
           </aside>
         </div>
       )}
