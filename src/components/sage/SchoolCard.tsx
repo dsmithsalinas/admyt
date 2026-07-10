@@ -5,6 +5,7 @@ import { scoreCollege, hasEnoughProfileForScore } from '@/lib/matchScore'
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
 import type { College } from '@/lib/colleges'
+import { orderMajorsForProfile } from '@/lib/majors'
 import ScoreRing from '@/components/ui/ScoreRing'
 import HeartButton from '@/components/ui/HeartButton'
 import AdmytPill from '@/components/ui/AdmytPill'
@@ -30,30 +31,6 @@ function whyFit(college: College, score: number, profile: ReturnType<typeof useP
   if (score >= 80) return 'Looks like a strong fit from what Sage knows so far.'
   if (score >= 60) return 'Worth a closer look — a few things already line up.'
   return 'A different option to consider while Sage gets to know you.'
-}
-
-function getPreferredMajorTerms(profile: ReturnType<typeof useProfile>['profile']) {
-  const p = profile as (typeof profile & { preferredMajors?: string[]; preferred_majors?: string[] })
-  return [
-    p?.intendedMajor,
-    ...(p?.preferredMajors ?? []),
-    ...(p?.preferred_majors ?? []),
-  ]
-    .filter((term): term is string => typeof term === 'string' && term.trim().length > 0)
-    .map(term => term.toLowerCase())
-}
-
-function orderMajorsForProfile(majors: string[], profile: ReturnType<typeof useProfile>['profile']) {
-  const preferredMajors = getPreferredMajorTerms(profile)
-  return majors
-    .map((major, index) => ({ major, index }))
-    .sort((a, b) => {
-      const aMatch = preferredMajors.some(term => a.major.toLowerCase().includes(term) || term.includes(a.major.toLowerCase()))
-      const bMatch = preferredMajors.some(term => b.major.toLowerCase().includes(term) || term.includes(b.major.toLowerCase()))
-      if (aMatch !== bMatch) return aMatch ? -1 : 1
-      return a.index - b.index
-    })
-    .map(item => item.major)
 }
 
 export default function SchoolCard({ collegeId }: { collegeId: string }) {

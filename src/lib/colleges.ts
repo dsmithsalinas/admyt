@@ -10,6 +10,7 @@ export interface College {
   url?: string
   locale?: string
   type: 'public' | 'private' | 'private_np'
+  degreesPredominant?: number
   size: 'small' | 'medium' | 'large'
   enrollment?: number
   acceptanceRate?: number
@@ -34,6 +35,7 @@ function mapRow(row: Record<string, unknown>): College {
     url: row.url as string | undefined,
     locale: row.locale as string | undefined,
     type: (row.type as College['type']) ?? 'private',
+    degreesPredominant: row.degrees_predominant as number | undefined,
     size: (row.size as College['size']) ?? 'medium',
     enrollment: row.enrollment as number | undefined,
     acceptanceRate: row.acceptance_rate as number | undefined,

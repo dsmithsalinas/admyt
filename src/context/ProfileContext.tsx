@@ -1,15 +1,23 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useAuth } from './AuthContext'
+import { loadProfilePreferences, mergeProfilePreferenceFields } from '@/lib/profilePreferences'
 
 export interface StudentProfile {
   preferredLocations: string[]
   careerGoals: string[]
   intendedMajor?: string
+  preferredStates?: string[]
+  maxTuition?: number | null
+  preferredMajors?: string[]
+  preferredSize?: 'small' | 'medium' | 'large' | null
+  preferredInstitutionType?: 'two_year' | 'four_year' | 'either' | null
   complete: boolean
 }
 
 interface ProfileContextType {
   profile: StudentProfile | null
   setProfile: (p: StudentProfile) => void
+  mergeProfile: (p: Partial<StudentProfile>) => void
   clearProfile: () => void
 }
 
@@ -30,7 +38,29 @@ function loadStored(): StudentProfile | null {
 }
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
   const [profile, setProfileState] = useState<StudentProfile | null>(() => loadStored())
+
+  useEffect(() => {
+    if (loading) return
+    if (!user) return
+
+    let cancelled = false
+    loadProfilePreferences(user.id).then(prefs => {
+      if (cancelled) return
+      setProfileState(prev => {
+        const merged = mergeProfilePreferenceFields(prev, prefs)
+        try {
+          if (merged) localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+        } catch {
+          /* storage unavailable — state still updates */
+        }
+        return merged
+      })
+    })
+
+    return () => { cancelled = true }
+  }, [user, loading])
 
   function setProfile(p: StudentProfile) {
     setProfileState(p)
@@ -39,6 +69,24 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* storage unavailable — state still updates */
     }
+  }
+
+  function mergeProfile(p: Partial<StudentProfile>) {
+    setProfileState(prev => {
+      const merged: StudentProfile = {
+        preferredLocations: [],
+        careerGoals: [],
+        complete: false,
+        ...prev,
+        ...p,
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+      } catch {
+        /* storage unavailable — state still updates */
+      }
+      return merged
+    })
   }
 
   function clearProfile() {
@@ -51,7 +99,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ProfileContext.Provider value={{ profile, setProfile, clearProfile }}>
+    <ProfileContext.Provider value={{ profile, setProfile, mergeProfile, clearProfile }}>
       {children}
     </ProfileContext.Provider>
   )

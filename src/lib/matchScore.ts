@@ -2,71 +2,135 @@ import type { College } from './colleges'
 import type { StudentProfile } from '@/context/ProfileContext'
 
 // A Fit Score is only meaningful once Sage knows something about the student.
-// Without any location, major, or career-goal signal the number is noise — hide it.
+// Without any saved preference signal the number is noise — hide it.
 export function hasEnoughProfileForScore(profile: StudentProfile | null): boolean {
   if (!profile) return false
   return !!(
+    (profile.preferredStates && profile.preferredStates.length > 0) ||
     (profile.preferredLocations && profile.preferredLocations.length > 0) ||
+    (profile.preferredMajors && profile.preferredMajors.length > 0) ||
     profile.intendedMajor ||
-    (profile.careerGoals && profile.careerGoals.length > 0)
+    (profile.careerGoals && profile.careerGoals.length > 0) ||
+    profile.maxTuition != null ||
+    profile.preferredSize ||
+    (profile.preferredInstitutionType && profile.preferredInstitutionType !== 'either')
   )
 }
 
+function neutralScore(collegeId: string): number {
+  // No profile — return a varied but neutral score in the 45-65 range.
+  return ((parseInt(collegeId) * 37) % 21) + 45
+}
+
+function normalizeTerms(terms: (string | undefined)[]): string[] {
+  return terms
+    .filter((term): term is string => typeof term === 'string' && term.trim().length > 0)
+    .map(term => term.trim().toLowerCase())
+}
+
+function hasTermMatch(haystack: string, terms: string[]): boolean {
+  const target = haystack.toLowerCase()
+  return terms.some(term => target.includes(term) || term.includes(target))
+}
+
+function institutionTypeMatches(
+  preference: StudentProfile['preferredInstitutionType'],
+  degreesPredominant: number | undefined,
+): boolean | null {
+  if (!preference || preference === 'either' || degreesPredominant == null) return null
+  if (preference === 'two_year') return degreesPredominant === 2
+  return degreesPredominant >= 3
+}
+
 export function scoreCollege(college: College, profile: StudentProfile | null): number {
-  if (!profile) {
-    // No profile — return a varied but neutral score in the 45–65 range
-    return ((parseInt(college.id) * 37) % 21) + 45
-  }
+  if (!profile) return neutralScore(college.id)
 
   const hasAnyProfile = !!(
     profile.intendedMajor ||
-    profile.careerGoals.length > 0 ||
-    profile.preferredLocations.length > 0
+    (profile.careerGoals?.length ?? 0) > 0 ||
+    (profile.preferredLocations?.length ?? 0) > 0 ||
+    (profile.preferredStates?.length ?? 0) > 0 ||
+    (profile.preferredMajors?.length ?? 0) > 0 ||
+    profile.maxTuition != null ||
+    profile.preferredSize ||
+    (profile.preferredInstitutionType && profile.preferredInstitutionType !== 'either')
   )
 
   if (!hasAnyProfile) {
-    return ((parseInt(college.id) * 37) % 21) + 45
+    return neutralScore(college.id)
   }
 
-  // Base: 35 (no overlap = low-40s after jitter)
-  let score = 35
+  // Start from a neutral read, then let strong matches and hard mismatches move
+  // schools far enough apart that "Best fit first" feels meaningfully sorted.
+  let score = 50
 
-  const goals = profile.careerGoals.map(g => g.toLowerCase())
-  const locations = profile.preferredLocations.map(l => l.toLowerCase())
+  const preferredStates = (profile.preferredStates ?? [])
+    .map(s => s.trim().toUpperCase())
+    .filter(Boolean)
+  const preferredLocations = normalizeTerms(profile.preferredLocations ?? [])
+  const preferredMajors = normalizeTerms([
+    ...(profile.preferredMajors ?? []),
+    profile.intendedMajor,
+  ])
+  const intendedMajor = normalizeTerms([profile.intendedMajor])
+  const goals = normalizeTerms(profile.careerGoals ?? [])
+  const collegeMajors = college.majors.map(m => m.toLowerCase())
 
-  // Major match via career goals — up to 18 points
-  const majorMatches = college.majors.filter(m =>
-    goals.some(g => m.toLowerCase().includes(g) || g.includes(m.toLowerCase()))
-  )
-  score += Math.min(majorMatches.length * 8, 18)
-
-  // Intended major exact match — up to 14 points
-  if (profile.intendedMajor) {
-    const exactMatch = college.majors.some(m =>
-      m.toLowerCase().includes(profile.intendedMajor!.toLowerCase())
-    )
-    if (exactMatch) score += 14
+  if (preferredStates.length > 0) {
+    score += preferredStates.includes(college.state.toUpperCase()) ? 24 : -12
   }
 
-  // Location match — up to 16 points
-  if (locations.length > 0) {
-    const locationMatch = locations.some(loc =>
-      college.state.toLowerCase().includes(loc) ||
+  if (preferredLocations.length > 0) {
+    const locationMatch = preferredLocations.some(loc =>
       college.location.toLowerCase().includes(loc) ||
+      college.state.toLowerCase() === loc ||
       loc.includes(college.state.toLowerCase())
     )
-    if (locationMatch) score += 16
+    score += locationMatch ? 16 : -6
   }
 
-  // Career goal keyword match in description — up to 7 points
+  const typeMatch = institutionTypeMatches(profile.preferredInstitutionType, college.degreesPredominant)
+  if (typeMatch === true) score += 24
+  if (typeMatch === false) score -= 30
+
+  if (profile.preferredSize) {
+    score += college.size === profile.preferredSize ? 12 : -10
+  }
+
+  if (profile.maxTuition != null) {
+    const tuition = college.tuitionOutState ?? college.tuitionInState
+    if (tuition != null) {
+      if (tuition <= profile.maxTuition) {
+        score += 10
+      } else {
+        const overage = tuition - profile.maxTuition
+        score -= Math.min(30, 10 + Math.ceil(overage / 5000) * 4)
+      }
+    }
+  }
+
+  if (preferredMajors.length > 0) {
+    const matchedCount = collegeMajors.filter(major => hasTermMatch(major, preferredMajors)).length
+    score += Math.min(matchedCount * 10, 20)
+  }
+
+  if (intendedMajor.length > 0 && collegeMajors.some(major => hasTermMatch(major, intendedMajor))) {
+    score += 10
+  }
+
+  if (goals.length > 0) {
+    const goalMajorMatches = collegeMajors.filter(major => hasTermMatch(major, goals)).length
+    score += Math.min(goalMajorMatches * 6, 12)
+  }
+
   if (college.description && goals.length > 0) {
-    const descMatch = goals.some(g => college.description!.toLowerCase().includes(g))
-    if (descMatch) score += 7
+    const descMatch = goals.some(goal => college.description!.toLowerCase().includes(goal))
+    if (descMatch) score += 6
   }
 
-  // Per-college jitter ±4 so scores feel varied
-  const jitter = ((parseInt(college.id) * 13) % 9) - 4
+  // Per-college jitter +/-5 so equivalent schools do not all tie.
+  const jitter = ((parseInt(college.id) * 13) % 11) - 5
   score += jitter
 
-  return Math.max(25, Math.min(score, 95))
+  return Math.max(0, Math.min(Math.round(score), 100))
 }

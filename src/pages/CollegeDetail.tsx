@@ -5,6 +5,7 @@ import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { scoreCollege } from '@/lib/matchScore'
+import { orderMajorsForProfile } from '@/lib/majors'
 import HeartButton from '@/components/ui/HeartButton'
 
 function matchLabel(score: number) {
@@ -25,30 +26,6 @@ function fitReasons(college: College, profile: ReturnType<typeof useProfile>['pr
   ].filter(Boolean) as string[]
 
   return reasons.length ? reasons.slice(0, 3) : ['Sage needs a little more about you before this read gets sharp.']
-}
-
-function getPreferredMajorTerms(profile: ReturnType<typeof useProfile>['profile']) {
-  const p = profile as (typeof profile & { preferredMajors?: string[]; preferred_majors?: string[] })
-  return [
-    p?.intendedMajor,
-    ...(p?.preferredMajors ?? []),
-    ...(p?.preferred_majors ?? []),
-  ]
-    .filter((term): term is string => typeof term === 'string' && term.trim().length > 0)
-    .map(term => term.toLowerCase())
-}
-
-function orderMajorsForProfile(majors: string[], profile: ReturnType<typeof useProfile>['profile']) {
-  const preferredMajors = getPreferredMajorTerms(profile)
-  return majors
-    .map((major, index) => ({ major, index }))
-    .sort((a, b) => {
-      const aMatch = preferredMajors.some(term => a.major.toLowerCase().includes(term) || term.includes(a.major.toLowerCase()))
-      const bMatch = preferredMajors.some(term => b.major.toLowerCase().includes(term) || term.includes(b.major.toLowerCase()))
-      if (aMatch !== bMatch) return aMatch ? -1 : 1
-      return a.index - b.index
-    })
-    .map(item => item.major)
 }
 
 function formatStat(value: string | number | null | undefined, fallback = 'Not listed') {

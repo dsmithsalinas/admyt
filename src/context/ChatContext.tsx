@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext'
 import { useProfile, type StudentProfile } from './ProfileContext'
 import { useColleges } from './CollegeContext'
 import type { College } from '@/lib/colleges'
+import { loadProfilePreferences, mergeProfilePreferenceFields, type ProfilePreferenceColumns } from '@/lib/profilePreferences'
 
 export interface ChatMessage {
   id: string
@@ -83,6 +84,7 @@ function mergeLearnedProfile(
   const goals = (incoming.careerGoals ?? []).filter(Boolean)
   const major = typeof incoming.intendedMajor === 'string' ? incoming.intendedMajor.trim() : ''
   return {
+    ...base,
     preferredLocations: locs.length ? unionCI(base.preferredLocations, locs) : base.preferredLocations,
     careerGoals: goals.length ? unionCI(base.careerGoals, goals) : base.careerGoals,
     intendedMajor: major || base.intendedMajor,
@@ -134,7 +136,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [authNudgeOpen, setAuthNudgeOpen] = useState(false)
   const heartNudgeShownRef = useRef(false)
   const [proactivePref] = useState<'yes' | 'no' | null>(null)
-  const [userPrefs, setUserPrefs] = useState<{ preferred_states: string[]; max_tuition: number | null; preferred_majors: string[] } | null>(null)
+  const [userPrefs, setUserPrefs] = useState<ProfilePreferenceColumns | null>(null)
   const userPrefsRef = useRef<typeof userPrefs>(null)
   userPrefsRef.current = userPrefs
   const sageProfileRef = useRef<typeof sageProfile>(null)
@@ -233,25 +235,24 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     let up = userPrefsRef.current
 
     if (user) {
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('preferred_states,max_tuition,preferred_majors')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      if (data) {
-        up = data
-        setUserPrefs(data)
-        userPrefsRef.current = data
+      const prefs = await loadProfilePreferences(user.id)
+      if (prefs) {
+        up = prefs
+        setUserPrefs(prefs)
+        userPrefsRef.current = prefs
       }
     }
 
+    const merged = mergeProfilePreferenceFields(sp, up)
     const snapshot: SageProfile = {
-      preferredLocations: sp?.preferredLocations,
-      careerGoals: sp?.careerGoals,
-      intendedMajor: sp?.intendedMajor,
-      preferredStates: up?.preferred_states,
-      maxTuition: up?.max_tuition,
-      preferredMajors: up?.preferred_majors,
+      preferredLocations: merged?.preferredLocations,
+      careerGoals: merged?.careerGoals,
+      intendedMajor: merged?.intendedMajor,
+      preferredStates: merged?.preferredStates,
+      maxTuition: merged?.maxTuition,
+      preferredMajors: merged?.preferredMajors,
+      preferredSize: merged?.preferredSize,
+      preferredInstitutionType: merged?.preferredInstitutionType,
     }
     return snapshot
   }
@@ -262,7 +263,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const [msgRes, heartRes, prefsRes] = await Promise.all([
         supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
         supabase.from('hearted_schools').select('college_id').eq('user_id', userId),
-        supabase.from('user_preferences').select('heart_action_count,sage_profile').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_preferences').select('heart_action_count,sage_profile,preferred_states,max_tuition,preferred_majors').eq('user_id', userId).maybeSingle(),
       ])
 
       const serverHearts = new Set<string>((heartRes.data ?? []).map((h: { college_id: string }) => h.college_id))
@@ -271,12 +272,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       if (prefsRes.data) {
         setHeartActionCount(prefsRes.data.heart_action_count ?? 0)
+        setUserPrefs(prefsRes.data)
+        userPrefsRef.current = prefsRes.data
       }
 
       // Restore the chat-learned profile. The server copy is authoritative (it
       // syncs across devices); if the account has none yet, push up whatever this
       // device already knows (e.g. a guest who just signed in).
-      const dbProfile = (prefsRes.data?.sage_profile ?? null) as StudentProfile | null
+      const dbProfile = mergeProfilePreferenceFields(
+        (prefsRes.data?.sage_profile ?? null) as StudentProfile | null,
+        prefsRes.data ?? null,
+      )
       if (dbProfile) {
         setProfile(dbProfile)
         sageProfileRef.current = dbProfile

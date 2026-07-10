@@ -9,4 +9,6 @@ export interface SageProfile {
   preferredStates?: string[]
   maxTuition?: number | null
   preferredMajors?: string[]
+  preferredSize?: 'small' | 'medium' | 'large' | null
+  preferredInstitutionType?: 'two_year' | 'four_year' | 'either' | null
 }

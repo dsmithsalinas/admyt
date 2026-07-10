@@ -156,7 +156,7 @@ function PreferencesModal({ prefs, onSave, onClose }: { prefs: UserPreferences; 
 export default function Profile() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { profile: sageProfile } = useProfile()
+  const { profile: sageProfile, mergeProfile } = useProfile()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPrefsModal, setShowPrefsModal] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -214,6 +214,11 @@ export default function Profile() {
     if (!user) return
     await supabase.from('user_preferences').upsert({ user_id: user.id, ...newPrefs }, { onConflict: 'user_id' })
     setPrefs(newPrefs)
+    mergeProfile({
+      preferredStates: newPrefs.preferred_states,
+      maxTuition: newPrefs.max_tuition,
+      preferredMajors: newPrefs.preferred_majors,
+    })
     setShowPrefsModal(false)
   }
 
