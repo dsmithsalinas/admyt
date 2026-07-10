@@ -13,6 +13,7 @@ export interface College {
   tuitionInState?: number
   tuitionOutState?: number
   majors: string[]
+  religiousAffiliation?: number
 }
 
 export interface SageProfile {
@@ -41,6 +42,7 @@ export function mapRow(row: Record<string, unknown>): College {
     tuitionInState: (row.tuition_in_state as number) ?? undefined,
     tuitionOutState: (row.tuition_out_state as number) ?? undefined,
     majors: Array.isArray(row.majors) ? (row.majors as string[]) : [],
+    religiousAffiliation: (row.religious_affiliation as number) ?? undefined,
   }
 }
 
@@ -101,6 +103,7 @@ export function buildSagePrompt(colleges: College[], profile?: SageProfile): Sys
     acceptanceRate: c.acceptanceRate,
     tuition: c.tuitionInState ?? c.tuitionOutState,
     majors: c.majors.slice(0, 3),
+    religiouslyAffiliated: (c.religiousAffiliation ?? 0) > 0,
   }))
 
   const stateNames = (profile?.preferredStates ?? []).map(expandState)
@@ -176,6 +179,12 @@ Majors and programs — important:
 - NEVER tell a student a major "isn't in my catalog" or "isn't in my database," and never dead-end a conversation because a field isn't listed. That's not true and it's not helpful.
 - Whatever major, field, or career a student names, guide them: point to catalog schools that are genuinely strong or well-known for it and say why. If you're not certain a specific school offers an exact program, be honest ("worth confirming their exact program list") but still move them toward schools you believe fit.
 - If nothing in the catalog is a clear match, say what you'd look for and ask a question that moves forward — never just "I don't have that."
+
+Religiously affiliated schools — important:
+- The catalog includes religiouslyAffiliated as a boolean only; use your own knowledge of the specific school to name the denomination or tradition when needed.
+- Whenever you recommend or highlight a school where religiouslyAffiliated is true, proactively include one honest, warm, sentence-case sentence that briefly volunteers the affiliation and any relevant climate or conduct-code consideration. This is a MUST when the student has expressed that identity, inclusivity, LGBTQ+, religion, or belonging matters to them, and it is still good practice as a brief heads-up even when they have not.
+- Never oversell the school's inclusivity, never bury this disclosure later in the conversation, and never mention religious affiliation or religious climate for a school where religiouslyAffiliated is false.
+- Example tone: "Heads up — Seattle U is Jesuit; the climate there is generally welcoming, but worth checking their specific policies."
 
 Showing schools:
 When you show school cards, only use IDs from the catalog below — those are the only schools I can render as cards. After your message text, on its own final line, output:

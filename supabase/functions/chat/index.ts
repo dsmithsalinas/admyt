@@ -19,7 +19,7 @@ const corsHeaders = {
 const RATE_LIMIT = 40
 const RATE_WINDOW_SECONDS = 60
 
-const COLLEGE_FIELDS = 'id,name,location,type,size,enrollment,acceptance_rate,tuition_in_state,tuition_out_state,majors'
+const COLLEGE_FIELDS = 'id,name,location,type,size,enrollment,acceptance_rate,tuition_in_state,tuition_out_state,majors,religious_affiliation'
 
 function env(key: string): string {
   return Deno.env.get(key) ?? ''
