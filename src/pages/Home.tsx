@@ -109,8 +109,8 @@ export default function Home() {
             Chat with Sage
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-        <div className="sage-home-grid" style={{ minHeight: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 330px', gap: 0, alignItems: 'stretch', background: 'linear-gradient(180deg, #fffdfa 0%, #faf8ff 100%)' }}>
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, background: 'linear-gradient(180deg, #fffdfa 0%, #faf8ff 100%)' }}>
+        <div className="sage-home-grid" style={{ minHeight: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 330px', gap: 0, alignItems: 'stretch', margin: '0 auto' }}>
           <div style={{ minWidth: 0, padding: '24px clamp(16px, 3vw, 48px)' }}>
 
           {isEmpty && (
