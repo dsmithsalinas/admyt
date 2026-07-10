@@ -112,6 +112,61 @@ export function typeLabel(type: College['type']): string {
   return 'Private'
 }
 
+export interface TuitionDisplayInfo {
+  display: string
+  label?: 'out-of-state' | 'in-state'
+  inState?: number
+  outState?: number
+  primary?: number
+}
+
+function formatTuitionDisplay(value: number): string {
+  return `$${(value / 1000).toFixed(0)}k/yr`
+}
+
+export function getTuitionDisplayInfo(college: College): TuitionDisplayInfo | null {
+  const inState = college.tuitionInState
+  const outState = college.tuitionOutState
+
+  if (inState != null && outState != null) {
+    if (inState !== outState) {
+      return {
+        display: formatTuitionDisplay(outState),
+        label: 'out-of-state',
+        inState,
+        outState,
+        primary: outState,
+      }
+    }
+
+    return {
+      display: formatTuitionDisplay(inState),
+      inState,
+      outState,
+      primary: inState,
+    }
+  }
+
+  if (outState != null) {
+    return {
+      display: formatTuitionDisplay(outState),
+      outState,
+      primary: outState,
+    }
+  }
+
+  if (inState != null) {
+    return {
+      display: formatTuitionDisplay(inState),
+      label: 'in-state',
+      inState,
+      primary: inState,
+    }
+  }
+
+  return null
+}
+
 export function getShortName(name: string): string {
   let s = name
 

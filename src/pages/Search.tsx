@@ -5,7 +5,7 @@ import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
 import { useSavedVibes } from '@/context/SavedVibesContext'
 import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchScore'
-import { typeLabel } from '@/lib/colleges'
+import { getTuitionDisplayInfo, typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { REGION_TO_STATES } from '@/lib/regions'
 import { orderMajorsForProfile } from '@/lib/majors'
@@ -90,7 +90,7 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
   const navigate = useNavigate()
   const { heartedSchools, toggleHeart } = useChatContext()
   const isHearted = heartedSchools.has(college.id)
-  const tuition = college.tuitionInState ?? college.tuitionOutState
+  const tuition = getTuitionDisplayInfo(college)
   const typeChip = typeLabel(college.type)
   const sizeLabel = college.size.charAt(0).toUpperCase() + college.size.slice(1)
   const fitRead = fitLine(college, profile)
@@ -98,7 +98,7 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
   const chips = [
     typeChip, sizeLabel,
     college.acceptanceRate != null ? `${college.acceptanceRate}% admit` : null,
-    tuition != null ? `$${(tuition / 1000).toFixed(0)}k/yr` : null,
+    tuition != null ? [tuition.display, tuition.label === 'out-of-state' ? tuition.label : null].filter(Boolean).join(' · ') : null,
   ].filter(Boolean) as string[]
 
   const majorChips = orderMajorsForProfile(college.majors, profile).slice(0, 2).map(m =>
@@ -206,7 +206,7 @@ export default function Search() {
         }
         if (selectedAffiliation === 'secular' && (c.religiousAffiliation ?? 0) > 0) return false
         if (selectedAffiliation === 'religious' && (c.religiousAffiliation ?? 0) <= 0) return false
-        const tuition = c.tuitionInState ?? c.tuitionOutState
+        const tuition = c.tuitionOutState ?? c.tuitionInState
         if (maxTuition < TUITION_MAX && tuition != null && tuition > maxTuition) return false
         if (selectedMajor && !c.majors.includes(selectedMajor)) return false
         return true

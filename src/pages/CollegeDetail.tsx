@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getCollege, getShortName, typeLabel } from '@/lib/colleges'
+import { getCollege, getShortName, getTuitionDisplayInfo, typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
@@ -18,6 +18,10 @@ function matchLabel(score: number) {
 function formatStat(value: string | number | null | undefined, fallback = 'Not listed') {
   if (value == null || value === '') return fallback
   return typeof value === 'number' ? value.toLocaleString() : value
+}
+
+function formatTuitionStat(value: number) {
+  return `$${Math.round(value / 1000)}k`
 }
 
 export default function CollegeDetail() {
@@ -93,13 +97,13 @@ export default function CollegeDetail() {
 
   const vibeScore = vibeScoreFor(college.id)
   const score = vibeScore ?? scoreCollege(college, profile)
-  const tuition = college.tuitionInState ?? college.tuitionOutState
+  const tuition = getTuitionDisplayInfo(college)
   const isHearted = heartedSchools.has(college.id)
   const reasons = explainFit(college, profile).slice(0, 3)
   const orderedMajors = orderMajorsForProfile(college.majors, profile)
   const shortName = getShortName(college.name)
   const watchOut = [
-    tuition != null && tuition > 45000 ? 'Worth a real look at the cost before you fall for it.' : null,
+    tuition?.primary != null && tuition.primary > 45000 ? 'Worth a real look at the cost before you fall for it.' : null,
     college.acceptanceRate != null && college.acceptanceRate < 25 ? 'Admissions are selective, so keep a balanced list.'
       : null,
     'Culture matters here. Run a Vibe Check before this turns into a favorite.',
@@ -128,7 +132,17 @@ export default function CollegeDetail() {
           <p>{college.location}</p>
           <div className="stat-grid">
             <div className="stat"><span>Admit rate</span><strong>{college.acceptanceRate != null ? `${college.acceptanceRate}%` : 'TBD'}</strong></div>
-            <div className="stat"><span>Tuition</span><strong>{tuition != null ? `$${Math.round(tuition / 1000)}k` : 'TBD'}</strong></div>
+            <div className="stat">
+              <span>Tuition</span>
+              {tuition?.inState != null && tuition.outState != null && tuition.inState !== tuition.outState ? (
+                <strong style={{ display: 'grid', gap: 2, lineHeight: 1.25 }}>
+                  <span>In-state {formatTuitionStat(tuition.inState)}</span>
+                  <span>Out-of-state {formatTuitionStat(tuition.outState)}</span>
+                </strong>
+              ) : (
+                <strong>{tuition?.primary != null ? formatTuitionStat(tuition.primary) : 'TBD'}</strong>
+              )}
+            </div>
             <div className="stat"><span>Enrollment</span><strong>{formatStat(college.enrollment)}</strong></div>
           </div>
         </div>

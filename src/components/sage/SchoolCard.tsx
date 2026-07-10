@@ -5,16 +5,12 @@ import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchS
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
 import { useSavedVibes } from '@/context/SavedVibesContext'
-import type { College } from '@/lib/colleges'
+import { getTuitionDisplayInfo, type College } from '@/lib/colleges'
 import { orderMajorsForProfile } from '@/lib/majors'
 import ScoreRing from '@/components/ui/ScoreRing'
 import HeartButton from '@/components/ui/HeartButton'
 import AdmytPill from '@/components/ui/AdmytPill'
 import AdmytButton from '@/components/ui/AdmytButton'
-
-function formatTuition(n: number) {
-  return `$${(n / 1000).toFixed(0)}k/yr`
-}
 
 function ringColor(score: number) {
   if (score >= 80) return 'var(--admyt-teal)'
@@ -41,6 +37,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
   const showScore = vibeScore !== undefined || hasEnoughProfileForScore(profile)
   const isHearted = heartedSchools.has(college.id)
   const fitRead = fitLine(college, profile)
+  const tuition = getTuitionDisplayInfo(college)
 
   function handleHeart(e: React.MouseEvent) {
     e.preventDefault()
@@ -53,9 +50,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
 
   const chips = [
     college.acceptanceRate != null ? `${college.acceptanceRate}% accepted` : null,
-    (college.tuitionInState ?? college.tuitionOutState) != null
-      ? formatTuition((college.tuitionInState ?? college.tuitionOutState)!)
-      : null,
+    tuition != null ? [tuition.display, tuition.label === 'out-of-state' ? tuition.label : null].filter(Boolean).join(' · ') : null,
     college.size,
   ].filter(Boolean) as string[]
 
