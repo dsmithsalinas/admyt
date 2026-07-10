@@ -177,7 +177,7 @@ export default function Search() {
     <div className="app-frame">
       <div className="search-hero">
         <div>
-          <span className="pill teal">{loading ? 'Loading schools' : `${filtered.length} schools that could fit you`}</span>
+          <span className="pill teal">{loading ? 'Loading schools' : `${filtered.length} ${filtered.length === 1 ? 'school' : 'schools'} that could fit you`}</span>
           <h1>Browse with Sage beside you.</h1>
           <p className="match-note">Search is still fast, but every result explains why it may or may not fit you.</p>
         </div>

@@ -14,6 +14,24 @@ function KnownRow({ label, value }: { label: string; value?: string }) {
   )
 }
 
+function humanizePreferredSize(size?: 'small' | 'medium' | 'large' | null): string | undefined {
+  if (!size) return undefined
+  return {
+    small: 'Small',
+    medium: 'Medium',
+    large: 'Large',
+  }[size]
+}
+
+function humanizePreferredInstitutionType(type?: 'two_year' | 'four_year' | 'either' | null): string | undefined {
+  if (!type) return undefined
+  return {
+    two_year: 'Two-year',
+    four_year: 'Four-year',
+    either: 'Open to either',
+  }[type]
+}
+
 export default function WhatSageKnows({ compact = false }: { compact?: boolean }) {
   const { profile } = useProfile()
   const [open, setOpen] = useState(!compact)
@@ -21,6 +39,8 @@ export default function WhatSageKnows({ compact = false }: { compact?: boolean }
     { label: 'Location', value: profile?.preferredLocations?.join(', ') },
     { label: 'Major', value: profile?.intendedMajor },
     { label: 'Goals', value: profile?.careerGoals?.join(', ') },
+    { label: 'Size', value: humanizePreferredSize(profile?.preferredSize) },
+    { label: 'Type', value: humanizePreferredInstitutionType(profile?.preferredInstitutionType) },
   ]
   const knownCount = rows.filter(row => row.value).length
 

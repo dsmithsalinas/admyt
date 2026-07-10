@@ -55,18 +55,30 @@ let cachedColleges: College[] | null = null
 export async function getColleges(): Promise<College[]> {
   if (cachedColleges) return cachedColleges
 
-  const { data, error } = await supabase
-    .from('colleges')
-    .select('*')
-    .order('enrollment', { ascending: false, nullsFirst: false })
-    .limit(1000)
+  const pageSize = 1000
+  const colleges: College[] = []
+  let from = 0
 
-  if (error) {
-    console.error('Failed to fetch colleges:', error.message)
-    return []
+  while (true) {
+    const { data, error } = await supabase
+      .from('colleges')
+      .select('*')
+      .order('id', { ascending: true })
+      .range(from, from + pageSize - 1)
+
+    if (error) {
+      console.error('Failed to fetch colleges:', error.message)
+      break
+    }
+
+    const page = (data ?? []).map(mapRow)
+    colleges.push(...page)
+
+    if (page.length < pageSize) break
+    from += pageSize
   }
 
-  cachedColleges = (data ?? []).map(mapRow)
+  cachedColleges = colleges
   return cachedColleges
 }
 
