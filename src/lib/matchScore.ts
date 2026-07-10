@@ -135,5 +135,10 @@ export function scoreCollege(college: College, profile: StudentProfile | null): 
   const jitter = ((parseInt(college.id) * 13) % 11) - 5
   score += jitter
 
-  return Math.max(0, Math.min(Math.round(score), 100))
+  // Soften the ceiling: a hard clamp made every strong match tie at 100 and
+  // erased the ordering between a 6-signal match and a 4-signal one. A logistic
+  // curve keeps that ordering — more/better matches still score higher — while
+  // only asymptotically approaching 100.
+  const display = 100 / (1 + Math.exp(-(score - 70) / 18))
+  return Math.max(1, Math.min(99, Math.round(display)))
 }
