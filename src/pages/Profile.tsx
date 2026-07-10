@@ -459,7 +459,16 @@ export default function Profile() {
   const topNudge = completenessNudges[0]
   const sageNudges = completenessNudges.slice(1, 3)
   const initials = user?.email?.charAt(0).toUpperCase() ?? 'Y'
-  const hasSageFacts = !!(sageProfile?.intendedMajor || sageProfile?.careerGoals?.length || sageProfile?.preferredLocations?.length)
+  const hasSageFacts = !!(
+    sageProfile?.intendedMajor ||
+    sageProfile?.careerGoals?.length ||
+    sageProfile?.preferredLocations?.length ||
+    sageProfile?.preferredMajors?.length ||
+    sageProfile?.preferredStates?.length ||
+    sageProfile?.maxTuition != null ||
+    sageProfile?.preferredSize ||
+    sageProfile?.preferredInstitutionType
+  )
 
   return (
     <div className="app-frame">
@@ -490,9 +499,12 @@ export default function Profile() {
               {loading ? <Skeleton height={100} /> : hasSageFacts ? (
                 <div className="learn-list">
                   {[
-                    ['Location', sageProfile?.preferredLocations?.join(', ')],
-                    ['Intended major', sageProfile?.intendedMajor],
+                    ['Location', sageProfile?.preferredLocations?.length ? sageProfile.preferredLocations.join(', ') : sageProfile?.preferredStates?.join(', ')],
+                    ['Major', sageProfile?.intendedMajor || sageProfile?.preferredMajors?.join(', ')],
                     ['Career goals', sageProfile?.careerGoals?.join(', ')],
+                    ['Max tuition', sageProfile?.maxTuition != null ? `$${sageProfile.maxTuition.toLocaleString()}/yr` : undefined],
+                    ['Campus size', sageProfile?.preferredSize ? SIZE_LABELS[sageProfile.preferredSize] : undefined],
+                    ['Institution type', sageProfile?.preferredInstitutionType ? INSTITUTION_TYPE_LABELS[sageProfile.preferredInstitutionType] : undefined],
                   ].filter(([, value]) => value).map(([label, value]) => (
                     <div className="learn-item" key={label}><span>{label}</span><span>{value}</span></div>
                   ))}
