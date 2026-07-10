@@ -21,6 +21,8 @@ interface VibeDimension {
   emoji: string
   score: number
   summary: string
+  why?: string
+  sources?: string[]
 }
 
 interface VibeResult {
@@ -65,6 +67,8 @@ const DEFAULT_VIBE_DIMENSION_KEYS = ['social', 'diversity', 'academic', 'communi
 
 function DimensionResult({ dim }: { dim: VibeDimension }) {
   const canonical = canonicalDimension(dim.key, dim)
+  const sources = dim.sources?.filter(Boolean) ?? []
+  const hasWhyReceipt = Boolean(dim.why || sources.length > 0)
 
   return (
     <div className="mock-card section-pad">
@@ -80,6 +84,24 @@ function DimensionResult({ dim }: { dim: VibeDimension }) {
       <div className="bar" style={{ marginTop: 14 }}>
         <span style={{ width: `${dim.score * 10}%` }} />
       </div>
+      {hasWhyReceipt && (
+        <details style={{ marginTop: 14 }}>
+          <summary className="match-note" style={{ cursor: 'pointer', fontWeight: 750 }}>
+            Why this score
+          </summary>
+          <div style={{ display: 'grid', gap: 10, marginTop: 10 }}>
+            {dim.why && <p className="match-note" style={{ margin: 0 }}>{dim.why}</p>}
+            {sources.length > 0 && (
+              <div>
+                <span className="mini-title" style={{ fontSize: 11 }}>What informs this</span>
+                <div className="filters" style={{ marginTop: 8 }}>
+                  {sources.map(source => <span className="pill" key={source}>{source}</span>)}
+                </div>
+              </div>
+            )}
+          </div>
+        </details>
+      )}
     </div>
   )
 }
@@ -335,6 +357,8 @@ export default function VibeCheck() {
           emoji: message.emoji,
           score: message.score,
           summary: message.summary,
+          why: message.why,
+          sources: message.sources,
         })
         return
       }
