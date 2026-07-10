@@ -7,6 +7,7 @@ import { useSavedVibes } from '@/context/SavedVibesContext'
 import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchScore'
 import { typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
+import { REGION_TO_STATES } from '@/lib/regions'
 import { orderMajorsForProfile } from '@/lib/majors'
 import HeartButton from '@/components/ui/HeartButton'
 
@@ -14,6 +15,48 @@ import HeartButton from '@/components/ui/HeartButton'
 // (~$72k), so parking the slider here means "no tuition limit" rather than
 // silently filtering out the priciest schools.
 const TUITION_MAX = 80000
+
+const REGION_OPTIONS = [
+  'pacific northwest',
+  'new england',
+  'midwest',
+  'south',
+  'southwest',
+  'mountain west',
+  'west coast',
+  'mid-atlantic',
+  'northeast',
+  'great lakes',
+  'deep south',
+] as const
+
+const SETTING_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: '1', label: 'City' },
+  { value: '2', label: 'Suburb' },
+  { value: '3', label: 'Town' },
+  { value: '4', label: 'Rural' },
+] as const
+
+const ADMIT_RATE_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: 'most-selective', label: 'Most selective (<25)' },
+  { value: 'selective', label: 'Selective (25-50)' },
+  { value: 'accessible', label: 'Accessible (>50)' },
+] as const
+
+const AFFILIATION_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: 'secular', label: 'Secular' },
+  { value: 'religious', label: 'Religious' },
+] as const
+
+function regionLabel(region: string) {
+  return region
+    .split(/[\s-]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' }, { abbr: 'AR', name: 'Arkansas' },
@@ -138,6 +181,10 @@ export default function Search() {
   const [selectedType, setSelectedType] = useState('')
   const [maxTuition, setMaxTuition] = useState(TUITION_MAX)
   const [selectedMajor, setSelectedMajor] = useState('')
+  const [selectedRegion, setSelectedRegion] = useState('')
+  const [selectedSetting, setSelectedSetting] = useState('')
+  const [selectedAdmitRate, setSelectedAdmitRate] = useState('')
+  const [selectedAffiliation, setSelectedAffiliation] = useState('')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   const allMajors = useMemo(() => Array.from(new Set(colleges.flatMap(c => c.majors))).sort(), [colleges])
@@ -147,8 +194,18 @@ export default function Search() {
       .filter(c => {
         if (query && !c.name.toLowerCase().includes(query.toLowerCase()) && !c.location.toLowerCase().includes(query.toLowerCase())) return false
         if (selectedState && c.state !== selectedState) return false
+        if (selectedRegion && !REGION_TO_STATES[selectedRegion]?.includes(c.state)) return false
         if (selectedSize && c.size !== selectedSize) return false
         if (selectedType && c.type !== selectedType) return false
+        if (selectedSetting && c.locale?.trim().charAt(0) !== selectedSetting) return false
+        if (selectedAdmitRate) {
+          if (c.acceptanceRate == null) return false
+          if (selectedAdmitRate === 'most-selective' && c.acceptanceRate >= 25) return false
+          if (selectedAdmitRate === 'selective' && (c.acceptanceRate < 25 || c.acceptanceRate > 50)) return false
+          if (selectedAdmitRate === 'accessible' && c.acceptanceRate <= 50) return false
+        }
+        if (selectedAffiliation === 'secular' && (c.religiousAffiliation ?? 0) > 0) return false
+        if (selectedAffiliation === 'religious' && (c.religiousAffiliation ?? 0) <= 0) return false
         const tuition = c.tuitionInState ?? c.tuitionOutState
         if (maxTuition < TUITION_MAX && tuition != null && tuition > maxTuition) return false
         if (selectedMajor && !c.majors.includes(selectedMajor)) return false
@@ -159,12 +216,13 @@ export default function Search() {
         const scoreB = vibeScoreFor(b.id) ?? scoreCollege(b, profile)
         return scoreB - scoreA
       })
-  }, [colleges, query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor, profile, vibeScoreFor])
+  }, [colleges, query, selectedState, selectedRegion, selectedSize, selectedType, selectedSetting, selectedAdmitRate, selectedAffiliation, maxTuition, selectedMajor, profile, vibeScoreFor])
 
-  const activeFilters = [selectedState, selectedSize, selectedType, selectedMajor].filter(Boolean).length + (maxTuition < TUITION_MAX ? 1 : 0)
+  const activeFilters = [selectedState, selectedRegion, selectedSize, selectedType, selectedMajor, selectedSetting, selectedAdmitRate, selectedAffiliation].filter(Boolean).length + (maxTuition < TUITION_MAX ? 1 : 0)
 
   function clearFilters() {
     setSelectedState(''); setSelectedSize(''); setSelectedType('')
+    setSelectedRegion(''); setSelectedSetting(''); setSelectedAdmitRate(''); setSelectedAffiliation('')
     setMaxTuition(TUITION_MAX); setSelectedMajor(''); setQuery('')
   }
 
@@ -196,6 +254,18 @@ export default function Search() {
 
       <div className="filters">
         <button className="pill teal">Best fit first</button>
+        <button onClick={() => setSelectedRegion('')} className="pill">
+          Any region
+        </button>
+        {REGION_OPTIONS.map(region => (
+          <button
+            key={region}
+            onClick={() => setSelectedRegion(selectedRegion === region ? '' : region)}
+            className={`pill ${selectedRegion === region ? 'teal' : ''}`}
+          >
+            {regionLabel(region)}
+          </button>
+        ))}
         {(['', 'small', 'medium', 'large'] as const).map(size => (
           <button key={size || 'any-size'} onClick={() => setSelectedSize(size)} className={`pill ${selectedSize === size && size !== '' ? 'teal' : ''}`}>
             {size === '' ? 'Any size' : size.charAt(0).toUpperCase() + size.slice(1)}
@@ -207,7 +277,7 @@ export default function Search() {
           </button>
         ))}
         {maxTuition < TUITION_MAX && <button className="pill teal" onClick={() => setMaxTuition(TUITION_MAX)}>Under ${(maxTuition / 1000).toFixed(0)}k</button>}
-        <button onClick={() => setShowMoreFilters(v => !v)} className={`pill ${showMoreFilters || !!(selectedState || selectedMajor || maxTuition < TUITION_MAX) ? 'teal' : ''}`}>
+        <button onClick={() => setShowMoreFilters(v => !v)} className={`pill ${showMoreFilters || !!(selectedState || selectedMajor || selectedSetting || selectedAdmitRate || selectedAffiliation || maxTuition < TUITION_MAX) ? 'teal' : ''}`}>
           {showMoreFilters ? 'Hide filters' : 'More filters'}
         </button>
         {activeFilters > 0 && (
@@ -232,6 +302,48 @@ export default function Search() {
               <option value="">Any major</option>
               {allMajors.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
+          </div>
+          <div>
+            <label className="mini-title" style={{ display: 'block' }}>Setting</label>
+            <div className="filters" style={{ marginTop: 8 }}>
+              {SETTING_OPTIONS.map(option => (
+                <button
+                  key={option.value || 'any-setting'}
+                  onClick={() => setSelectedSetting(option.value)}
+                  className={`pill ${selectedSetting === option.value && option.value !== '' ? 'teal' : ''}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mini-title" style={{ display: 'block' }}>Admit rate</label>
+            <div className="filters" style={{ marginTop: 8 }}>
+              {ADMIT_RATE_OPTIONS.map(option => (
+                <button
+                  key={option.value || 'any-admit-rate'}
+                  onClick={() => setSelectedAdmitRate(option.value)}
+                  className={`pill ${selectedAdmitRate === option.value && option.value !== '' ? 'teal' : ''}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mini-title" style={{ display: 'block' }}>Affiliation</label>
+            <div className="filters" style={{ marginTop: 8 }}>
+              {AFFILIATION_OPTIONS.map(option => (
+                <button
+                  key={option.value || 'any-affiliation'}
+                  onClick={() => setSelectedAffiliation(option.value)}
+                  className={`pill ${selectedAffiliation === option.value && option.value !== '' ? 'teal' : ''}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <label className="mini-title" style={{ display: 'block' }}>
