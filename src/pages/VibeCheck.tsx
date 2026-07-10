@@ -641,7 +641,20 @@ export default function VibeCheck() {
                   <div className="suggestion-list" style={{ marginTop: 12 }}>
                     <button className="suggestion" onClick={() => { setResult(null); setError(null); setSaved(false) }}><p>Change what I'm checking</p></button>
                     <button className="suggestion" onClick={runVibeCheck}><p>Run it again</p></button>
-                    <button className="suggestion" onClick={() => navigate('/chat')}><p>Ask Sage about this result</p></button>
+                    <button
+                      className="suggestion"
+                      onClick={() => navigate('/chat', {
+                        state: {
+                          vibeContext: {
+                            collegeId: college.id,
+                            collegeName: college.name,
+                            fitScore: result.fitScore,
+                          },
+                        },
+                      })}
+                    >
+                      <p>Ask Sage about this result</p>
+                    </button>
                     <button className="suggestion" onClick={() => navigate(`/college/${id}`)}><p>Back to {schoolFirst}</p></button>
                   </div>
                 </section>

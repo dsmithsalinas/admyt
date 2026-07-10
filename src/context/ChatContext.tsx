@@ -20,7 +20,7 @@ export const SAGE_GREETING =
 
 interface ChatContextType {
   messages: ChatMessage[]
-  sendMessage: (text: string) => Promise<void>
+  sendMessage: (text: string, options?: { apiText?: string }) => Promise<void>
   loading: boolean
   initializing: boolean
   heartedSchools: Set<string>
@@ -455,7 +455,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
-  async function sendMessage(text: string) {
+  async function sendMessage(text: string, options?: { apiText?: string }) {
     if (!text.trim() || loading) return
     setLoading(true)
 
@@ -468,6 +468,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     try {
       // Seed the static greeting as context on the very first exchange
       let apiMsgs = nextMessages.map(m => ({ role: m.role, content: m.content }))
+      const apiText = options?.apiText?.trim()
+      if (apiText) {
+        apiMsgs[apiMsgs.length - 1] = { role: 'user', content: apiText }
+      }
       if (snapshot.length === 0) {
         apiMsgs = [{ role: 'assistant', content: SAGE_GREETING }, ...apiMsgs]
       }

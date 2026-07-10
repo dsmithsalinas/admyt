@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ArrowRight, Compass, Scale, Sparkles, Target } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useChat } from '@/context/ChatContext'
 import SageOrb from '@/components/sage/SageOrb'
 import SchoolCard from '@/components/sage/SchoolCard'
@@ -7,6 +8,16 @@ import AuthModal from '@/components/ui/AuthModal'
 import { useAuth } from '@/context/AuthContext'
 import WhatSageKnows from '@/components/sage/WhatSageKnows'
 import AdmytCard from '@/components/ui/AdmytCard'
+
+interface VibeContext {
+  collegeId: string
+  collegeName: string
+  fitScore: number
+}
+
+interface ChatLocationState {
+  vibeContext?: VibeContext
+}
 
 const ACTION_TILES = [
   { label: 'Find where I fit', Icon: Target, message: 'Help me find where I fit', bg: 'var(--admyt-grad)' },
@@ -31,7 +42,10 @@ function TypingDots() {
 export default function Home() {
   const { messages, sendMessage, loading, initializing } = useChat()
   const { user } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [input, setInput] = useState('')
+  const [vibeContext, setVibeContext] = useState<VibeContext | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -50,6 +64,13 @@ export default function Home() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
 
+  useEffect(() => {
+    const incoming = (location.state as ChatLocationState | null)?.vibeContext
+    if (!incoming) return
+    setVibeContext(incoming)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
+
   function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setInput(e.target.value)
     e.target.style.height = 'auto'
@@ -59,9 +80,18 @@ export default function Home() {
   function handleSend() {
     const text = input.trim()
     if (!text || loading) return
+    const activeVibeContext = vibeContext
     setInput('')
+    setVibeContext(null)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    sendMessage(text)
+    sendMessage(text, activeVibeContext ? {
+      apiText: [
+        `Context: This question is about the student's Vibe Check for ${activeVibeContext.collegeName}.`,
+        `Vibe Check fit score: ${activeVibeContext.fitScore}/100.`,
+        `College id: ${activeVibeContext.collegeId}.`,
+        `Student question: ${text}`,
+      ].join('\n'),
+    } : undefined)
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -227,6 +257,30 @@ export default function Home() {
           </div>
         )}
         <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+          {vibeContext && (
+            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'flex-start' }}>
+              <span className="pill" style={{ maxWidth: '100%', whiteSpace: 'normal' }}>
+                Discussing: {vibeContext.collegeName} Vibe Check · {vibeContext.fitScore}
+                <button
+                  type="button"
+                  onClick={() => setVibeContext(null)}
+                  aria-label="Stop discussing this Vibe Check"
+                  style={{
+                    border: 0,
+                    background: 'transparent',
+                    color: 'var(--admyt-muted)',
+                    cursor: 'pointer',
+                    font: 'inherit',
+                    fontWeight: 850,
+                    padding: '0 0 0 2px',
+                    lineHeight: 1,
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
           <div style={{
             display: 'flex', gap: '8px', alignItems: 'flex-end',
             background: 'white', borderRadius: '12px', border: '1px solid var(--admyt-line)',
