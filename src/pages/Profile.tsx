@@ -6,6 +6,7 @@ import { useChat } from '@/context/ChatContext'
 import { useColleges } from '@/context/CollegeContext'
 import { supabase } from '@/lib/supabase'
 import type { College } from '@/lib/colleges'
+import { REGION_TO_STATES } from '@/lib/regions'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
 import SageOrb from '@/components/sage/SageOrb'
@@ -47,7 +48,12 @@ interface UserPreferences {
   preferred_states: string[]
   max_tuition: number | null
   preferred_majors: string[]
+  preferredSize?: 'small' | 'medium' | 'large' | null
+  preferredInstitutionType?: 'two_year' | 'four_year' | 'either' | null
 }
+
+type SizePreference = NonNullable<UserPreferences['preferredSize']>
+type InstitutionTypePreference = NonNullable<UserPreferences['preferredInstitutionType']>
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' }, { abbr: 'AR', name: 'Arkansas' },
@@ -82,11 +88,43 @@ function EmptyState({ message, action }: { message: string; action: React.ReactN
   )
 }
 
+const SIZE_LABELS: Record<SizePreference, string> = {
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
+}
+
+const INSTITUTION_TYPE_LABELS: Record<InstitutionTypePreference, string> = {
+  two_year: 'Two-year',
+  four_year: 'Four-year',
+  either: 'Open to either',
+}
+
+const REGION_PICKERS = [
+  'pacific northwest',
+  'new england',
+  'midwest',
+  'south',
+  'southwest',
+  'mountain west',
+  'west coast',
+  'mid-atlantic',
+  'northeast',
+  'great lakes',
+  'deep south',
+] as const
+
+function humanizeRegion(region: string) {
+  return region.split(/[\s-]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+}
+
 function PreferenceRows({ prefs }: { prefs: UserPreferences }) {
   const rows = [
     prefs.preferred_states.length ? ['States', prefs.preferred_states.join(', ')] : null,
     prefs.max_tuition != null ? ['Max tuition', `$${prefs.max_tuition.toLocaleString()}/yr`] : null,
     prefs.preferred_majors.length ? ['Major', prefs.preferred_majors.join(', ')] : null,
+    prefs.preferredSize ? ['Size', SIZE_LABELS[prefs.preferredSize]] : null,
+    prefs.preferredInstitutionType ? ['Institution type', INSTITUTION_TYPE_LABELS[prefs.preferredInstitutionType]] : null,
   ].filter(Boolean) as string[][]
 
   return (
@@ -101,14 +139,59 @@ function PreferenceRows({ prefs }: { prefs: UserPreferences }) {
   )
 }
 
-function PreferencesModal({ prefs, onSave, onClose }: { prefs: UserPreferences; onSave: (p: UserPreferences) => void; onClose: () => void }) {
-  const [states, setStates] = useState<string[]>(prefs.preferred_states)
+function PreferencesModal({
+  prefs,
+  sageProfile,
+  onSave,
+  onClose,
+}: {
+  prefs: UserPreferences
+  sageProfile: ReturnType<typeof useProfile>['profile']
+  onSave: (p: UserPreferences) => Promise<void>
+  onClose: () => void
+}) {
+  const sageMajor = sageProfile?.intendedMajor ?? sageProfile?.preferredMajors?.[0] ?? ''
+  const initialStates = prefs.preferred_states.length ? prefs.preferred_states : (sageProfile?.preferredStates ?? [])
+  const initialMajor = prefs.preferred_majors[0] ?? sageMajor
+  const majorFromSage = !prefs.preferred_majors.length && !!sageMajor
+  const statesFromSage = !prefs.preferred_states.length && initialStates.length > 0
+  const sizeFromSage = !!sageProfile?.preferredSize
+  const institutionTypeFromSage = !!sageProfile?.preferredInstitutionType
+
+  const [states, setStates] = useState<string[]>(initialStates)
   const [maxTuition, setMaxTuition] = useState(prefs.max_tuition ?? 70000)
-  const [major, setMajor] = useState(prefs.preferred_majors[0] ?? '')
+  const [major, setMajor] = useState(initialMajor)
+  const [preferredSize, setPreferredSize] = useState<UserPreferences['preferredSize']>(sageProfile?.preferredSize ?? null)
+  const [preferredInstitutionType, setPreferredInstitutionType] = useState<UserPreferences['preferredInstitutionType']>(sageProfile?.preferredInstitutionType ?? null)
   const [stateSearch, setStateSearch] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
   function toggleState(abbr: string) {
     setStates(prev => prev.includes(abbr) ? prev.filter(s => s !== abbr) : [...prev, abbr])
+  }
+
+  function toggleRegion(region: (typeof REGION_PICKERS)[number]) {
+    const regionStates = REGION_TO_STATES[region] ?? []
+    setStates(prev => {
+      const hasAll = regionStates.every(state => prev.includes(state))
+      if (hasAll) return prev.filter(state => !regionStates.includes(state))
+      return [...prev, ...regionStates.filter(state => !prev.includes(state))]
+    })
+  }
+
+  async function savePreferences() {
+    setSaving(true)
+    setSaveMessage('')
+    await onSave({
+      preferred_states: states,
+      max_tuition: maxTuition,
+      preferred_majors: major.trim() ? [major.trim()] : [],
+      preferredSize: preferredSize ?? null,
+      preferredInstitutionType: preferredInstitutionType ?? null,
+    })
+    setSaveMessage('Saved — Sage will use these in your matches.')
+    window.setTimeout(onClose, 900)
   }
 
   const filteredStates = US_STATES.filter(s =>
@@ -125,17 +208,77 @@ function PreferencesModal({ prefs, onSave, onClose }: { prefs: UserPreferences; 
 
       <div className="section-pad" style={{ display: 'grid', gap: 14 }}>
         <section className="mock-card section-pad">
-          <label className="mini-title" style={{ display: 'block' }}>Preferred major</label>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 8 }}>
+            Preferred major
+            {majorFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
+          </label>
           <input className="field" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" style={{ height: 44 }} />
         </section>
 
         <section className="mock-card section-pad">
-          <label className="mini-title" style={{ display: 'block' }}>Max tuition — ${maxTuition.toLocaleString()}/yr</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+            <label style={{ fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)' }}>Max tuition</label>
+            <span className="pill teal" style={{ fontWeight: 850 }}>${maxTuition.toLocaleString()}/yr</span>
+          </div>
           <input type="range" min={5000} max={75000} step={1000} value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))} style={{ width: '100%', accentColor: '#6366F1' }} />
         </section>
 
         <section className="mock-card section-pad">
-          <label className="mini-title" style={{ display: 'block' }}>Preferred states {states.length ? `— ${states.length} selected` : ''}</label>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
+            Campus size
+            {sizeFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
+          </label>
+          <div className="filters">
+            {(['small', 'medium', 'large'] as const).map(size => (
+              <button
+                key={size}
+                className={`pill ${preferredSize === size ? 'teal' : ''}`}
+                onClick={() => setPreferredSize(prev => prev === size ? null : size)}
+              >
+                {SIZE_LABELS[size]}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="mock-card section-pad">
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
+            Institution type
+            {institutionTypeFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
+          </label>
+          <div className="filters">
+            {(['two_year', 'four_year', 'either'] as const).map(type => (
+              <button
+                key={type}
+                className={`pill ${preferredInstitutionType === type ? 'teal' : ''}`}
+                onClick={() => setPreferredInstitutionType(prev => prev === type ? null : type)}
+              >
+                {INSTITUTION_TYPE_LABELS[type]}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="mock-card section-pad">
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
+            Preferred states {states.length ? `— ${states.length} selected` : ''}
+            {statesFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
+          </label>
+          <div className="filters" style={{ marginBottom: 12 }}>
+            {REGION_PICKERS.map(region => {
+              const regionStates = REGION_TO_STATES[region] ?? []
+              const selected = regionStates.length > 0 && regionStates.every(state => states.includes(state))
+              return (
+                <button
+                  className={`pill ${selected ? 'teal' : ''}`}
+                  key={region}
+                  onClick={() => toggleRegion(region)}
+                >
+                  {humanizeRegion(region)}
+                </button>
+              )
+            })}
+          </div>
           {states.length > 0 && (
             <div className="filters" style={{ marginBottom: 12 }}>
               {states.map(abbr => <button className="pill teal" key={abbr} onClick={() => toggleState(abbr)}>{abbr} ×</button>)}
@@ -157,8 +300,9 @@ function PreferencesModal({ prefs, onSave, onClose }: { prefs: UserPreferences; 
           </div>
         </section>
 
-        <button className="btn" onClick={() => onSave({ preferred_states: states, max_tuition: maxTuition, preferred_majors: major ? [major] : [] })}>
-          Save preferences
+        {saveMessage && <p className="match-note" style={{ margin: 0, fontWeight: 750, color: 'var(--admyt-teal)' }}>{saveMessage}</p>}
+        <button className="btn" disabled={saving} onClick={savePreferences}>
+          {saving ? 'Saving...' : 'Save preferences'}
         </button>
       </div>
     </Modal>
@@ -247,14 +391,25 @@ export default function Profile() {
 
   async function handleSavePrefs(newPrefs: UserPreferences) {
     if (!user) return
-    await supabase.from('user_preferences').upsert({ user_id: user.id, ...newPrefs }, { onConflict: 'user_id' })
-    setPrefs(newPrefs)
-    mergeProfile({
+    const { preferredSize, preferredInstitutionType, ...preferenceColumns } = newPrefs
+    const profileUpdate = {
       preferredStates: newPrefs.preferred_states,
       maxTuition: newPrefs.max_tuition,
       preferredMajors: newPrefs.preferred_majors,
-    })
-    setShowPrefsModal(false)
+      preferredSize: preferredSize ?? null,
+      preferredInstitutionType: preferredInstitutionType ?? null,
+    }
+    const sageProfileForPersistence = {
+      ...sageProfile,
+      ...profileUpdate,
+    }
+
+    await supabase.from('user_preferences').upsert(
+      { user_id: user.id, ...preferenceColumns, sage_profile: sageProfileForPersistence },
+      { onConflict: 'user_id' },
+    )
+    setPrefs(newPrefs)
+    mergeProfile(profileUpdate)
   }
 
   function getCompleteness() {
@@ -434,8 +589,8 @@ export default function Profile() {
               {user && <button className="pill teal" onClick={() => setShowPrefsModal(true)}>Edit</button>}
             </div>
             <div style={{ marginTop: 12 }}>
-              {prefs.preferred_states.length || prefs.max_tuition || prefs.preferred_majors.length ? (
-                <PreferenceRows prefs={prefs} />
+              {prefs.preferred_states.length || prefs.max_tuition || prefs.preferred_majors.length || prefs.preferredSize || prefs.preferredInstitutionType || sageProfile?.preferredSize || sageProfile?.preferredInstitutionType ? (
+                <PreferenceRows prefs={{ ...prefs, preferredSize: sageProfile?.preferredSize ?? prefs.preferredSize, preferredInstitutionType: sageProfile?.preferredInstitutionType ?? prefs.preferredInstitutionType }} />
               ) : (
                 <EmptyState message="Set standing preferences so Sage can use them without making you repeat yourself." action={user ? <button className="btn secondary" onClick={() => setShowPrefsModal(true)}>Set preferences</button> : <button className="btn secondary" onClick={() => setShowAuthModal(true)}>Sign up to save</button>} />
               )}
@@ -460,7 +615,7 @@ export default function Profile() {
         </aside>
       </div>
 
-      {showPrefsModal && <PreferencesModal prefs={prefs} onSave={handleSavePrefs} onClose={() => setShowPrefsModal(false)} />}
+      {showPrefsModal && <PreferencesModal prefs={prefs} sageProfile={sageProfile} onSave={handleSavePrefs} onClose={() => setShowPrefsModal(false)} />}
       {showAuthModal && <AuthModal trigger="general" onClose={() => setShowAuthModal(false)} onSuccess={() => setShowAuthModal(false)} />}
       <style>{`@keyframes profilePulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
     </div>
