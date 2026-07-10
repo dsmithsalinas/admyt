@@ -4,7 +4,7 @@ import { getCollege, getShortName, typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
-import { scoreCollege } from '@/lib/matchScore'
+import { scoreCollege, explainFit } from '@/lib/matchScore'
 import { orderMajorsForProfile } from '@/lib/majors'
 import HeartButton from '@/components/ui/HeartButton'
 
@@ -12,20 +12,6 @@ function matchLabel(score: number) {
   if (score >= 85) return 'Strong fit'
   if (score >= 70) return 'Worth a close look'
   return 'Useful comparison'
-}
-
-function fitReasons(college: College, profile: ReturnType<typeof useProfile>['profile']) {
-  const reasons = [
-    profile?.intendedMajor && college.majors.some(m => m.toLowerCase().includes(profile.intendedMajor!.toLowerCase()))
-      ? `${profile.intendedMajor} shows up in its academic mix.`
-      : null,
-    profile?.preferredLocations?.some(loc => college.location.toLowerCase().includes(loc.toLowerCase()) || college.state === loc)
-      ? 'The location lines up with what Sage has heard from you.'
-      : null,
-    college.size ? `The ${college.size} campus size gives you a real environment to compare.` : null,
-  ].filter(Boolean) as string[]
-
-  return reasons.length ? reasons.slice(0, 3) : ['Sage needs a little more about you before this read gets sharp.']
 }
 
 function formatStat(value: string | number | null | undefined, fallback = 'Not listed') {
@@ -106,7 +92,7 @@ export default function CollegeDetail() {
   const score = scoreCollege(college, profile)
   const tuition = college.tuitionInState ?? college.tuitionOutState
   const isHearted = heartedSchools.has(college.id)
-  const reasons = fitReasons(college, profile)
+  const reasons = explainFit(college, profile).slice(0, 3)
   const orderedMajors = orderMajorsForProfile(college.majors, profile)
   const shortName = getShortName(college.name)
   const watchOut = [

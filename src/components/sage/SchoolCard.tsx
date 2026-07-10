@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useColleges } from '@/context/CollegeContext'
-import { scoreCollege, hasEnoughProfileForScore } from '@/lib/matchScore'
+import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchScore'
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
 import type { College } from '@/lib/colleges'
@@ -21,16 +21,8 @@ function ringColor(score: number) {
   return 'var(--admyt-faint)'
 }
 
-function whyFit(college: College, score: number, profile: ReturnType<typeof useProfile>['profile']) {
-  if (profile?.intendedMajor && college.majors.some(m => m.toLowerCase().includes(profile.intendedMajor!.toLowerCase()))) {
-    return `${profile.intendedMajor} shows up in the programs Sage is watching for you.`
-  }
-  if (profile?.preferredLocations?.some(loc => college.location.toLowerCase().includes(loc.toLowerCase()) || college.state === loc)) {
-    return `It lines up with the place you said you might want to be.`
-  }
-  if (score >= 80) return 'Looks like a strong fit from what Sage knows so far.'
-  if (score >= 60) return 'Worth a closer look — a few things already line up.'
-  return 'A different option to consider while Sage gets to know you.'
+function fitLine(college: College, profile: ReturnType<typeof useProfile>['profile']) {
+  return explainFit(college, profile).slice(0, 2).join(' · ')
 }
 
 export default function SchoolCard({ collegeId }: { collegeId: string }) {
@@ -45,7 +37,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
   const score = scoreCollege(college, profile)
   const showScore = hasEnoughProfileForScore(profile)
   const isHearted = heartedSchools.has(college.id)
-  const fitRead = whyFit(college, score, profile)
+  const fitRead = fitLine(college, profile)
 
   function handleHeart(e: React.MouseEvent) {
     e.preventDefault()

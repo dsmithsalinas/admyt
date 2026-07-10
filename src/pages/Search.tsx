@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
-import { scoreCollege, hasEnoughProfileForScore } from '@/lib/matchScore'
+import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchScore'
 import { typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { orderMajorsForProfile } from '@/lib/majors'
@@ -34,16 +34,8 @@ const US_STATES = [
   { abbr: 'WI', name: 'Wisconsin' }, { abbr: 'WV', name: 'West Virginia' }, { abbr: 'WY', name: 'Wyoming' },
 ]
 
-function whyFit(college: College, score: number, profile: ReturnType<typeof useProfile>['profile']) {
-  if (profile?.intendedMajor && college.majors.some(m => m.toLowerCase().includes(profile.intendedMajor!.toLowerCase()))) {
-    return `${profile.intendedMajor} is one reason Sage pulled this up.`
-  }
-  if (profile?.preferredLocations?.some(loc => college.location.toLowerCase().includes(loc.toLowerCase()) || college.state === loc)) {
-    return `This matches a location signal Sage has heard from you.`
-  }
-  if (score >= 80) return 'Strong fit based on what Sage knows so far.'
-  if (score >= 60) return 'A solid maybe. Worth checking the tradeoffs.'
-  return 'Good for comparison while your preferences get sharper.'
+function fitLine(college: College, profile: ReturnType<typeof useProfile>['profile']) {
+  return explainFit(college, profile).slice(0, 2).join(' · ')
 }
 
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
@@ -55,7 +47,7 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
   const tuition = college.tuitionInState ?? college.tuitionOutState
   const typeChip = typeLabel(college.type)
   const sizeLabel = college.size.charAt(0).toUpperCase() + college.size.slice(1)
-  const fitRead = whyFit(college, score, profile)
+  const fitRead = fitLine(college, profile)
 
   const chips = [
     typeChip, sizeLabel,
