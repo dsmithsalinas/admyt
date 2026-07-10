@@ -1,5 +1,6 @@
 import type { College } from './colleges'
 import type { StudentProfile } from '@/context/ProfileContext'
+import { expandLocationTerms } from './regions'
 
 // A Fit Score is only meaningful once Sage knows something about the student.
 // Without any saved preference signal the number is noise — hide it.
@@ -67,7 +68,11 @@ export function scoreCollege(college: College, profile: StudentProfile | null): 
   const preferredStates = (profile.preferredStates ?? [])
     .map(s => s.trim().toUpperCase())
     .filter(Boolean)
-  const preferredLocations = normalizeTerms(profile.preferredLocations ?? [])
+  const expandedLocations = expandLocationTerms(profile.preferredLocations ?? [])
+  const targetStates = new Set([
+    ...preferredStates,
+    ...expandedLocations.states,
+  ])
   const preferredMajors = normalizeTerms([
     ...(profile.preferredMajors ?? []),
     profile.intendedMajor,
@@ -76,17 +81,15 @@ export function scoreCollege(college: College, profile: StudentProfile | null): 
   const goals = normalizeTerms(profile.careerGoals ?? [])
   const collegeMajors = college.majors.map(m => m.toLowerCase())
 
-  if (preferredStates.length > 0) {
-    score += preferredStates.includes(college.state.toUpperCase()) ? 24 : -12
+  if (targetStates.size > 0) {
+    score += targetStates.has(college.state.toUpperCase()) ? 24 : -12
   }
 
-  if (preferredLocations.length > 0) {
-    const locationMatch = preferredLocations.some(loc =>
-      college.location.toLowerCase().includes(loc) ||
-      college.state.toLowerCase() === loc ||
-      loc.includes(college.state.toLowerCase())
+  if (expandedLocations.freeText.length > 0) {
+    const cityMatch = expandedLocations.freeText.some(term =>
+      college.location.toLowerCase().includes(term)
     )
-    score += locationMatch ? 16 : -6
+    if (cityMatch) score += 8
   }
 
   const typeMatch = institutionTypeMatches(profile.preferredInstitutionType, college.degreesPredominant)
