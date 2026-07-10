@@ -499,7 +499,9 @@ export default function Landing() {
         }
         @media (max-width: 479px) {
           .landing-nav-cta { display: none !important; }
-          .landing-chat-preview { display: none !important; }
+          /* The live chat preview is the landing's strongest, most student-shaped
+             element — keep it on phones (where most teens land) instead of hiding it. */
+          .landing-chat-preview { margin-top: 8px !important; }
         }
         @media (max-width: 900px) {
           .landing-hero {
