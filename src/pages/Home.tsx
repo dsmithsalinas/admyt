@@ -39,6 +39,14 @@ export default function Home() {
     () => ['Ask me anything...', 'What matters most to you?', 'Try: find something like NYU but warmer'][Math.floor(Math.random() * 3)],
     [],
   )
+  const visibleMessages = useMemo(
+    () => messages.filter(m => {
+      if (m.metadata?.hidden) return false
+      if (m.role === 'user') return true
+      return m.content.trim().length > 0 || (m.metadata?.schoolIds?.length ?? 0) > 0
+    }),
+    [messages],
+  )
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
 
@@ -60,7 +68,7 @@ export default function Home() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
-  const isEmpty = messages.length === 0 && !loading && !initializing
+  const isEmpty = visibleMessages.length === 0 && !loading && !initializing
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'radial-gradient(circle at 12% 6%, rgba(33,184,165,.12), transparent 28%), radial-gradient(circle at 86% 4%, rgba(255,122,102,.12), transparent 28%), var(--admyt-paper)', padding: '28px clamp(16px, 3vw, 42px)' }}>
@@ -127,49 +135,54 @@ export default function Home() {
             </div>
           )}
 
-          {messages.filter(m => !m.metadata?.hidden).map((msg) => (
-            <div key={msg.id} style={{ marginBottom: '18px', animation: 'sageFadeUp 0.3s ease' }}>
-              {msg.role === 'user' ? (
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <div style={{
-                    background: 'var(--admyt-grad)', color: 'white',
-                    borderRadius: '16px 16px 4px 16px', padding: '11px 15px',
-                    fontSize: '13px', lineHeight: 1.6, maxWidth: '80%', wordBreak: 'break-word',
-                    boxShadow: 'var(--shadow-float)',
-                  }}>
-                    {msg.content}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <SageOrb size={30} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '11px', color: '#A8A8BC', fontWeight: 600, marginBottom: '5px', letterSpacing: '0.03em' }}>
-                        Sage
-                      </div>
-                      <div style={{
-                        background: 'rgba(255,253,250,0.96)', border: '1px solid var(--admyt-line)',
-                        borderRadius: '4px 16px 16px 16px', padding: '11px 14px',
-                        fontSize: '13px', color: 'var(--admyt-slate)', lineHeight: 1.6,
-                        display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word',
-                        boxShadow: 'var(--shadow-soft)',
-                      }}>
-                        {msg.content}
-                      </div>
+          {visibleMessages.map((msg) => {
+            const assistantText = msg.role === 'assistant' ? msg.content.trim() : ''
+            return (
+              <div key={msg.id} style={{ marginBottom: '18px', animation: 'sageFadeUp 0.3s ease' }}>
+                {msg.role === 'user' ? (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{
+                      background: 'var(--admyt-grad)', color: 'white',
+                      borderRadius: '16px 16px 4px 16px', padding: '11px 15px',
+                      fontSize: '13px', lineHeight: 1.6, maxWidth: '80%', wordBreak: 'break-word',
+                      boxShadow: 'var(--shadow-float)',
+                    }}>
+                      {msg.content}
                     </div>
                   </div>
-                  {msg.metadata?.schoolIds && msg.metadata.schoolIds.length > 0 && (
-                    <div className="sage-school-stack" style={{ marginTop: '12px', paddingLeft: '40px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {msg.metadata.schoolIds.map(id => (
-                        <SchoolCard key={id} collegeId={id} />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
+                ) : (
+                  <>
+                    {assistantText && (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                        <SageOrb size={30} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '11px', color: '#A8A8BC', fontWeight: 600, marginBottom: '5px', letterSpacing: '0.03em' }}>
+                            Sage
+                          </div>
+                          <div style={{
+                            background: 'rgba(255,253,250,0.96)', border: '1px solid var(--admyt-line)',
+                            borderRadius: '4px 16px 16px 16px', padding: '11px 14px',
+                            fontSize: '13px', color: 'var(--admyt-slate)', lineHeight: 1.6,
+                            display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word',
+                            boxShadow: 'var(--shadow-soft)',
+                          }}>
+                            {assistantText}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {msg.metadata?.schoolIds && msg.metadata.schoolIds.length > 0 && (
+                      <div className="sage-school-stack" style={{ marginTop: '12px', paddingLeft: '40px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {msg.metadata.schoolIds.map(id => (
+                          <SchoolCard key={id} collegeId={id} />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
 
           {loading && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '18px' }}>
@@ -193,7 +206,7 @@ export default function Home() {
       </div>
 
       <div style={{ flexShrink: 0, maxWidth: '1120px', width: '100%', margin: '0 auto', background: 'rgba(255,253,250,0.9)', border: '1px solid var(--admyt-line)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 16px', backdropFilter: 'blur(14px)' }}>
-        {!user && messages.filter(m => !m.metadata?.hidden).length >= 4 && (
+        {!user && visibleMessages.length >= 4 && (
           <div style={{
             maxWidth: '680px', margin: '0 auto 10px',
             background: 'var(--admyt-grad-soft)', border: '1px solid var(--admyt-line)',

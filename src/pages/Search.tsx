@@ -82,6 +82,12 @@ function fitLine(college: College, profile: ReturnType<typeof useProfile>['profi
   return explainFit(college, profile).slice(0, 2).join(' · ')
 }
 
+function ringColor(score: number) {
+  if (score >= 80) return 'var(--admyt-teal)'
+  if (score >= 60) return 'var(--admyt-indigo)'
+  return 'var(--admyt-faint)'
+}
+
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
   const { vibeScoreFor } = useSavedVibes()
   const vibeScore = vibeScoreFor(college.id)
@@ -119,10 +125,18 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
         <div className="score-stack">
           {showScore ? (
             <>
-              <div className="score" style={{ background: `conic-gradient(var(--admyt-teal) 0 ${score}%, #eeeaf8 ${score}% 100%)` }}>
-                <strong>{score}</strong>
-              </div>
-              <span className="score-label">Fit Score</span>
+              <span
+                className="pill"
+                style={{
+                  color: ringColor(score),
+                  borderColor: ringColor(score),
+                  padding: '5px 9px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                }}
+              >
+                {score} match
+              </span>
               {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
             </>
           ) : (
@@ -139,7 +153,7 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
         </div>
       </div>
 
-      <p className="match-note">{fitRead}</p>
+      <p className="match-note" style={{ color: 'var(--admyt-slate)', fontSize: '14px', fontWeight: 650, lineHeight: 1.55 }}>{fitRead}</p>
 
       <div className="filters">
         {chips.map(tag => (

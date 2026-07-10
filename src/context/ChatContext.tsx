@@ -209,6 +209,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages([])
       setHeartedSchools(new Set())
       setHeartActionCount(0)
+      setLoading(false)
       clearProfile()
       sageProfileRef.current = null
       recapSentRef.current = false
@@ -378,6 +379,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (!recapSentRef.current && !sessionStorage.getItem(sessionKey)) {
           recapSentRef.current = true
           sessionStorage.setItem(sessionKey, '1')
+          setLoading(true)
           setRecapPending({ userId, history: serverMsgs })
         }
       }
@@ -497,6 +499,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Sends a system event message (e.g. [HEARTED]) — bypasses the loading guard
   // so it can fire after a heart tap even if Sage was just typing.
   async function sendSystemEvent(text: string) {
+    setLoading(true)
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(), role: 'user', content: text,
       metadata: { hidden: true },
@@ -506,7 +509,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setMessages(nextMessages)
     if (user) persistMsg(userMsg, user.id)
 
-    setLoading(true)
     try {
       const profile = await getLatestProfile()
       const raw = await callEdge(nextMessages.map(m => ({ role: m.role, content: m.content })), profile)

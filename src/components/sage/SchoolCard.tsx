@@ -7,7 +7,6 @@ import { useChat } from '@/context/ChatContext'
 import { useSavedVibes } from '@/context/SavedVibesContext'
 import { getTuitionDisplayInfo, type College } from '@/lib/colleges'
 import { orderMajorsForProfile } from '@/lib/majors'
-import ScoreRing from '@/components/ui/ScoreRing'
 import HeartButton from '@/components/ui/HeartButton'
 import AdmytPill from '@/components/ui/AdmytPill'
 import AdmytButton from '@/components/ui/AdmytButton'
@@ -92,8 +91,18 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
         <div className="score-stack">
           {showScore ? (
             <>
-              <ScoreRing score={score} size={46} color={ringColor(score)} />
-              <span className="score-label">Fit Score</span>
+              <span
+                className="pill"
+                style={{
+                  color: ringColor(score),
+                  borderColor: ringColor(score),
+                  padding: '5px 9px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                }}
+              >
+                {score} match
+              </span>
               {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
             </>
           ) : (
@@ -110,7 +119,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
         </div>
       </div>
 
-      <p style={{ fontSize: '12px', color: 'var(--admyt-slate)', lineHeight: 1.55, margin: '0 0 10px' }}>
+      <p style={{ fontSize: '13px', color: 'var(--admyt-slate)', fontWeight: 650, lineHeight: 1.6, margin: '0 0 10px' }}>
         {fitRead}
       </p>
 
