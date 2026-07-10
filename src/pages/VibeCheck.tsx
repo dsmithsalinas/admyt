@@ -33,6 +33,10 @@ const VIBE_DIMENSIONS = [
   { key: 'community', label: 'Local community atmosphere', emoji: '🏘️', description: 'The relationship between campus and the surrounding town or city.' },
 ]
 
+// True profile-based dimension inference needs a "what matters most" priorities
+// field we do not capture yet, so this curated starter set is the honest interim.
+const DEFAULT_VIBE_DIMENSION_KEYS = ['social', 'diversity', 'academic', 'community', 'arts']
+
 function DimensionResult({ dim }: { dim: VibeDimension }) {
   return (
     <div className="mock-card section-pad">
@@ -52,15 +56,67 @@ function DimensionResult({ dim }: { dim: VibeDimension }) {
   )
 }
 
+function formatPreferredSize(size?: 'small' | 'medium' | 'large' | null) {
+  if (!size) return undefined
+  return {
+    small: 'small campus',
+    medium: 'medium campus',
+    large: 'large campus',
+  }[size]
+}
+
+function formatPreferredInstitutionType(type?: 'two_year' | 'four_year' | 'either' | null) {
+  if (!type) return undefined
+  return {
+    two_year: 'two-year',
+    four_year: 'four-year',
+    either: 'open to either',
+  }[type]
+}
+
+function ProfileLensChips({ profile }: { profile: ReturnType<typeof useProfile>['profile'] }) {
+  const chips = [
+    profile?.intendedMajor,
+    formatPreferredSize(profile?.preferredSize),
+    formatPreferredInstitutionType(profile?.preferredInstitutionType),
+    ...(profile?.preferredLocations ?? []),
+    ...(profile?.careerGoals ?? []),
+  ].filter((chip): chip is string => Boolean(chip?.trim()))
+
+  if (chips.length === 0) return null
+
+  return (
+    <section className="profile-lens" aria-label="Profile lens">
+      <span className="profile-lens-label">Reading this as:</span>
+      <div className="profile-lens-chips">
+        {chips.map((chip, index) => (
+          <span className="pill profile-lens-chip" key={`${chip}-${index}`}>{chip}</span>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function LoadingDimensionRow({ dim }: { dim: typeof VIBE_DIMENSIONS[number] }) {
+  return (
+    <div className="vibe-loading-row">
+      <span className="vibe-loading-icon" aria-hidden="true">{dim.emoji}</span>
+      <span className="vibe-loading-label">{dim.label}</span>
+      <span className="vibe-loading-bar" aria-hidden="true" />
+    </div>
+  )
+}
+
 export default function VibeCheck() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { profile } = useProfile()
   const { user } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [selected, setSelected] = useState<Set<string>>(new Set(VIBE_DIMENSIONS.map(d => d.key)))
+  const [selected, setSelected] = useState<Set<string>>(new Set(DEFAULT_VIBE_DIMENSION_KEYS))
   const [result, setResult] = useState<VibeResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingStep, setLoadingStep] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
@@ -74,6 +130,18 @@ export default function VibeCheck() {
     getCollege(id).then(data => { setCollege(data); setCollegeLoading(false) })
   }, [id])
 
+  const selectedDimensions = VIBE_DIMENSIONS.filter(dim => selected.has(dim.key))
+  const loadingStatuses = selectedDimensions.map(dim => `Reading the ${dim.label.toLowerCase()}...`)
+  const loadingStatus = loadingStatuses[loadingStep % Math.max(loadingStatuses.length, 1)] ?? 'Reading the campus culture...'
+
+  useEffect(() => {
+    if (!loading || loadingStatuses.length === 0) return
+    setLoadingStep(0)
+    const timer = window.setInterval(() => {
+      setLoadingStep(step => (step + 1) % loadingStatuses.length)
+    }, 1800)
+    return () => window.clearInterval(timer)
+  }, [loading, loadingStatuses.length])
 
   function toggleDimension(key: string) {
     setSelected(prev => {
@@ -171,6 +239,8 @@ export default function VibeCheck() {
               <p>Pick the parts of campus life that would actually change your decision. Sage will give you the honest read.</p>
             </section>
 
+            <ProfileLensChips profile={profile} />
+
             <div className="dimension-grid">
               {VIBE_DIMENSIONS.map(dim => {
                 const isSelected = selected.has(dim.key)
@@ -225,7 +295,12 @@ export default function VibeCheck() {
               <h2 style={{ color: 'white', margin: '10px 0 0' }}>{schoolFirst}, through your lens</h2>
               <p>Sage is checking the dimensions you picked and turning the answer into a clean fit read.</p>
             </div>
-            <div className="big-score">...</div>
+            <div className="vibe-loading-panel" aria-live="polite">
+              <div className="vibe-loading-status">{loadingStatus}</div>
+              <div className="vibe-loading-list">
+                {selectedDimensions.map(dim => <LoadingDimensionRow key={dim.key} dim={dim} />)}
+              </div>
+            </div>
           </section>
         </div>
       )}
@@ -233,6 +308,8 @@ export default function VibeCheck() {
       {result && (
         <div className="vibe-setup">
           <main style={{ display: 'grid', gap: 14 }}>
+            <ProfileLensChips profile={profile} />
+
             <section className="result-card mock-card">
               <div>
                 <span className="mini-title" style={{ color: 'var(--admyt-teal)' }}>Your fit score</span>
