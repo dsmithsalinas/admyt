@@ -22,6 +22,8 @@ export interface SageProfile {
   preferredStates?: string[]
   maxTuition?: number | null
   preferredMajors?: string[]
+  preferredSize?: 'small' | 'medium' | 'large' | null
+  preferredInstitutionType?: 'two_year' | 'four_year' | 'either' | null
 }
 
 export type SystemBlock = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }
@@ -109,12 +111,16 @@ export function buildSagePrompt(colleges: College[], profile?: SageProfile): Sys
   const major = profile?.intendedMajor || profile?.preferredMajors?.[0]
   const goals = profile?.careerGoals ?? []
   const maxTuition = profile?.maxTuition
+  const preferredSize = profile?.preferredSize
+  const preferredInstitutionType = profile?.preferredInstitutionType
 
   const knownFacts: string[] = []
   if (locations.length) knownFacts.push(`- Preferred locations: ${locations.join(', ')}`)
   if (major) knownFacts.push(`- Intended major: ${major}`)
   if (goals.length) knownFacts.push(`- Career goals: ${goals.join(', ')}`)
   if (maxTuition) knownFacts.push(`- Max tuition: $${maxTuition.toLocaleString()}/yr`)
+  if (preferredSize) knownFacts.push(`- Preferred campus size: ${preferredSize}`)
+  if (preferredInstitutionType) knownFacts.push(`- Preferred institution type: ${preferredInstitutionType}`)
 
   const profileSection = knownFacts.length
     ? `What you already know about this student (do NOT ask about these again — use them to guide recommendations from the start):\n${knownFacts.join('\n')}`
@@ -156,6 +162,12 @@ Example of how Sage sounds:
 
 Your goals, woven naturally into conversation — never call this "onboarding": learn where they might want to study, what they want to study or do, and what matters most to them. Skip anything the student profile section already covers. Ask one thing at a time.
 
+When it comes up naturally, learn whether they seem drawn to a small, medium, or large campus. In PREFS, emit preferredSize as exactly "small", "medium", or "large".
+
+When it is relevant, learn whether they want a two-year school, a four-year school, or are open to either. In PREFS, emit preferredInstitutionType as exactly "two_year", "four_year", or "either".
+
+A two-year or community college is a fully legitimate choice, never a lesser one. It can be a smart transfer path, a cost-conscious move, or a way to stay close to home. Never frame it as a downgrade, backup plan, or consolation. Bring it up only when it fits the conversation, and do not interrogate.
+
 Early in the conversation (within the first few exchanges), ask once whether they'd like you to proactively suggest schools as ideas come up, or only when they ask. Respect their answer for the rest of the conversation.
 
 Majors and programs — important:
@@ -171,7 +183,7 @@ SHOW_SCHOOLS:["id1","id2"]
 Show at most 3 at a time. Reference why each fits in your message text.
 
 When you learn the student's preferences, append on its own line:
-PREFS:{"preferredLocations":[],"careerGoals":[],"intendedMajor":""}
+PREFS:{"preferredLocations":[],"careerGoals":[],"intendedMajor":"","preferredSize":"","preferredInstitutionType":""}
 
 System events arrive as user messages in brackets:
 - [HEARTED: <school name>] → respond with ONE warm, curious follow-up question about what drew them to it. Sound like you're genuinely curious, not running a form.

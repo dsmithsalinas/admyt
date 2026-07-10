@@ -72,12 +72,29 @@ function unionCI(a: string[] = [], b: string[] = []): string[] {
   return out
 }
 
+const SIZE_VALUES = new Set(['small', 'medium', 'large'])
+const INSTITUTION_TYPE_VALUES = new Set(['two_year', 'four_year', 'either'])
+
+function parsePreferredSize(value: unknown): StudentProfile['preferredSize'] | undefined {
+  return typeof value === 'string' && SIZE_VALUES.has(value) ? value as StudentProfile['preferredSize'] : undefined
+}
+
+function parsePreferredInstitutionType(value: unknown): StudentProfile['preferredInstitutionType'] | undefined {
+  return typeof value === 'string' && INSTITUTION_TYPE_VALUES.has(value) ? value as StudentProfile['preferredInstitutionType'] : undefined
+}
+
 // Merge newly learned preferences into the existing profile instead of replacing
 // it — so a later PREFS that omits a field (or sends an empty array) can't wipe
 // what Sage already knew.
 function mergeLearnedProfile(
   prev: StudentProfile | null,
-  incoming: { preferredLocations?: string[]; careerGoals?: string[]; intendedMajor?: string },
+  incoming: {
+    preferredLocations?: string[]
+    careerGoals?: string[]
+    intendedMajor?: string
+    preferredSize?: StudentProfile['preferredSize']
+    preferredInstitutionType?: StudentProfile['preferredInstitutionType']
+  },
 ): StudentProfile {
   const base = prev ?? { preferredLocations: [], careerGoals: [], intendedMajor: undefined, complete: false }
   const locs = (incoming.preferredLocations ?? []).filter(Boolean)
@@ -88,6 +105,8 @@ function mergeLearnedProfile(
     preferredLocations: locs.length ? unionCI(base.preferredLocations, locs) : base.preferredLocations,
     careerGoals: goals.length ? unionCI(base.careerGoals, goals) : base.careerGoals,
     intendedMajor: major || base.intendedMajor,
+    preferredSize: incoming.preferredSize ?? base.preferredSize,
+    preferredInstitutionType: incoming.preferredInstitutionType ?? base.preferredInstitutionType,
     complete: true,
   }
 }
@@ -369,11 +388,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       preferredLocations: Array.isArray(prefs.preferredLocations) ? (prefs.preferredLocations as string[]) : undefined,
       careerGoals: Array.isArray(prefs.careerGoals) ? (prefs.careerGoals as string[]) : undefined,
       intendedMajor: typeof prefs.intendedMajor === 'string' ? prefs.intendedMajor : undefined,
+      preferredSize: parsePreferredSize(prefs.preferredSize),
+      preferredInstitutionType: parsePreferredInstitutionType(prefs.preferredInstitutionType),
     }
     const hasSignal =
       incoming.preferredLocations?.some(Boolean) ||
       incoming.careerGoals?.some(Boolean) ||
-      !!incoming.intendedMajor?.trim()
+      !!incoming.intendedMajor?.trim() ||
+      !!incoming.preferredSize ||
+      !!incoming.preferredInstitutionType
     if (!hasSignal) return
 
     const merged = mergeLearnedProfile(sageProfileRef.current, incoming)
