@@ -23,8 +23,9 @@ export default function Layout() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const { user } = useAuth()
-  const { authNudgeOpen, dismissAuthNudge } = useChat()
+  const { heartedSchools, authNudgeOpen, dismissAuthNudge } = useChat()
   const isHome = location.pathname === '/chat'
+  const savedCount = heartedSchools.size
 
   const activeTabColor = 'var(--admyt-indigo)'
   const inactiveTabColor = 'var(--admyt-muted)'
@@ -85,7 +86,26 @@ export default function Layout() {
               <Search size={16} />
               Browse
             </Link>
-            <ProfileAvatar />
+            <div style={{ position: 'relative' }}>
+              <ProfileAvatar />
+              {savedCount > 0 && (
+                <span className="pill" style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-8px',
+                  minWidth: 20,
+                  height: 20,
+                  padding: '0 6px',
+                  justifyContent: 'center',
+                  fontSize: 11,
+                  fontWeight: 850,
+                  color: 'var(--admyt-indigo)',
+                  background: 'white',
+                  boxShadow: 'var(--admyt-shadow-small)',
+                  pointerEvents: 'none',
+                }}>{savedCount}</span>
+              )}
+            </div>
           </div>
         )}
       </nav>
@@ -184,20 +204,39 @@ export default function Layout() {
               color: isProfile ? activeTabColor : inactiveTabColor,
             }}
           >
-            <div style={{
-              width: '24px', height: '24px', borderRadius: '50%',
-              background: user
-                ? 'var(--admyt-grad)'
-                : 'var(--admyt-lavender)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: isProfile && user ? '2px solid var(--admyt-indigo)' : '1px solid var(--admyt-line)',
-            }}>
-              {user ? (
-                <span style={{ fontSize: '11px', color: 'white', fontWeight: 700 }}>
-                  {user.email?.charAt(0).toUpperCase()}
-                </span>
-              ) : (
-                <UserRound size={14} />
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                background: user
+                  ? 'var(--admyt-grad)'
+                  : 'var(--admyt-lavender)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: isProfile && user ? '2px solid var(--admyt-indigo)' : '1px solid var(--admyt-line)',
+              }}>
+                {user ? (
+                  <span style={{ fontSize: '11px', color: 'white', fontWeight: 700 }}>
+                    {user.email?.charAt(0).toUpperCase()}
+                  </span>
+                ) : (
+                  <UserRound size={14} />
+                )}
+              </div>
+              {savedCount > 0 && (
+                <span className="pill" style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-12px',
+                  minWidth: 18,
+                  height: 18,
+                  padding: '0 5px',
+                  justifyContent: 'center',
+                  fontSize: 10,
+                  fontWeight: 850,
+                  color: 'var(--admyt-indigo)',
+                  background: 'white',
+                  boxShadow: 'var(--admyt-shadow-small)',
+                  pointerEvents: 'none',
+                }}>{savedCount}</span>
               )}
             </div>
             <span style={{ fontSize: '10px', fontWeight: isProfile ? 800 : 600 }}>Profile</span>

@@ -2,7 +2,10 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
+import { useChat } from '@/context/ChatContext'
+import { useColleges } from '@/context/CollegeContext'
 import { supabase } from '@/lib/supabase'
+import type { College } from '@/lib/colleges'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
 import SageOrb from '@/components/sage/SageOrb'
@@ -29,6 +32,15 @@ interface HeartedSchool {
   college_id: string
   college_name: string
   created_at: string
+}
+
+interface DisplayHeartedSchool {
+  id: string
+  college_id: string
+  college_name: string
+  location?: string
+  created_at?: string
+  college?: College
 }
 
 interface UserPreferences {
@@ -157,6 +169,8 @@ export default function Profile() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
   const { profile: sageProfile, mergeProfile } = useProfile()
+  const { heartedSchools, toggleHeart } = useChat()
+  const { colleges, loading: collegesLoading } = useColleges()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPrefsModal, setShowPrefsModal] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -164,6 +178,7 @@ export default function Profile() {
   const [vibes, setVibes] = useState<SavedVibe[]>([])
   const [prefs, setPrefs] = useState<UserPreferences>({ preferred_states: [], max_tuition: null, preferred_majors: [] })
   const [deadlines, setDeadlines] = useState<Record<string, CollegeDeadlines>>({})
+  const collegeById = useMemo(() => new Map(colleges.map(c => [c.id, c])), [colleges])
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -201,11 +216,31 @@ export default function Profile() {
     () => Object.fromEntries(hearts.map(h => [h.college_id, h.college_name])),
     [hearts],
   )
+  const guestHearts = useMemo<DisplayHeartedSchool[]>(
+    () => [...heartedSchools].map(id => {
+      const college = collegeById.get(id)
+      return {
+        id,
+        college_id: id,
+        college_name: college?.name ?? 'Saved school',
+        location: college?.location,
+        college,
+      }
+    }).filter(h => h.college),
+    [heartedSchools, collegeById],
+  )
+  const visibleHearts: DisplayHeartedSchool[] = user ? hearts : guestHearts
+  const mySchoolsLoading = user ? loading : collegesLoading && heartedSchools.size > 0
+  const savedSchoolCount = user ? hearts.length : heartedSchools.size
   const upcoming = useMemo(() => upcomingWithin(60, deadlines, nameById), [deadlines, nameById])
   const todayISO = new Date().toISOString().slice(0, 10)
 
   async function handleUnheart(collegeId: string) {
-    if (!user) return
+    if (!user) {
+      const college = collegeById.get(collegeId)
+      if (college) toggleHeart(college)
+      return
+    }
     await supabase.from('hearted_schools').delete().eq('user_id', user.id).eq('college_id', collegeId)
     setHearts(prev => prev.filter(h => h.college_id !== collegeId))
   }
@@ -227,7 +262,7 @@ export default function Profile() {
     if (sageProfile?.intendedMajor) score += 20
     if (sageProfile?.careerGoals?.length) score += 20
     if (sageProfile?.preferredLocations?.length) score += 20
-    if (hearts.length > 0) score += 20
+    if (savedSchoolCount > 0) score += 20
     if (vibes.length > 0) score += 20
     return score
   }
@@ -236,7 +271,7 @@ export default function Profile() {
     if (!sageProfile?.intendedMajor) return 'Tell Sage your intended major. It changes what shows up.'
     if (!sageProfile?.careerGoals?.length) return 'Share your career goals so recommendations make more sense.'
     if (!sageProfile?.preferredLocations?.length) return "Tell Sage where you're thinking of studying, even roughly."
-    if (!hearts.length) return "Heart a school you're curious about. It gives Sage a real signal."
+    if (!savedSchoolCount) return "Heart a school you're curious about. It gives Sage a real signal."
     if (!vibes.length) return 'Run a Vibe Check so Sage can learn what culture fits you.'
     return "You're all set. Sage has enough to make a much sharper read."
   }
@@ -323,15 +358,21 @@ export default function Profile() {
           <section className="mock-card section-pad">
             <div className="school-head">
               <span className="mini-title">My Schools</span>
-              <span className="pill">{hearts.length} saved</span>
+              <span className="pill">{savedSchoolCount} saved</span>
             </div>
             <div className="timeline" style={{ marginTop: 12 }}>
-              {loading ? <><Skeleton height={62} /><Skeleton height={62} /></> : hearts.length ? hearts.map(h => (
+              {mySchoolsLoading ? <><Skeleton height={62} /><Skeleton height={62} /></> : visibleHearts.length ? (
+                <>
+                  {visibleHearts.map(h => (
                 <div className="saved-row mock-soft-card" key={h.id}>
                   <div>
                     <h3>{h.college_name}</h3>
-                    <p>Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                    {(() => {
+                    {h.created_at ? (
+                      <p>Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                    ) : h.location ? (
+                      <p>{h.location}</p>
+                    ) : null}
+                    {user && (() => {
                       const d = deadlines[h.college_id]
                       if (!d) return null
                       if (d.rolling) return <div className="filters" style={{ marginTop: 6 }}><span className="pill">Rolling admissions</span></div>
@@ -351,8 +392,16 @@ export default function Profile() {
                     <button className="pill" onClick={() => handleUnheart(h.college_id)}>Remove</button>
                   </div>
                 </div>
-              )) : (
-                <EmptyState message="No saved schools yet — heart the ones you love and they'll show up here." action={<button className="btn secondary" onClick={() => navigate('/search')}>Browse schools</button>} />
+                  ))}
+                  {!user && (
+                    <div className="callout">
+                      <p style={{ marginTop: 0 }}>Nice list. Create a free account when you're ready, and Sage can keep these schools with the rest of your college search.</p>
+                      <button className="btn" onClick={() => setShowAuthModal(true)}>Sign up to keep these</button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState message="No saved schools yet — heart the ones you're curious about and they'll show up here." action={<button className="btn secondary" onClick={() => navigate('/search')}>Browse schools</button>} />
               )}
             </div>
           </section>
@@ -405,7 +454,7 @@ export default function Profile() {
           <section className="callout">
             <strong>Sage nudges</strong>
             <p>{getCompletenessNudge()}</p>
-            <p>{hearts.length > 1 ? "You've got a few saved schools. Ask Sage how they stack up." : "Heart one school you're curious about. It gives Sage a real signal."}</p>
+            <p>{savedSchoolCount > 1 ? "You've got a few saved schools. Ask Sage how they stack up." : "Heart one school you're curious about. It gives Sage a real signal."}</p>
             <button className="btn" onClick={() => navigate('/chat')} style={{ marginTop: 14, width: '100%' }}>Ask Sage</button>
           </section>
         </aside>

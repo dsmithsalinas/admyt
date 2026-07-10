@@ -33,6 +33,33 @@ interface ChatContextType {
 }
 
 const ChatContext = createContext<ChatContextType | null>(null)
+const GUEST_HEARTS_STORAGE_KEY = 'admyt_guest_hearts'
+
+function loadGuestHearts(): Set<string> {
+  try {
+    const raw = localStorage.getItem(GUEST_HEARTS_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? parsed.map(String) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveGuestHearts(hearts: Set<string>) {
+  try {
+    localStorage.setItem(GUEST_HEARTS_STORAGE_KEY, JSON.stringify([...hearts]))
+  } catch {
+    /* storage unavailable — state still updates */
+  }
+}
+
+function clearGuestHearts() {
+  try {
+    localStorage.removeItem(GUEST_HEARTS_STORAGE_KEY)
+  } catch {
+    /* no-op */
+  }
+}
 
 function parseResponse(raw: string): { content: string; schoolIds?: string[]; prefs?: Record<string, unknown> } {
   let content = raw
@@ -142,7 +169,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // A recap that's been decided on but is waiting for the college catalog to load
   // before firing — otherwise Sage gets an empty catalog and invents school IDs.
   const [recapPending, setRecapPending] = useState<{ userId: string; history: ChatMessage[] } | null>(null)
-  const [heartedSchools, setHeartedSchools] = useState<Set<string>>(new Set())
+  const [heartedSchools, setHeartedSchools] = useState<Set<string>>(() => loadGuestHearts())
   const heartedSchoolsRef = useRef<Set<string>>(new Set())
   heartedSchoolsRef.current = heartedSchools
   const [heartActionCount, setHeartActionCount] = useState(0)
@@ -150,8 +177,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   heartActionCountRef.current = heartActionCount
   // One gentle sign-up nudge per guest session, fired on their first new heart.
   // The ref survives route changes (provider never unmounts) so navigating
-  // between hearts doesn't re-trigger it; a refresh resets it, which is fine —
-  // that's also when their in-memory hearts are lost.
+  // between hearts doesn't re-trigger it; a refresh resets the nudge, but guest
+  // hearts still hydrate from localStorage.
   const [authNudgeOpen, setAuthNudgeOpen] = useState(false)
   const heartNudgeShownRef = useRef(false)
   const [proactivePref] = useState<'yes' | 'no' | null>(null)
@@ -202,6 +229,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     )
   }, [user, authLoading])
 
+  useEffect(() => {
+    if (authLoading || user) return
+    setHeartedSchools(loadGuestHearts())
+  }, [user, authLoading])
+
+  useEffect(() => {
+    if (authLoading || user) return
+    saveGuestHearts(heartedSchools)
+  }, [heartedSchools, user, authLoading])
+
   // Fire a deferred recap once the college catalog is available, so Sage never
   // builds its system prompt (and picks school IDs) against an empty catalog.
   useEffect(() => {
@@ -229,6 +266,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
 
     const heartsToInsert = [...localHearts].filter(id => !serverHearts.has(id))
+    let guestHeartsMoved = localHearts.size > 0
     if (heartsToInsert.length > 0) {
       const rows = heartsToInsert
         .map(id => {
@@ -236,14 +274,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           return c ? { user_id: userId, college_id: c.id, college_name: c.name } : null
         })
         .filter(Boolean) as { user_id: string; college_id: string; college_name: string }[]
+      guestHeartsMoved = rows.length === heartsToInsert.length
       if (rows.length > 0) {
         try {
           await supabase.from('hearted_schools').insert(rows)
         } catch (e) {
+          guestHeartsMoved = false
           console.error('Failed to migrate guest hearts:', e)
         }
       }
     }
+    if (localHearts.size > 0 && guestHeartsMoved) clearGuestHearts()
   }
 
   // Fetches a fresh copy of user_preferences from Supabase (if signed in) and
@@ -490,6 +531,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setHeartedSchools(prev => {
       const next = new Set(prev)
       isHearted ? next.delete(college.id) : next.add(college.id)
+      if (!user) saveGuestHearts(next)
       return next
     })
 
