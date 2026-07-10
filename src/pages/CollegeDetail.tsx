@@ -15,8 +15,11 @@ function matchLabel(score: number) {
   return 'Useful comparison'
 }
 
-function formatStat(value: string | number | null | undefined, fallback = 'Not listed') {
-  if (value == null || value === '') return fallback
+function hasStatValue(value: string | number | null | undefined): value is string | number {
+  return value != null && value !== ''
+}
+
+function formatStat(value: string | number) {
   return typeof value === 'number' ? value.toLocaleString() : value
 }
 
@@ -102,6 +105,7 @@ export default function CollegeDetail() {
   const reasons = explainFit(college, profile).slice(0, 3)
   const orderedMajors = orderMajorsForProfile(college.majors, profile)
   const shortName = getShortName(college.name)
+  const tuitionPrimary = tuition?.primary
   const watchOut = [
     tuition?.primary != null && tuition.primary > 45000 ? 'Worth a real look at the cost before you fall for it.' : null,
     college.acceptanceRate != null && college.acceptanceRate < 25 ? 'Admissions are selective, so keep a balanced list.'
@@ -131,19 +135,25 @@ export default function CollegeDetail() {
           <h1>{college.name}</h1>
           <p>{college.location}</p>
           <div className="stat-grid">
-            <div className="stat"><span>Admit rate</span><strong>{college.acceptanceRate != null ? `${college.acceptanceRate}%` : 'TBD'}</strong></div>
-            <div className="stat">
-              <span>Tuition</span>
-              {tuition?.inState != null && tuition.outState != null && tuition.inState !== tuition.outState ? (
-                <strong style={{ display: 'grid', gap: 2, lineHeight: 1.25 }}>
-                  <span>In-state {formatTuitionStat(tuition.inState)}</span>
-                  <span>Out-of-state {formatTuitionStat(tuition.outState)}</span>
-                </strong>
-              ) : (
-                <strong>{tuition?.primary != null ? formatTuitionStat(tuition.primary) : 'TBD'}</strong>
-              )}
-            </div>
-            <div className="stat"><span>Enrollment</span><strong>{formatStat(college.enrollment)}</strong></div>
+            {hasStatValue(college.acceptanceRate) && (
+              <div className="stat"><span>Admit rate</span><strong>{college.acceptanceRate}%</strong></div>
+            )}
+            {tuitionPrimary != null && (
+              <div className="stat">
+                <span>Tuition</span>
+                {tuition?.inState != null && tuition.outState != null && tuition.inState !== tuition.outState ? (
+                  <strong style={{ display: 'grid', gap: 2, lineHeight: 1.25 }}>
+                    <span>In-state {formatTuitionStat(tuition.inState)}</span>
+                    <span>Out-of-state {formatTuitionStat(tuition.outState)}</span>
+                  </strong>
+                ) : (
+                  <strong>{formatTuitionStat(tuitionPrimary)}</strong>
+                )}
+              </div>
+            )}
+            {hasStatValue(college.enrollment) && (
+              <div className="stat"><span>Enrollment</span><strong>{formatStat(college.enrollment)}</strong></div>
+            )}
           </div>
         </div>
 
@@ -230,9 +240,9 @@ export default function CollegeDetail() {
           <section className="mock-card section-pad">
             <span className="mini-title">Quick stats</span>
             <div className="learn-list" style={{ marginTop: 12 }}>
-              <div className="learn-item"><span>Average GPA</span><span>{college.avgGpa?.toFixed(2) ?? 'TBD'}</span></div>
-              <div className="learn-item"><span>Average SAT</span><span>{college.avgSat ?? 'TBD'}</span></div>
-              <div className="learn-item"><span>Graduation rate</span><span>{college.graduationRate != null ? `${college.graduationRate}%` : 'TBD'}</span></div>
+              {hasStatValue(college.avgGpa) && <div className="learn-item"><span>Average GPA</span><span>{college.avgGpa.toFixed(2)}</span></div>}
+              {hasStatValue(college.avgSat) && <div className="learn-item"><span>Average SAT</span><span>{college.avgSat}</span></div>}
+              {hasStatValue(college.graduationRate) && <div className="learn-item"><span>Graduation rate</span><span>{college.graduationRate}%</span></div>}
             </div>
           </section>
         </aside>

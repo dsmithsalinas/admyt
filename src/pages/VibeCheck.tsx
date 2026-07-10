@@ -42,16 +42,28 @@ const VIBE_DIMENSIONS = [
   { key: 'community', label: 'Local community atmosphere', emoji: '🏘️', description: 'The relationship between campus and the surrounding town or city.' },
 ]
 
+const VIBE_DIMENSIONS_BY_KEY = new Map(VIBE_DIMENSIONS.map(dim => [dim.key, dim]))
+
+function canonicalDimension(key: string, fallback: Pick<VibeDimension, 'emoji' | 'label'>) {
+  const canonical = VIBE_DIMENSIONS_BY_KEY.get(key)
+  return {
+    emoji: canonical?.emoji ?? fallback.emoji,
+    label: canonical?.label ?? fallback.label,
+  }
+}
+
 // True profile-based dimension inference needs a "what matters most" priorities
 // field we do not capture yet, so this curated starter set is the honest interim.
 const DEFAULT_VIBE_DIMENSION_KEYS = ['social', 'diversity', 'academic', 'community', 'arts']
 
 function DimensionResult({ dim }: { dim: VibeDimension }) {
+  const canonical = canonicalDimension(dim.key, dim)
+
   return (
     <div className="mock-card section-pad">
       <div className="school-head">
         <div>
-          <span className="mini-title">{dim.emoji} {dim.label}</span>
+          <span className="mini-title">{canonical.emoji} {canonical.label}</span>
           <p className="match-note" style={{ marginTop: 8 }}>{dim.summary}</p>
         </div>
         <strong style={{ color: dim.score >= 8 ? 'var(--admyt-teal)' : 'var(--admyt-indigo)', fontSize: 22 }}>
@@ -353,6 +365,7 @@ export default function VibeCheck() {
             <div className="dimension-grid">
               {VIBE_DIMENSIONS.map(dim => {
                 const isSelected = selected.has(dim.key)
+                const canonical = canonicalDimension(dim.key, dim)
                 return (
                   <button
                     key={dim.key}
@@ -361,7 +374,7 @@ export default function VibeCheck() {
                     type="button"
                   >
                     <strong>
-                      <span>{dim.emoji} {dim.label}</span>
+                      <span>{canonical.emoji} {canonical.label}</span>
                       {isSelected && <span className="check">✓</span>}
                     </strong>
                     <p>{dim.description}</p>
