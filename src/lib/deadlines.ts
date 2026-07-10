@@ -109,3 +109,34 @@ export function upcomingWithin(
   }
   return out.sort((a, b) => a.date.localeCompare(b.date))
 }
+
+export function nearestUpcomingDeadline(
+  deadlinesByCollege: Record<string, CollegeDeadlines>,
+  nameByCollege: Record<string, string>,
+): UpcomingDeadline | null {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+
+  let nearest: UpcomingDeadline | null = null
+  for (const [collegeId, d] of Object.entries(deadlinesByCollege)) {
+    for (const r of d.rounds ?? []) {
+      const dt = new Date(`${r.date}T00:00:00`)
+      if (isNaN(dt.getTime()) || dt < now) continue
+
+      const candidate = {
+        collegeId,
+        collegeName: nameByCollege[collegeId] ?? 'School',
+        type: r.type,
+        date: r.date,
+        daysAway: Math.round((dt.getTime() - now.getTime()) / 86400000),
+        sourceUrl: d.source_url,
+      }
+
+      if (!nearest || candidate.date.localeCompare(nearest.date) < 0) {
+        nearest = candidate
+      }
+    }
+  }
+
+  return nearest
+}

@@ -4,8 +4,10 @@ import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
 import { useColleges } from '@/context/CollegeContext'
+import { useSavedVibes } from '@/context/SavedVibesContext'
 import { supabase } from '@/lib/supabase'
 import type { College } from '@/lib/colleges'
+import { scoreCollege } from '@/lib/matchScore'
 import { REGION_TO_STATES } from '@/lib/regions'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
@@ -14,6 +16,7 @@ import {
   ensureDeadline,
   getCachedDeadlines,
   upcomingWithin,
+  nearestUpcomingDeadline,
   roundLabel,
   formatDeadlineDate,
   type CollegeDeadlines,
@@ -86,6 +89,12 @@ function EmptyState({ message, action }: { message: string; action: React.ReactN
       <div style={{ marginTop: 14 }}>{action}</div>
     </div>
   )
+}
+
+function ringColor(score: number) {
+  if (score >= 80) return 'var(--admyt-teal)'
+  if (score >= 60) return 'var(--admyt-indigo)'
+  return 'var(--admyt-faint)'
 }
 
 const SIZE_LABELS: Record<SizePreference, string> = {
@@ -315,6 +324,7 @@ export default function Profile() {
   const { profile: sageProfile, mergeProfile } = useProfile()
   const { heartedSchools, toggleHeart } = useChat()
   const { colleges, loading: collegesLoading } = useColleges()
+  const { vibeScoreFor } = useSavedVibes()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPrefsModal, setShowPrefsModal] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -374,9 +384,14 @@ export default function Profile() {
     [heartedSchools, collegeById],
   )
   const visibleHearts: DisplayHeartedSchool[] = user ? hearts : guestHearts
-  const mySchoolsLoading = user ? loading : collegesLoading && heartedSchools.size > 0
+  const mySchoolsLoading = user ? (loading || (collegesLoading && hearts.length > 0)) : collegesLoading && heartedSchools.size > 0
   const savedSchoolCount = user ? hearts.length : heartedSchools.size
   const upcoming = useMemo(() => upcomingWithin(60, deadlines, nameById), [deadlines, nameById])
+  const nearestDeadline = useMemo(() => nearestUpcomingDeadline(deadlines, nameById), [deadlines, nameById])
+  const hasKnownDeadlines = useMemo(
+    () => Object.values(deadlines).some(d => d.rolling || (d.rounds ?? []).length > 0),
+    [deadlines],
+  )
   const todayISO = new Date().toISOString().slice(0, 10)
 
   async function handleUnheart(collegeId: string) {
@@ -422,16 +437,27 @@ export default function Profile() {
     return score
   }
 
-  function getCompletenessNudge() {
-    if (!sageProfile?.intendedMajor) return 'Tell Sage your intended major. It changes what shows up.'
-    if (!sageProfile?.careerGoals?.length) return 'Share your career goals so recommendations make more sense.'
-    if (!sageProfile?.preferredLocations?.length) return "Tell Sage where you're thinking of studying, even roughly."
-    if (!savedSchoolCount) return "Heart a school you're curious about. It gives Sage a real signal."
-    if (!vibes.length) return 'Run a Vibe Check so Sage can learn what culture fits you.'
-    return "You're all set. Sage has enough to make a much sharper read."
+  function getCompletenessNudges() {
+    const hasSavedVibe = user ? vibes.length > 0 : false
+    const profileIsThin = !(
+      sageProfile?.intendedMajor &&
+      sageProfile?.careerGoals?.length &&
+      sageProfile?.preferredLocations?.length
+    )
+
+    const nudges: string[] = []
+    if (savedSchoolCount === 0) nudges.push("Heart a school you're curious about")
+    if (savedSchoolCount > 0 && !hasSavedVibe) nudges.push('Run a Vibe Check on one of your schools')
+    if (savedSchoolCount === 1) nudges.push('Heart a second school to compare')
+    if (profileIsThin) nudges.push('Tell Sage a bit more')
+
+    return nudges.length ? nudges : ["You're set. Sage has enough to give you a sharper read."]
   }
 
   const completeness = user ? getCompleteness() : 48
+  const completenessNudges = getCompletenessNudges()
+  const topNudge = completenessNudges[0]
+  const sageNudges = completenessNudges.slice(1, 3)
   const initials = user?.email?.charAt(0).toUpperCase() ?? 'Y'
   const hasSageFacts = !!(sageProfile?.intendedMajor || sageProfile?.careerGoals?.length || sageProfile?.preferredLocations?.length)
 
@@ -500,8 +526,16 @@ export default function Profile() {
                       </div>
                     ))}
                   </div>
+                ) : savedSchoolCount === 0 ? (
+                  <p className="match-note">Heart schools and I'll track their application dates here.</p>
+                ) : !hasKnownDeadlines ? (
+                  <p className="match-note">I'm still gathering dates for your schools. They'll show up here as Sage finds them.</p>
+                ) : nearestDeadline ? (
+                  <p className="match-note">
+                    {nearestDeadline.collegeName}'s first deadline is {roundLabel(nearestDeadline.type)} · {formatDeadlineDate(nearestDeadline.date)} — {nearestDeadline.daysAway === 0 ? 'today' : `${nearestDeadline.daysAway} days out`}.
+                  </p>
                 ) : (
-                  <p className="match-note">Nothing due in the next 60 days. Heart schools and I'll track their application dates here.</p>
+                  <p className="match-note">No upcoming deadlines found yet. Keep these schools saved and I'll keep watching for fresh dates.</p>
                 )}
                 <p className="match-note" style={{ marginTop: 10, fontSize: 12 }}>
                   Dates are gathered from each school's site — always confirm on their official admissions page before you rely on them.
@@ -518,36 +552,59 @@ export default function Profile() {
             <div className="timeline" style={{ marginTop: 12 }}>
               {mySchoolsLoading ? <><Skeleton height={62} /><Skeleton height={62} /></> : visibleHearts.length ? (
                 <>
-                  {visibleHearts.map(h => (
-                <div className="saved-row mock-soft-card" key={h.id}>
-                  <div>
-                    <h3>{h.college_name}</h3>
-                    {h.created_at ? (
-                      <p>Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                    ) : h.location ? (
-                      <p>{h.location}</p>
-                    ) : null}
-                    {user && (() => {
-                      const d = deadlines[h.college_id]
-                      if (!d) return null
-                      if (d.rolling) return <div className="filters" style={{ marginTop: 6 }}><span className="pill">Rolling admissions</span></div>
-                      const future = (d.rounds ?? []).filter(r => r.date >= todayISO)
-                      if (!future.length) return null
-                      return (
-                        <div className="filters" style={{ marginTop: 6 }}>
-                          {future.slice(0, 4).map(r => (
-                            <span className="pill" key={`${r.type}-${r.date}`}>{roundLabel(r.type)} · {formatDeadlineDate(r.date)}</span>
-                          ))}
+                  {visibleHearts.map(h => {
+                    const college = h.college ?? collegeById.get(h.college_id)
+                    const vibeScore = vibeScoreFor(h.college_id)
+                    const score = college ? (vibeScore ?? scoreCollege(college, sageProfile)) : null
+                    return (
+                      <div
+                        className="saved-row mock-soft-card"
+                        key={h.id}
+                        onClick={() => navigate(`/college/${h.college_id}`)}
+                        role="link"
+                        tabIndex={0}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') navigate(`/college/${h.college_id}`)
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div>
+                          <h3>{h.college_name}</h3>
+                          {h.created_at ? (
+                            <p>Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                          ) : h.location ? (
+                            <p>{h.location}</p>
+                          ) : null}
+                          {user && (() => {
+                            const d = deadlines[h.college_id]
+                            if (!d) return null
+                            if (d.rolling) return <div className="filters" style={{ marginTop: 6 }}><span className="pill">Rolling admissions</span></div>
+                            const future = (d.rounds ?? []).filter(r => r.date >= todayISO)
+                            if (!future.length) return null
+                            return (
+                              <div className="filters" style={{ marginTop: 6 }}>
+                                {future.slice(0, 4).map(r => (
+                                  <span className="pill" key={`${r.type}-${r.date}`}>{roundLabel(r.type)} · {formatDeadlineDate(r.date)}</span>
+                                ))}
+                              </div>
+                            )
+                          })()}
                         </div>
-                      )
-                    })()}
-                  </div>
-                  <div className="filters">
-                    <button className="pill teal" onClick={() => navigate(`/college/${h.college_id}`)}>View</button>
-                    <button className="pill" onClick={() => handleUnheart(h.college_id)}>Remove</button>
-                  </div>
-                </div>
-                  ))}
+                        <div className="filters" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+                          {score != null && (
+                            <div className="score-stack">
+                              <div className="score" style={{ width: 54, height: 54, background: `conic-gradient(${ringColor(score)} 0 ${score}%, #eeeaf8 ${score}% 100%)` }}>
+                                <strong style={{ width: 40, height: 40, fontSize: 14 }}>{score}</strong>
+                              </div>
+                              <span className="score-label">Fit Score</span>
+                              {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
+                            </div>
+                          )}
+                          <button className="pill" onClick={e => { e.stopPropagation(); handleUnheart(h.college_id) }}>Remove</button>
+                        </div>
+                      </div>
+                    )
+                  })}
                   {!user && (
                     <div className="callout">
                       <p style={{ marginTop: 0 }}>Nice list. Create a free account when you're ready, and Sage can keep these schools with the rest of your college search.</p>
@@ -603,13 +660,16 @@ export default function Profile() {
             <span className="mini-title">Profile strength</span>
             <h2 style={{ margin: '8px 0', fontSize: 34, color: 'var(--admyt-ink)' }}>{completeness}%</h2>
             <div className="bar"><span style={{ width: `${completeness}%` }} /></div>
-            <p className="match-note" style={{ marginTop: 12 }}>{getCompletenessNudge()}</p>
+            <p className="match-note" style={{ marginTop: 12 }}>{topNudge}</p>
           </section>
 
           <section className="callout">
             <strong>Sage nudges</strong>
-            <p>{getCompletenessNudge()}</p>
-            <p>{savedSchoolCount > 1 ? "You've got a few saved schools. Ask Sage how they stack up." : "Heart one school you're curious about. It gives Sage a real signal."}</p>
+            {sageNudges.length ? (
+              sageNudges.map(nudge => <p key={nudge}>{nudge}</p>)
+            ) : (
+              <p>No extra homework right now. Ask Sage when you want a sharper compare.</p>
+            )}
             <button className="btn" onClick={() => navigate('/chat')} style={{ marginTop: 14, width: '100%' }}>Ask Sage</button>
           </section>
         </aside>
