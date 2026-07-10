@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { useProfile } from '@/context/ProfileContext'
+import { useProfile, type StudentProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
 import { useColleges } from '@/context/CollegeContext'
 import { useSavedVibes } from '@/context/SavedVibesContext'
@@ -57,6 +57,12 @@ interface UserPreferences {
 
 type SizePreference = NonNullable<UserPreferences['preferredSize']>
 type InstitutionTypePreference = NonNullable<UserPreferences['preferredInstitutionType']>
+interface SageFactRow {
+  label: string
+  value?: string
+  removeLabel: string
+  clearUpdate: Partial<StudentProfile>
+}
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' }, { abbr: 'AR', name: 'Arkansas' },
@@ -404,27 +410,46 @@ export default function Profile() {
     setHearts(prev => prev.filter(h => h.college_id !== collegeId))
   }
 
+  async function persistProfile(update: Partial<StudentProfile>) {
+    const sageProfileForPersistence: StudentProfile = {
+      preferredLocations: [],
+      careerGoals: [],
+      complete: false,
+      ...sageProfile,
+      ...update,
+    }
+    const preferenceColumns = {
+      preferred_states: sageProfileForPersistence.preferredStates ?? [],
+      max_tuition: sageProfileForPersistence.maxTuition ?? null,
+      preferred_majors: sageProfileForPersistence.preferredMajors ?? [],
+    }
+
+    if (user) {
+      await supabase.from('user_preferences').upsert(
+        { user_id: user.id, ...preferenceColumns, sage_profile: sageProfileForPersistence },
+        { onConflict: 'user_id' },
+      )
+    }
+
+    setPrefs(prev => ({
+      ...prev,
+      ...('preferredStates' in update ? { preferred_states: update.preferredStates ?? [] } : {}),
+      ...('maxTuition' in update ? { max_tuition: update.maxTuition ?? null } : {}),
+      ...('preferredMajors' in update ? { preferred_majors: update.preferredMajors ?? [] } : {}),
+      ...('preferredSize' in update ? { preferredSize: update.preferredSize ?? null } : {}),
+      ...('preferredInstitutionType' in update ? { preferredInstitutionType: update.preferredInstitutionType ?? null } : {}),
+    }))
+    mergeProfile(update)
+  }
+
   async function handleSavePrefs(newPrefs: UserPreferences) {
-    if (!user) return
-    const { preferredSize, preferredInstitutionType, ...preferenceColumns } = newPrefs
-    const profileUpdate = {
+    await persistProfile({
       preferredStates: newPrefs.preferred_states,
       maxTuition: newPrefs.max_tuition,
       preferredMajors: newPrefs.preferred_majors,
-      preferredSize: preferredSize ?? null,
-      preferredInstitutionType: preferredInstitutionType ?? null,
-    }
-    const sageProfileForPersistence = {
-      ...sageProfile,
-      ...profileUpdate,
-    }
-
-    await supabase.from('user_preferences').upsert(
-      { user_id: user.id, ...preferenceColumns, sage_profile: sageProfileForPersistence },
-      { onConflict: 'user_id' },
-    )
-    setPrefs(newPrefs)
-    mergeProfile(profileUpdate)
+      preferredSize: newPrefs.preferredSize ?? null,
+      preferredInstitutionType: newPrefs.preferredInstitutionType ?? null,
+    })
   }
 
   function getCompleteness() {
@@ -469,6 +494,45 @@ export default function Profile() {
     sageProfile?.preferredSize ||
     sageProfile?.preferredInstitutionType
   )
+  const allSageFactRows: SageFactRow[] = [
+    {
+      label: 'Location',
+      value: sageProfile?.preferredLocations?.length ? sageProfile.preferredLocations.join(', ') : sageProfile?.preferredStates?.join(', '),
+      removeLabel: 'Remove location',
+      clearUpdate: { preferredLocations: [], preferredStates: [] },
+    },
+    {
+      label: 'Major',
+      value: sageProfile?.intendedMajor || sageProfile?.preferredMajors?.join(', '),
+      removeLabel: 'Remove major',
+      clearUpdate: { intendedMajor: undefined, preferredMajors: [] },
+    },
+    {
+      label: 'Career goals',
+      value: sageProfile?.careerGoals?.join(', '),
+      removeLabel: 'Remove career goals',
+      clearUpdate: { careerGoals: [] },
+    },
+    {
+      label: 'Max tuition',
+      value: sageProfile?.maxTuition != null ? `$${sageProfile.maxTuition.toLocaleString()}/yr` : undefined,
+      removeLabel: 'Remove max tuition',
+      clearUpdate: { maxTuition: null },
+    },
+    {
+      label: 'Campus size',
+      value: sageProfile?.preferredSize ? SIZE_LABELS[sageProfile.preferredSize] : undefined,
+      removeLabel: 'Remove campus size',
+      clearUpdate: { preferredSize: null },
+    },
+    {
+      label: 'Institution type',
+      value: sageProfile?.preferredInstitutionType ? INSTITUTION_TYPE_LABELS[sageProfile.preferredInstitutionType] : undefined,
+      removeLabel: 'Remove institution type',
+      clearUpdate: { preferredInstitutionType: null },
+    },
+  ]
+  const sageFactRows = allSageFactRows.filter((row): row is SageFactRow & { value: string } => !!row.value)
 
   return (
     <div className="app-frame">
@@ -493,20 +557,22 @@ export default function Profile() {
                 <span className="mini-title">What Sage knows</span>
                 <p className="match-note" style={{ marginTop: 8 }}>Your conversation signals, organized so recommendations feel less random.</p>
               </div>
-              <button className="btn secondary" onClick={() => navigate('/chat')}>Chat</button>
+              <div className="filters" style={{ justifyContent: 'flex-end' }}>
+                <button className="btn secondary" onClick={() => setShowPrefsModal(true)}>Edit</button>
+                <button className="btn secondary" onClick={() => navigate('/chat')}>Chat</button>
+              </div>
             </div>
             <div style={{ marginTop: 14 }}>
               {loading ? <Skeleton height={100} /> : hasSageFacts ? (
                 <div className="learn-list">
-                  {[
-                    ['Location', sageProfile?.preferredLocations?.length ? sageProfile.preferredLocations.join(', ') : sageProfile?.preferredStates?.join(', ')],
-                    ['Major', sageProfile?.intendedMajor || sageProfile?.preferredMajors?.join(', ')],
-                    ['Career goals', sageProfile?.careerGoals?.join(', ')],
-                    ['Max tuition', sageProfile?.maxTuition != null ? `$${sageProfile.maxTuition.toLocaleString()}/yr` : undefined],
-                    ['Campus size', sageProfile?.preferredSize ? SIZE_LABELS[sageProfile.preferredSize] : undefined],
-                    ['Institution type', sageProfile?.preferredInstitutionType ? INSTITUTION_TYPE_LABELS[sageProfile.preferredInstitutionType] : undefined],
-                  ].filter(([, value]) => value).map(([label, value]) => (
-                    <div className="learn-item" key={label}><span>{label}</span><span>{value}</span></div>
+                  {sageFactRows.map(row => (
+                    <div className="learn-item" key={row.label}>
+                      <span>{row.label}</span>
+                      <div className="filters" style={{ justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--admyt-ink)', fontWeight: 700, textAlign: 'right' }}>{row.value}</span>
+                        <button className="pill" aria-label={row.removeLabel} onClick={() => persistProfile(row.clearUpdate)}>×</button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
