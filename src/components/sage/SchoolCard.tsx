@@ -4,6 +4,7 @@ import { useColleges } from '@/context/CollegeContext'
 import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchScore'
 import { useProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
+import { useSavedVibes } from '@/context/SavedVibesContext'
 import type { College } from '@/lib/colleges'
 import { orderMajorsForProfile } from '@/lib/majors'
 import ScoreRing from '@/components/ui/ScoreRing'
@@ -30,12 +31,14 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
   const college = colleges.find(c => c.id === collegeId) as College | undefined
   const { profile } = useProfile()
   const { heartedSchools, toggleHeart } = useChat()
+  const { vibeScoreFor } = useSavedVibes()
   const [animating, setAnimating] = useState(false)
 
   if (!college) return null
 
-  const score = scoreCollege(college, profile)
-  const showScore = hasEnoughProfileForScore(profile)
+  const vibeScore = vibeScoreFor(college.id)
+  const score = vibeScore ?? scoreCollege(college, profile)
+  const showScore = vibeScore !== undefined || hasEnoughProfileForScore(profile)
   const isHearted = heartedSchools.has(college.id)
   const fitRead = fitLine(college, profile)
 
@@ -96,6 +99,7 @@ export default function SchoolCard({ collegeId }: { collegeId: string }) {
             <>
               <ScoreRing score={score} size={46} color={ringColor(score)} />
               <span className="score-label">Fit Score</span>
+              {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
             </>
           ) : (
             <div style={{

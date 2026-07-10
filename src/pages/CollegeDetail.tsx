@@ -4,6 +4,7 @@ import { getCollege, getShortName, typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
+import { useSavedVibes } from '@/context/SavedVibesContext'
 import { scoreCollege, explainFit } from '@/lib/matchScore'
 import { orderMajorsForProfile } from '@/lib/majors'
 import HeartButton from '@/components/ui/HeartButton'
@@ -24,6 +25,7 @@ export default function CollegeDetail() {
   const navigate = useNavigate()
   const { profile } = useProfile()
   const { heartedSchools, toggleHeart } = useChatContext()
+  const { vibeScoreFor } = useSavedVibes()
   const [college, setCollege] = useState<College | null>(null)
   const [loading, setLoading] = useState(true)
   const [descriptionLoading, setDescriptionLoading] = useState(false)
@@ -89,7 +91,8 @@ export default function CollegeDetail() {
     )
   }
 
-  const score = scoreCollege(college, profile)
+  const vibeScore = vibeScoreFor(college.id)
+  const score = vibeScore ?? scoreCollege(college, profile)
   const tuition = college.tuitionInState ?? college.tuitionOutState
   const isHearted = heartedSchools.has(college.id)
   const reasons = explainFit(college, profile).slice(0, 3)
@@ -136,6 +139,7 @@ export default function CollegeDetail() {
               <span className="mini-title">Sage fit read</span>
               <h3 style={{ margin: '6px 0', fontSize: 24 }}>{matchLabel(score)}</h3>
               <p className="match-note">Based on what Sage knows so far. More conversation makes this sharper.</p>
+              {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
             </div>
             <HeartButton active={isHearted} onClick={() => toggleHeart(college)} size={38} />
           </div>

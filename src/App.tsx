@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProfileProvider } from '@/context/ProfileContext'
 import { AuthProvider } from '@/context/AuthContext'
+import { SavedVibesProvider } from '@/context/SavedVibesContext'
 import { CollegeProvider } from '@/context/CollegeContext'
 import { ChatProvider } from '@/context/ChatContext'
 import { useAuth } from '@/context/AuthContext'
@@ -35,20 +36,22 @@ export default function App() {
   return (
     <AuthProvider>
       <ProfileProvider>
-        <CollegeProvider>
-          <ChatProvider>
-            <Routes>
-              <Route path="/" element={<RootRoute />} />
-              <Route element={<Layout />}>
-                <Route path="/chat" element={<Home />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/college/:id" element={<CollegeDetail />} />
-                <Route path="/college/:id/vibe" element={<VibeCheck />} />
-                <Route path="/profile" element={<Profile />} />
-              </Route>
-            </Routes>
-          </ChatProvider>
-        </CollegeProvider>
+        <SavedVibesProvider>
+          <CollegeProvider>
+            <ChatProvider>
+              <Routes>
+                <Route path="/" element={<RootRoute />} />
+                <Route element={<Layout />}>
+                  <Route path="/chat" element={<Home />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/college/:id" element={<CollegeDetail />} />
+                  <Route path="/college/:id/vibe" element={<VibeCheck />} />
+                  <Route path="/profile" element={<Profile />} />
+                </Route>
+              </Routes>
+            </ChatProvider>
+          </CollegeProvider>
+        </SavedVibesProvider>
       </ProfileProvider>
     </AuthProvider>
   )

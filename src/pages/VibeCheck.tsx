@@ -6,6 +6,7 @@ import { useProfile } from '@/context/ProfileContext'
 import { useAuth } from '@/context/AuthContext'
 import AuthModal from '@/components/ui/AuthModal'
 import { saveVibeCheck } from '@/lib/savedVibes'
+import { useSavedVibes } from '@/context/SavedVibesContext'
 
 interface VibeDimension {
   key: string
@@ -120,6 +121,7 @@ export default function VibeCheck() {
   const navigate = useNavigate()
   const { profile } = useProfile()
   const { user } = useAuth()
+  const { refresh: refreshSavedVibes } = useSavedVibes()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set(DEFAULT_VIBE_DIMENSION_KEYS))
   const [result, setResult] = useState<VibeResult | null>(null)
@@ -179,7 +181,10 @@ export default function VibeCheck() {
       overall_summary: result.overallSummary,
     })
     if (err) setSaveError(err)
-    else setSaved(true)
+    else {
+      await refreshSavedVibes()
+      setSaved(true)
+    }
     setSaveLoading(false)
   }
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
 import { useChatContext } from '@/context/ChatContext'
+import { useSavedVibes } from '@/context/SavedVibesContext'
 import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchScore'
 import { typeLabel } from '@/lib/colleges'
 import type { College } from '@/lib/colleges'
@@ -39,8 +40,10 @@ function fitLine(college: College, profile: ReturnType<typeof useProfile>['profi
 }
 
 function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
-  const score = scoreCollege(college, profile)
-  const showScore = hasEnoughProfileForScore(profile)
+  const { vibeScoreFor } = useSavedVibes()
+  const vibeScore = vibeScoreFor(college.id)
+  const score = vibeScore ?? scoreCollege(college, profile)
+  const showScore = vibeScore !== undefined || hasEnoughProfileForScore(profile)
   const navigate = useNavigate()
   const { heartedSchools, toggleHeart } = useChatContext()
   const isHearted = heartedSchools.has(college.id)
@@ -77,6 +80,7 @@ function CollegeCard({ college, profile }: { college: College; profile: ReturnTy
                 <strong>{score}</strong>
               </div>
               <span className="score-label">Fit Score</span>
+              {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
             </>
           ) : (
             <div style={{
@@ -126,6 +130,7 @@ function SkeletonCard() {
 export default function Search() {
   const { profile } = useProfile()
   const { colleges, loading } = useColleges()
+  const { vibeScoreFor } = useSavedVibes()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [selectedState, setSelectedState] = useState('')
@@ -149,8 +154,12 @@ export default function Search() {
         if (selectedMajor && !c.majors.includes(selectedMajor)) return false
         return true
       })
-      .sort((a, b) => scoreCollege(b, profile) - scoreCollege(a, profile))
-  }, [colleges, query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor, profile])
+      .sort((a, b) => {
+        const scoreA = vibeScoreFor(a.id) ?? scoreCollege(a, profile)
+        const scoreB = vibeScoreFor(b.id) ?? scoreCollege(b, profile)
+        return scoreB - scoreA
+      })
+  }, [colleges, query, selectedState, selectedSize, selectedType, maxTuition, selectedMajor, profile, vibeScoreFor])
 
   const activeFilters = [selectedState, selectedSize, selectedType, selectedMajor].filter(Boolean).length + (maxTuition < TUITION_MAX ? 1 : 0)
 
