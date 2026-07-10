@@ -31,6 +31,9 @@ export default function Layout() {
   const inactiveTabColor = 'var(--admyt-muted)'
   const isBrowse = location.pathname === '/search'
   const isProfile = location.pathname === '/profile'
+  // The floating "Back to Sage" pill belongs on Browse + school pages, not on
+  // Home (that IS Sage) or Profile (which has its own tab and gets overlapped).
+  const showBackPill = !isHome && !isProfile
   const navLink = (active: boolean): CSSProperties => ({
     display: 'inline-flex',
     alignItems: 'center',
@@ -116,7 +119,9 @@ export default function Layout() {
         paddingBottom: isMobile ? '70px' : 0,
       } : {
         flex: 1, overflowY: 'auto',
-        paddingBottom: isMobile ? '70px' : 0,
+        // On mobile, clear the bottom tab bar (~70px) plus the floating
+        // "Back to Sage" pill where it shows, so it never covers content.
+        paddingBottom: isMobile ? (showBackPill ? '132px' : '70px') : 0,
       }}>
         {isHome ? (
           <Outlet />
@@ -127,8 +132,8 @@ export default function Layout() {
         )}
       </main>
 
-      {/* ── Back to Sage pill (non-home pages) ──────────────────── */}
-      {!isHome && (
+      {/* ── Back to Sage pill (Browse + school pages) ───────────── */}
+      {showBackPill && (
         <button
           onClick={() => navigate('/chat')}
           style={{
