@@ -64,7 +64,7 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'radial-gradient(circle at 12% 6%, rgba(33,184,165,.12), transparent 28%), radial-gradient(circle at 86% 4%, rgba(255,122,102,.12), transparent 28%), var(--admyt-paper)', padding: '28px clamp(16px, 3vw, 42px)' }}>
-      <div style={{ flex: 1, overflow: 'hidden', maxWidth: '1120px', width: '100%', margin: '0 auto', border: '1px solid var(--admyt-line)', borderRadius: '12px', background: 'rgba(255,255,255,.72)', boxShadow: 'var(--admyt-shadow)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, overflow: 'hidden', maxWidth: '1120px', width: '100%', margin: '0 auto', border: '1px solid var(--admyt-line)', borderBottom: 'none', borderRadius: '12px 12px 0 0', background: 'rgba(255,255,255,.72)', boxShadow: 'var(--admyt-shadow)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ minHeight: '54px', borderBottom: '1px solid var(--admyt-line)', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(255,255,255,.82)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--admyt-muted)', fontSize: '13px', fontWeight: 760 }}>
             <SageOrb size={30} />

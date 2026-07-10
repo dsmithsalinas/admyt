@@ -668,13 +668,15 @@ export default function Profile() {
                             )
                           })()}
                         </div>
-                        <div className="filters" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <div className="filters" style={{ alignItems: 'flex-start', justifyContent: 'flex-end' }}>
                           {score != null && (
                             <div className="score-stack">
                               <div className="score" style={{ width: 54, height: 54, background: `conic-gradient(${ringColor(score)} 0 ${score}%, #eeeaf8 ${score}% 100%)` }}>
                                 <strong style={{ width: 40, height: 40, fontSize: 14 }}>{score}</strong>
                               </div>
                               <span className="score-label">Fit Score</span>
+                              {/* Row is top-aligned (flex-start), so the ring + Remove sit in the same
+                                  spot on every card; this pill just hangs below the ring when present. */}
                               {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
                             </div>
                           )}
