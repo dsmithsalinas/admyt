@@ -4246,15 +4246,27 @@
   }
 
   .premium-scroll-panel {
-    min-height: max(76svh, 580px);
+    min-height: max(84svh, 640px);
     align-items: flex-start;
-    padding: calc(34svh + 30px) 20px 44px;
+    padding: calc(43svh + 24px) 16px 48px;
   }
 
   .premium-scroll-panel > div,
   .premium-scroll-panel.is-active > div {
     width: 100%;
-    padding: 0;
+    position: relative;
+    z-index: 3;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,.5);
+    border-radius: 24px;
+    background: linear-gradient(
+      150deg,
+      rgba(255,250,244,.62),
+      rgba(255,250,244,.86)
+    );
+    box-shadow: 0 20px 50px rgba(36,25,82,.09), inset 0 1px 0 rgba(255,255,255,.72);
+    backdrop-filter: blur(8px) saturate(1.08);
+    -webkit-backdrop-filter: blur(8px) saturate(1.08);
     opacity: 1;
     transform: none;
     transition: none;
@@ -4302,14 +4314,15 @@
   }
 
   .premium-scroll-visual-sticky {
-    min-height: 34svh;
-    height: 34svh;
-    padding-top: 54px;
+    min-height: 52svh;
+    height: 52svh;
+    padding-top: 50px;
+    overflow: visible;
   }
 
   .premium-scroll-world {
-    width: min(98vw, 460px);
-    transform: translateX(10vw) scale(.76);
+    width: min(102vw, 480px);
+    transform: translateX(8vw) scale(.8);
   }
 
   .premium-scroll-vibe {
@@ -4317,6 +4330,17 @@
     background:
       radial-gradient(circle at 72% 16%, rgba(117,82,234,.28), transparent 31%),
       linear-gradient(180deg, #15113b 0%, #080925 100%);
+  }
+
+  .premium-scroll-vibe > div,
+  .premium-scroll-vibe.is-active > div {
+    border-color: rgba(190,177,255,.18);
+    background: linear-gradient(
+      150deg,
+      rgba(17,14,54,.58),
+      rgba(8,9,37,.82)
+    );
+    box-shadow: 0 22px 56px rgba(1,2,20,.28), inset 0 1px 0 rgba(255,255,255,.08);
   }
 
   .premium-scroll-vibe h2,
