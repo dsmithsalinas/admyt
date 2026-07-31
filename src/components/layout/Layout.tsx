@@ -161,7 +161,7 @@ export default function Layout() {
 
       {/* ── Mobile bottom tab bar ───────────────────────────────── */}
       {isMobile && (
-        <div style={{
+        <div className="mobile-tab-bar" style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
           height: '68px',
           background: 'rgba(255, 253, 250, 0.94)',
@@ -174,6 +174,7 @@ export default function Layout() {
           {/* Chat tab */}
           <Link
             to="/chat"
+            className="mobile-tab-link"
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
@@ -188,6 +189,7 @@ export default function Layout() {
           {/* Browse tab */}
           <Link
             to="/search"
+            className="mobile-tab-link"
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
@@ -202,6 +204,7 @@ export default function Layout() {
           {/* Profile tab */}
           <button
             onClick={() => navigate('/profile')}
+            className="mobile-tab-link"
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',

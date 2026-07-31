@@ -4221,3 +4221,281 @@
     animation: none;
   }
 }
+
+/* ── Mobile landing + Sage path ──────────────────────────────
+   The desktop landing remains the pinned cinematic story. Phones get the same
+   world and scene changes with a shorter visual stage and an editorial reading
+   rhythm that never asks copy to compete with the campus art. */
+@media (max-width: 640px) {
+  .premium-landing-nav {
+    min-height: 64px;
+    padding: 15px 18px;
+    background: linear-gradient(180deg, rgba(255,250,244,.98), rgba(255,250,244,.86));
+    backdrop-filter: blur(18px);
+  }
+
+  .premium-wordmark {
+    font-size: 27px;
+  }
+
+  .premium-scroll-story,
+  .premium-scroll-story.is-vibe {
+    background:
+      radial-gradient(circle at 50% 4%, rgba(118,89,238,.08), transparent 18%),
+      #fffaf4;
+  }
+
+  .premium-scroll-panel {
+    min-height: max(76svh, 580px);
+    align-items: flex-start;
+    padding: calc(34svh + 30px) 20px 44px;
+  }
+
+  .premium-scroll-panel > div,
+  .premium-scroll-panel.is-active > div {
+    width: 100%;
+    padding: 0;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .premium-scroll-panel h2,
+  .premium-scroll-hero .premium-hero-title,
+  .premium-scroll-pressure h2,
+  .premium-scroll-story.is-vibe .premium-scroll-panel h2 {
+    max-width: 355px;
+    margin-bottom: 18px;
+    color: #101222;
+    font-size: clamp(38px, 10.8vw, 48px);
+    line-height: 1;
+    letter-spacing: -.052em;
+  }
+
+  .premium-scroll-hero .premium-hero-title {
+    font-size: clamp(48px, 13.5vw, 58px);
+  }
+
+  .premium-scroll-panel > div > p:not(.premium-story-ghost),
+  .premium-scroll-story.is-vibe .premium-scroll-panel > div > p:not(.premium-story-ghost) {
+    max-width: 350px;
+    color: #606378;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .premium-scroll-panel .premium-story-eyebrow {
+    margin-bottom: 17px;
+    font-size: 13px;
+  }
+
+  .premium-story-ghost {
+    display: none;
+  }
+
+  .premium-scroll-hero > div > p {
+    margin-bottom: 24px !important;
+  }
+
+  .premium-pressure-cta {
+    margin-top: 24px;
+  }
+
+  .premium-scroll-visual-sticky {
+    min-height: 34svh;
+    height: 34svh;
+    padding-top: 54px;
+  }
+
+  .premium-scroll-world {
+    width: min(98vw, 460px);
+    transform: translateX(10vw) scale(.76);
+  }
+
+  .premium-scroll-vibe {
+    position: relative;
+    background:
+      radial-gradient(circle at 72% 16%, rgba(117,82,234,.28), transparent 31%),
+      linear-gradient(180deg, #15113b 0%, #080925 100%);
+  }
+
+  .premium-scroll-vibe h2,
+  .premium-scroll-story.is-vibe .premium-scroll-vibe h2 {
+    color: #f7f5ff;
+  }
+
+  .premium-scroll-vibe > div > p,
+  .premium-scroll-story.is-vibe .premium-scroll-vibe > div > p:not(.premium-story-ghost) {
+    color: rgba(232,230,244,.8);
+  }
+
+  .premium-scroll-story .premium-match-card {
+    right: 4%;
+    bottom: 3%;
+    width: 88%;
+  }
+
+  .premium-scroll-story .premium-vibe-read {
+    right: 5%;
+    width: 45%;
+  }
+
+  .premium-story-trust {
+    padding-top: 78px;
+  }
+
+  .premium-trust-grid {
+    margin-top: 46px;
+  }
+
+  .premium-story-chapter,
+  .premium-story-audience {
+    padding-block: 56px 64px;
+  }
+
+  .premium-story-copy h2,
+  .premium-story-trust h2,
+  .premium-story-final h2 {
+    font-size: clamp(40px, 11.4vw, 50px);
+    line-height: 1;
+  }
+
+  .premium-story-final {
+    min-height: max(720px, 88svh);
+    padding-top: 74px;
+    padding-bottom: 72px;
+  }
+
+  .premium-final-orb {
+    transform: scale(.86);
+  }
+
+  /* Mobile Safari changes the usable height as its address bar moves. Using
+     the dynamic viewport keeps the chat composer and tabs inside that space. */
+  .app-layout {
+    height: 100dvh !important;
+    min-height: 100dvh;
+  }
+
+  .app-top-nav {
+    min-height: 56px !important;
+    padding: 8px 16px !important;
+  }
+
+  .app-top-nav > a span > strong {
+    font-size: 13px !important;
+  }
+
+  .app-top-nav > a span > span {
+    margin-top: 3px !important;
+    font-size: 10px !important;
+  }
+
+  .app-main-sage {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .sage-space {
+    min-height: 0;
+    padding: 8px 8px 0;
+    overscroll-behavior: none;
+  }
+
+  .sage-presence {
+    left: 16px;
+    top: 8px;
+    gap: 9px;
+  }
+
+  .sage-arrival-orb {
+    width: 52px;
+    height: 52px;
+  }
+
+  .sage-arrival-orb > div {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .sage-presence-status {
+    font-size: 11px;
+  }
+
+  .sage-conversation-shell {
+    width: 100%;
+    margin-top: 50px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .sage-conversation-inner {
+    padding: 22px 13px 14px;
+  }
+
+  .sage-empty-kicker {
+    margin-bottom: 9px;
+    font-size: 9px;
+  }
+
+  .sage-empty-state h2 {
+    margin-bottom: 9px;
+    font-size: 31px;
+  }
+
+  .sage-empty-state > p {
+    margin-bottom: 17px;
+    font-size: 14px;
+    line-height: 1.48;
+  }
+
+  .sage-mobile-knows {
+    margin-bottom: 11px;
+  }
+
+  .sage-action-grid {
+    gap: 8px;
+  }
+
+  .sage-action-chip {
+    min-height: 46px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .sage-action-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .sage-composer-dock {
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .sage-composer {
+    min-height: 48px;
+    padding: 7px 8px 7px 14px;
+    border-radius: 15px;
+  }
+
+  .sage-composer textarea {
+    font-size: 13px;
+  }
+
+  .sage-composer > button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mobile-tab-bar {
+    height: calc(58px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-tab-link {
+    min-height: 58px;
+  }
+
+  .mobile-tab-link svg {
+    width: 20px;
+    height: 20px;
+  }
+}
