@@ -2,14 +2,11 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
-import { useChatContext } from '@/context/ChatContext'
 import { useSavedVibes } from '@/context/SavedVibesContext'
-import { scoreCollege, hasEnoughProfileForScore, explainFit } from '@/lib/matchScore'
-import { getTuitionDisplayInfo, typeLabel } from '@/lib/colleges'
-import type { College } from '@/lib/colleges'
+import { scoreCollege } from '@/lib/matchScore'
 import { REGION_TO_STATES } from '@/lib/regions'
-import { orderMajorsForProfile } from '@/lib/majors'
-import HeartButton from '@/components/ui/HeartButton'
+import SageOrb from '@/components/sage/SageOrb'
+import PremiumSchoolCard from '@/components/sage/PremiumSchoolCard'
 
 // Top of the tuition slider. Above the most expensive school in the catalog
 // (~$72k), so parking the slider here means "no tuition limit" rather than
@@ -77,106 +74,6 @@ const US_STATES = [
   { abbr: 'VA', name: 'Virginia' }, { abbr: 'VT', name: 'Vermont' }, { abbr: 'WA', name: 'Washington' },
   { abbr: 'WI', name: 'Wisconsin' }, { abbr: 'WV', name: 'West Virginia' }, { abbr: 'WY', name: 'Wyoming' },
 ]
-
-function fitLine(college: College, profile: ReturnType<typeof useProfile>['profile']) {
-  return explainFit(college, profile).slice(0, 2).join(' · ')
-}
-
-function ringColor(score: number) {
-  if (score >= 80) return 'var(--admyt-teal)'
-  if (score >= 60) return 'var(--admyt-indigo)'
-  return 'var(--admyt-faint)'
-}
-
-function CollegeCard({ college, profile }: { college: College; profile: ReturnType<typeof useProfile>['profile'] }) {
-  const { vibeScoreFor } = useSavedVibes()
-  const vibeScore = vibeScoreFor(college.id)
-  const score = vibeScore ?? scoreCollege(college, profile)
-  const showScore = vibeScore !== undefined || hasEnoughProfileForScore(profile)
-  const navigate = useNavigate()
-  const { heartedSchools, toggleHeart } = useChatContext()
-  const isHearted = heartedSchools.has(college.id)
-  const tuition = getTuitionDisplayInfo(college)
-  const typeChip = typeLabel(college.type)
-  const sizeLabel = college.size.charAt(0).toUpperCase() + college.size.slice(1)
-  const fitRead = fitLine(college, profile)
-
-  const chips = [
-    typeChip, sizeLabel,
-    college.acceptanceRate != null ? `${college.acceptanceRate}% admit` : null,
-    tuition != null ? [tuition.display, tuition.label === 'out-of-state' ? tuition.label : null].filter(Boolean).join(' · ') : null,
-  ].filter(Boolean) as string[]
-
-  const majorChips = orderMajorsForProfile(college.majors, profile).slice(0, 2).map(m =>
-    m.length > 28 ? m.slice(0, 27) + '…' : m
-  )
-
-  return (
-    <div
-      onClick={() => navigate(`/college/${college.id}`)}
-      className="mock-card school-card"
-      style={{ cursor: 'pointer' }}
-    >
-      <div className="school-head">
-        <div>
-          <h3>{college.name}</h3>
-          <p>{college.location}</p>
-        </div>
-        <div className="score-stack">
-          {showScore ? (
-            <>
-              <span
-                className="pill"
-                style={{
-                  color: ringColor(score),
-                  borderColor: ringColor(score),
-                  padding: '5px 9px',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                }}
-              >
-                {score} match
-              </span>
-              {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
-            </>
-          ) : (
-            <div style={{
-              fontSize: '11px',
-              color: '#A8A8BC',
-              textAlign: 'center',
-              maxWidth: '52px',
-              lineHeight: 1.3,
-            }}>
-              Chat with Sage to get your score
-            </div>
-          )}
-        </div>
-      </div>
-
-      <p className="match-note" style={{ color: 'var(--admyt-slate)', fontSize: '14px', fontWeight: 650, lineHeight: 1.55 }}>{fitRead}</p>
-
-      <div className="filters">
-        {chips.map(tag => (
-          <span className="pill" key={tag}>{tag}</span>
-        ))}
-        {majorChips.map(major => <span className="pill teal" key={major}>{major}</span>)}
-      </div>
-
-      <div className="card-actions">
-        <button className="btn secondary" onClick={e => { e.stopPropagation(); navigate(`/college/${college.id}`) }}>
-          Details
-        </button>
-        <button
-          className="btn teal"
-          onClick={e => { e.stopPropagation(); navigate(`/college/${college.id}/vibe`) }}
-        >
-          Vibe Check
-        </button>
-        <HeartButton active={isHearted} onClick={e => { e.stopPropagation(); toggleHeart(college) }} size={30} />
-      </div>
-    </div>
-  )
-}
 
 function SkeletonCard() {
   return (
@@ -247,17 +144,20 @@ export default function Search() {
   }
 
   return (
-    <div className="app-frame">
-      <div className="search-hero">
-        <div>
-          <span className="pill teal">{loading ? 'Loading schools' : `${filtered.length} ${filtered.length === 1 ? 'school' : 'schools'} that could fit you`}</span>
+    <div className="app-frame browse-page">
+      <div className="search-hero premium-search-hero">
+        <div className="premium-search-copy">
+          <span className="pill dark">{loading ? 'Loading schools' : `${filtered.length} ${filtered.length === 1 ? 'school' : 'schools'} that could fit you`}</span>
           <h1>Browse with Sage beside you.</h1>
-          <p className="match-note">Search is still fast, but every result explains why it may or may not fit you.</p>
+          <p>Search fast. Keep the honest fit read.</p>
         </div>
-        <button className="btn" onClick={() => navigate('/chat')}>Ask Sage to narrow this</button>
+        <div className="premium-search-sage">
+          <SageOrb size={76} animate />
+          <button className="btn" onClick={() => navigate('/chat')}>Ask Sage to narrow this</button>
+        </div>
       </div>
 
-      <div className="search-layout">
+      <div className="search-layout premium-search-layout">
         <input
           className="search-box"
           value={query}
@@ -266,7 +166,7 @@ export default function Search() {
           style={{ width: '100%', outline: 'none' }}
         />
 
-      <div className="filters">
+      <div className="filters premium-filter-dock" aria-label="Quick filters">
         <button className="pill teal">Best fit first</button>
         <button onClick={() => setSelectedRegion('')} className="pill">
           Any region
@@ -302,7 +202,7 @@ export default function Search() {
       </div>
 
       {showMoreFilters && (
-        <div className="mock-card section-pad" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
+        <div className="mock-card section-pad premium-more-filters" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
           <div>
             <label className="mini-title" style={{ display: 'block' }}>State</label>
             <select value={selectedState} onChange={e => setSelectedState(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
@@ -373,7 +273,7 @@ export default function Search() {
       )}
 
       {loading ? (
-        <div className="grid-3">
+        <div className="premium-school-grid">
           {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
@@ -385,14 +285,14 @@ export default function Search() {
           </button>
         </div>
       ) : (
-        <div className="grid-3">
+        <div className="premium-school-grid">
           {filtered.map(college => (
-            <CollegeCard key={college.id} college={college} profile={profile} />
+            <PremiumSchoolCard key={college.id} college={college} />
           ))}
         </div>
       )}
 
-      <div className="callout">
+      <div className="callout premium-search-note">
         <strong>From Sage</strong>
         <p>These are sorted by what Sage knows so far. The score should start the conversation, not end it.</p>
       </div>

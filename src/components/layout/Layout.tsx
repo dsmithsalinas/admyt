@@ -33,7 +33,7 @@ export default function Layout() {
   const isProfile = location.pathname === '/profile'
   // The floating "Back to Sage" pill belongs on Browse + school pages, not on
   // Home (that IS Sage) or Profile (which has its own tab and gets overlapped).
-  const showBackPill = !isHome && !isProfile
+  const showBackPill = !isMobile && !isHome && !isProfile
   const navLink = (active: boolean): CSSProperties => ({
     display: 'inline-flex',
     alignItems: 'center',

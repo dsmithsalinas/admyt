@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import AuthModal from '@/components/ui/AuthModal'
 import { saveVibeCheck } from '@/lib/savedVibes'
 import { useSavedVibes } from '@/context/SavedVibesContext'
+import SageOrb from '@/components/sage/SageOrb'
 import {
   GUEST_VIBES_MAX_RUNS,
   getGuestVibeRuns,
@@ -71,7 +72,7 @@ function DimensionResult({ dim }: { dim: VibeDimension }) {
   const hasWhyReceipt = Boolean(dim.why || sources.length > 0)
 
   return (
-    <div className="mock-card section-pad">
+    <div className="mock-card section-pad vibe-dimension-result">
       <div className="school-head">
         <div>
           <span className="mini-title">{canonical.emoji} {canonical.label}</span>
@@ -160,7 +161,7 @@ function VibeCompareView({
   const compareDimensions = new Map(compareRun.result.dimensions.map(dim => [dim.key, dim]))
 
   return (
-    <section className="mock-card section-pad" aria-label="Compare Vibe Checks">
+    <section className="mock-card section-pad vibe-compare-card" aria-label="Compare Vibe Checks">
       <div className="school-head" style={{ alignItems: 'flex-start', gap: 16 }}>
         <div>
           <span className="mini-title">Compare with another school</span>
@@ -494,7 +495,7 @@ export default function VibeCheck() {
   const compareRun = compareOptions.find(run => run.id === compareRunId) ?? compareOptions[0] ?? null
 
   return (
-    <div className="app-frame">
+    <div className="app-frame vibe-page">
       <div className="frame-head">
         <button className="crumb" onClick={() => navigate(`/college/${id}`)} style={{ border: 0, background: 'transparent', cursor: 'pointer' }}>
           <span>←</span>
@@ -506,11 +507,27 @@ export default function VibeCheck() {
       {!result && !loading && !streaming && (
         <div className="vibe-setup">
           <main>
-            <section className="vibe-banner">
-              <span className="pill dark">Campus culture, minus the brochure voice</span>
-              <h1>Would you actually fit at {schoolFirst}?</h1>
-              <p>Pick the parts of campus life that would actually change your decision. Sage will give you the honest read.</p>
+            <section className="vibe-banner premium-vibe-banner">
+              <div className="premium-vibe-banner-copy">
+                <span className="pill dark">Campus culture, minus the brochure voice</span>
+                <h1>Would you actually fit at {schoolFirst}?</h1>
+                <p>Pick the parts of campus life that would actually change your decision. Sage will give you the honest read.</p>
+              </div>
+              <div className="premium-vibe-guide">
+                <SageOrb size={88} animate />
+                <span>I’m reading this with you.</span>
+              </div>
             </section>
+
+            <div className="premium-vibe-mobile-action">
+              <div>
+                <strong>{selected.size} of {VIBE_DIMENSIONS.length} selected</strong>
+                <span>Pick what matters. Sage will handle the read.</span>
+              </div>
+              <button className="btn" onClick={runVibeCheck} disabled={selected.size === 0}>
+                {selected.size === 0 ? 'Pick one' : `Run ${selected.size}`}
+              </button>
+            </div>
 
             <ProfileLensChips profile={profile} />
 
@@ -538,8 +555,8 @@ export default function VibeCheck() {
             {error && <div className="callout" style={{ marginTop: 14, color: '#B42318' }}>{error}</div>}
           </main>
 
-          <aside className="sage-panel">
-            <section className="mock-soft-card section-pad">
+          <aside className="sage-panel premium-vibe-sidebar">
+            <section className="mock-soft-card section-pad premium-vibe-setup-card">
               <span className="mini-title">Your setup</span>
               <h2 style={{ margin: '8px 0 8px', fontSize: 28, color: 'var(--admyt-ink)' }}>
                 {selected.size} of {VIBE_DIMENSIONS.length}
@@ -550,7 +567,7 @@ export default function VibeCheck() {
               </button>
             </section>
 
-            <section className="callout">
+            <section className="callout premium-vibe-ready">
               <strong>Ready when you are</strong>
               <p>Pick what matters to you, then I'll give it to you straight — the real read, not the brochure version.</p>
               <button className="btn" onClick={runVibeCheck} disabled={selected.size === 0} style={{ marginTop: 14, width: '100%', opacity: selected.size === 0 ? .55 : 1 }}>
@@ -563,16 +580,19 @@ export default function VibeCheck() {
 
       {loading && !streaming && (
         <div className="vibe-setup">
-          <section className="result-card mock-card" style={{ gridColumn: '1 / -1' }}>
+          <section className="result-card mock-card premium-vibe-result" style={{ gridColumn: '1 / -1' }}>
             <div>
               <span className="mini-title" style={{ color: 'var(--admyt-teal)' }}>Reading the campus culture</span>
               <h2 style={{ color: 'white', margin: '10px 0 0' }}>{schoolFirst}, through your lens</h2>
               <p>Sage is checking the dimensions you picked and turning the answer into a clean fit read.</p>
             </div>
-            <div className="vibe-loading-panel" aria-live="polite">
-              <div className="vibe-loading-status">{loadingStatus}</div>
-              <div className="vibe-loading-list">
-                {selectedDimensions.map(dim => <LoadingDimensionRow key={dim.key} dim={dim} />)}
+            <div className="premium-vibe-reading-stage">
+              <SageOrb size={72} animate />
+              <div className="vibe-loading-panel" aria-live="polite">
+                <div className="vibe-loading-status">{loadingStatus}</div>
+                <div className="vibe-loading-list">
+                  {selectedDimensions.map(dim => <LoadingDimensionRow key={dim.key} dim={dim} />)}
+                </div>
               </div>
             </div>
           </section>
@@ -584,7 +604,7 @@ export default function VibeCheck() {
           <main style={{ display: 'grid', gap: 14 }}>
             <ProfileLensChips profile={profile} />
 
-            <section className="result-card mock-card">
+            <section className="result-card mock-card premium-vibe-result">
               <div>
                 <span className="mini-title" style={{ color: 'var(--admyt-teal)' }}>Your fit score</span>
                 <h1 style={{ color: 'white', margin: '10px 0 0' }}>{schoolFirst}'s real read</h1>
@@ -595,8 +615,11 @@ export default function VibeCheck() {
                   </p>
                 )}
               </div>
-              <div className="big-score">
-                {result?.fitScore ?? streamingOverall?.fitScore ?? '...'}<span>/ 100</span>
+              <div className="premium-vibe-score-stage">
+                <SageOrb size={74} animate />
+                <div className="big-score">
+                  {result?.fitScore ?? streamingOverall?.fitScore ?? '...'}<span>/ 100</span>
+                </div>
               </div>
             </section>
 
@@ -608,7 +631,7 @@ export default function VibeCheck() {
                   return streamed
                     ? <DimensionResult key={dim.key} dim={streamed} />
                     : (
-                      <div className="mock-card section-pad" key={dim.key}>
+                      <div className="mock-card section-pad vibe-dimension-result" key={dim.key}>
                         <LoadingDimensionRow dim={dim} />
                       </div>
                     )
@@ -625,10 +648,10 @@ export default function VibeCheck() {
             )}
           </main>
 
-          <aside className="sage-panel">
+          <aside className="sage-panel premium-vibe-sidebar">
             {result ? (
               <>
-                <section className="callout">
+                <section className="callout premium-vibe-ready">
                   <strong>{saved ? 'Saved to your profile' : user ? 'Save this read' : "Don't lose this"}</strong>
                   <p>{saved ? 'You can find it from Profile whenever you need it.' : 'Save this Vibe Check so Sage can use it later.'}</p>
                   {user ? (
@@ -646,7 +669,7 @@ export default function VibeCheck() {
 
                 {saveError && <div className="callout" style={{ color: '#B42318' }}>{saveError}</div>}
 
-                <section className="callout">
+                <section className="callout premium-vibe-ready">
                   <strong>Compare with another school</strong>
                   <p>
                     {compareOptions.length > 0
@@ -660,7 +683,7 @@ export default function VibeCheck() {
                   )}
                 </section>
 
-                <section className="mock-card section-pad">
+                <section className="mock-card section-pad premium-vibe-setup-card">
                   <span className="mini-title">Next moves</span>
                   <div className="suggestion-list" style={{ marginTop: 12 }}>
                     <button className="suggestion" onClick={() => { setResult(null); setError(null); setSaved(false) }}><p>Change what I'm checking</p></button>
@@ -684,7 +707,7 @@ export default function VibeCheck() {
                 </section>
               </>
             ) : (
-              <section className="callout">
+              <section className="callout premium-vibe-ready">
                 <strong>Building your read</strong>
                 <p>{loadingStatus}</p>
                 <div className="vibe-loading-list" style={{ marginTop: 12 }}>

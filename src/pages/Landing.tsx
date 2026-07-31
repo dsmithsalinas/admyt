@@ -1,316 +1,299 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import SageOrb from '@/components/sage/SageOrb'
 import campusHorizon from '@/assets/landing/campus-horizon.webp'
-import humanSage01 from '@/assets/sage/human-sage-01.webp'
-import humanSage02 from '@/assets/sage/human-sage-02.webp'
-import humanSage03 from '@/assets/sage/human-sage-03.webp'
-import humanSage04 from '@/assets/sage/human-sage-04.webp'
-import humanSage05 from '@/assets/sage/human-sage-05.webp'
-import humanSage06 from '@/assets/sage/human-sage-06.webp'
-import humanSage07 from '@/assets/sage/human-sage-07.webp'
-import humanSage08 from '@/assets/sage/human-sage-08.webp'
+import sageCutout01 from '@/assets/sage/sage-cutout-01.webp'
+import sageCutout02 from '@/assets/sage/sage-cutout-02.webp'
+import sageCutout03 from '@/assets/sage/sage-cutout-03.webp'
 import { useSageTransition } from '@/context/SageTransitionContext'
 
 const GradText = ({ children }: { children: React.ReactNode }) => (
-  <span style={{
-    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  }}>
-    {children}
-  </span>
+  <span className="premium-wordmark-y">{children}</span>
 )
 
 function CTAButton({ onClick, large }: { onClick: () => void; large?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className="landing-primary-cta"
-      style={{
-        background: 'linear-gradient(110deg, #4748f2 0%, #8057f4 52%, #e552ae 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '999px',
-        padding: large ? '15px 25px' : '12px 22px',
-        fontSize: large ? '15px' : '14px',
-        fontWeight: 720,
-        cursor: 'pointer',
-        boxShadow: '0 15px 36px rgba(99,72,232,.32), 0 0 36px rgba(229,82,174,.13)',
-        fontFamily: 'Inter, sans-serif',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '14px',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow = '0 20px 44px rgba(99,72,232,.4), 0 0 42px rgba(229,82,174,.18)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = '0 15px 36px rgba(99,72,232,.32), 0 0 36px rgba(229,82,174,.13)'
-      }}
+      className={`landing-primary-cta${large ? ' landing-primary-cta-large' : ''}`}
     >
       Start chatting with Sage
-      <ArrowRight size={18} />
+      <ArrowRight size={18} aria-hidden="true" />
     </button>
   )
 }
 
-const humanSageAvatars = [
-  humanSage01, humanSage02, humanSage03, humanSage04,
-  humanSage05, humanSage06, humanSage07, humanSage08,
+function Eyebrow({ children, tone = 'indigo' }: { children: React.ReactNode; tone?: 'indigo' | 'violet' | 'teal' }) {
+  return (
+    <div className={`premium-story-eyebrow premium-story-eyebrow-${tone}`}>
+      <span />
+      {children}
+    </div>
+  )
+}
+
+function CampusWorld({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
+  return (
+    <div className={`premium-story-world ${className}`}>
+      <img src={campusHorizon} alt="" aria-hidden="true" />
+      <div className="premium-world-ring premium-world-ring-one" aria-hidden="true" />
+      <div className="premium-world-ring premium-world-ring-two" aria-hidden="true" />
+      {children}
+    </div>
+  )
+}
+
+const preferenceSignals = [
+  'Small classes',
+  'Creative campus',
+  'Strong financial aid',
+  'Somewhere outdoorsy',
+  'Not too far from home',
+  'Creative, not overwhelming',
 ]
 
 export default function Landing() {
   const navigate = useNavigate()
   const { startSageTransition } = useSageTransition()
+  const [activeScene, setActiveScene] = useState(0)
   const pageRef = useRef<HTMLDivElement>(null)
   const orbRef = useRef<HTMLDivElement>(null)
   const goToChat = () => startSageTransition(orbRef.current, navigate)
 
-  // Single global observer — watches every .fade-up element on the page
   useEffect(() => {
     const makeVisible = (el: Element) => el.classList.add('visible')
-
-    const observer = new IntersectionObserver(
-      (entries) => {
+    const revealObserver = new IntersectionObserver(
+      entries => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             makeVisible(entry.target)
-            observer.unobserve(entry.target)
+            revealObserver.unobserve(entry.target)
           }
         })
       },
-      { threshold: 0.05, rootMargin: '0px 0px -20px 0px' }
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
     )
 
-    // Observe all current .fade-up elements
-    const observe = () => {
-      document.querySelectorAll('.fade-up:not(.visible)').forEach(el => observer.observe(el))
-    }
-    observe()
+    const sceneObserver = new IntersectionObserver(
+      entries => {
+        const visible = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (visible) setActiveScene(Number((visible.target as HTMLElement).dataset.premiumScene))
+      },
+      { threshold: [0.35, 0.55, 0.75], rootMargin: '-18% 0px -18% 0px' }
+    )
 
-    // Fallback: force all visible after 1.5s in case observer never fires
-    const fallback = setTimeout(() => {
-      document.querySelectorAll('.fade-up:not(.visible)').forEach(makeVisible)
-    }, 1500)
+    document.querySelectorAll('.premium-reveal:not(.visible)').forEach(el => revealObserver.observe(el))
+    document.querySelectorAll('[data-premium-scene]').forEach(el => sceneObserver.observe(el))
+    const fallback = window.setTimeout(() => {
+      document.querySelectorAll('.premium-reveal:not(.visible)').forEach(makeVisible)
+    }, 1800)
 
     return () => {
-      observer.disconnect()
-      clearTimeout(fallback)
+      revealObserver.disconnect()
+      sceneObserver.disconnect()
+      window.clearTimeout(fallback)
     }
   }, [])
 
   return (
-    <div ref={pageRef} className="premium-landing" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--admyt-slate)', background: 'var(--admyt-paper)', overflowX: 'hidden' }}>
-
-      {/* ── Nav ─────────────────────────────────────────────── */}
+    <div ref={pageRef} className="premium-landing">
       <nav className="landing-nav premium-landing-nav">
         <a className="premium-wordmark" href="#" aria-label="Admyt home">
-          <span>adm<GradText>y</GradText>t</span>
+          adm<GradText>y</GradText>t
         </a>
         <div className="premium-landing-links">
-          <a href="#how-it-works" style={{ color: 'inherit', textDecoration: 'none' }}>How it works</a>
-          <a href="#vibe" style={{ color: 'inherit', textDecoration: 'none' }}>Vibe Check</a>
-          <a href="#trust" style={{ color: 'inherit', textDecoration: 'none' }}>Why trust it</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#vibe">Vibe Check</a>
+          <a href="#trust">Why trust it</a>
         </div>
       </nav>
 
-      {/* ── Section 1: Hero ──────────────────────────────────── */}
-      <section className="landing-hero premium-landing-hero">
-        <div className="premium-hero-glow premium-hero-glow-one" aria-hidden="true" />
-        <div className="premium-hero-glow premium-hero-glow-two" aria-hidden="true" />
-        <div className="landing-hero-text premium-hero-copy">
-          <div className="premium-hero-eyebrow">
-            <span className="premium-hero-signal" />
-            The y is for you
-          </div>
-          <h1 className="landing-hero-title premium-hero-title">
-            Find where you fit.
-          </h1>
-          <p className="premium-hero-subtitle">
-            Sage helps you discover colleges that fit the person you are — and the life you want.
-          </p>
-          <div className="landing-hero-cta-row">
-            <CTAButton onClick={goToChat} large />
-          </div>
-        </div>
-
-        <div className="premium-hero-scene" aria-label="A college campus opening into an energetic city">
-          <img src={campusHorizon} alt="" aria-hidden="true" />
-          <div className="premium-scene-orbit premium-scene-orbit-one" aria-hidden="true" />
-          <div className="premium-scene-orbit premium-scene-orbit-two" aria-hidden="true" />
-          <div ref={orbRef} className="premium-hero-orb">
-            <SageOrb size={112} animate />
-          </div>
-          <div className="premium-hero-prompt">
-            What would make a place feel like yours?
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section landing-sage-scenes" id="meet-sage">
-        <div className="landing-inner landing-sage-strip">
-          <div className="fade-up">
-            <div className="landing-eyebrow"><span className="landing-signal" />Meet Sage</div>
-            <h2>One guide. A lot of ways to feel seen.</h2>
-            <p className="landing-wide-copy">
-              Sage is the calm voice in your corner — part older sibling, part friend who already figured it out. However you picture that person, the point is the same: you're not doing this alone.
-            </p>
-            <div className="landing-orb-note">
-              <SageOrb size={54} />
-              <p className="match-note">In chat, Sage stays simple: a calm little orb, ready when you are.</p>
-            </div>
-          </div>
-          <div className="landing-avatar-rail" aria-label="Human Sage avatar set">
-            {humanSageAvatars.map(src => (
-              <div className="landing-human-avatar" key={src}>
-                <img src={src} alt="Human Sage avatar portrait" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section" id="how-it-works">
-        <div className="landing-inner">
-          <div className="landing-section-head fade-up">
-            <div>
-              <div className="landing-eyebrow"><span className="landing-signal" />How Admyt works</div>
-              <h2>How Admyt works</h2>
-            </div>
-            <p>No forms, no pressure, no SAT score required. Start with a real conversation and let Sage help you sort the messy parts into a list that actually feels like yours.</p>
-          </div>
-          <div className="landing-panel">
-            <div className="landing-journey">
-              {[
-                ['Just start talking', "Tell Sage what you're thinking — or that you have no idea where to start. Both are totally fine."],
-                ['Sage gets to know you', "Sage learns what actually matters: your goals, your budget, and the kind of place you'd feel at home."],
-                ['Discover schools that fit', "See schools matched to you, including ones you may not know yet that could fit better and cost less."],
-                ['Run Vibe Check', 'Before you fall in love with a school, get the honest read on campus culture and daily life.'],
-              ].map(([title, body], i) => (
-                <article className="landing-step fade-up" key={title} style={{ transitionDelay: `${i * .08}s` }}>
-                  <div className="landing-num">{i + 1}</div>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section landing-vibe-section" id="vibe">
-        <div className="landing-inner landing-vibe-layout">
-          <div className="fade-up">
-            <div className="landing-eyebrow"><span className="landing-signal" />Vibe Check</div>
-            <h2>Would you actually vibe there?</h2>
-            <p className="landing-wide-copy">
-              A school can look perfect on paper and feel completely wrong in person. Vibe Check helps you see the social scene, culture, and campus life before you commit four years of your life.
-            </p>
-            <div className="landing-voice-card">
-              <div className="landing-human-avatar"><img src={humanSage03} alt="Human Sage avatar portrait" /></div>
-              <p>Real talk belongs here. Not the brochure version — the version that helps you decide if you would actually feel at home.</p>
-            </div>
-          </div>
-          <div className="landing-score-card fade-up" style={{ transitionDelay: '.12s' }}>
-            <div className="landing-score-head">
-              <span>Sample Vibe Check · Oberlin College</span>
-              <h3>Creative, activist, and proudly unusual.</h3>
-            </div>
-            <div className="landing-meters">
-              {[
-                ['Creative energy', '9/10', '90%'],
-                ['Traditional school spirit', '4/10', '40%'],
-                ['Finding your people', '8/10', '80%'],
-              ].map(([label, score, width]) => (
-                <div className="landing-meter" key={label}>
-                  <div className="landing-meter-top"><span>{label}</span><strong>{score}</strong></div>
-                  <div className="bar"><span style={{ width }} /></div>
+      <main>
+        <section className={`premium-scroll-story${activeScene === 5 ? ' is-vibe' : ''}`}>
+          <div className="premium-scroll-grid">
+            <div className="premium-scroll-copy-column">
+              <article className={`premium-scroll-panel premium-scroll-hero${activeScene === 0 ? ' is-active' : ''}`} data-premium-scene="0">
+                <div>
+                  <Eyebrow tone="teal">The y is for you</Eyebrow>
+                  <h1 className="premium-hero-title">Find where you fit.</h1>
+                  <p>Sage helps you discover colleges that fit the person you are — and the life you want.</p>
+                  <CTAButton onClick={goToChat} large />
                 </div>
-              ))}
-              <div className="landing-readout">
-                Real talk: if you want a polished, rah-rah campus, this may feel too niche. If you want classmates who care intensely about art, politics, music, and identity, it could feel like permission to be yourself.
+              </article>
+
+              <article className={`premium-scroll-panel premium-scroll-pressure${activeScene === 1 ? ' is-active' : ''}`} data-premium-scene="1">
+                <div>
+                  <p className="premium-story-ghost">Find where you fit.</p>
+                  <h2>The college search became a numbers game.</h2>
+                  <p>A GPA. A ranking. A list of schools everyone else thinks you should want.</p>
+                  <div className="premium-pressure-cta"><CTAButton onClick={goToChat} /></div>
+                </div>
+              </article>
+
+              <article className={`premium-scroll-panel${activeScene === 2 ? ' is-active' : ''}`} data-premium-scene="2">
+                <div>
+                  <Eyebrow>Meet Sage</Eyebrow>
+                  <h2>Like having a friend who already figured it out.</h2>
+                  <p>Ask the real questions. Sage helps you understand what matters to you — then find the places that match.</p>
+                </div>
+              </article>
+
+              <article id="how-it-works" className={`premium-scroll-panel${activeScene === 3 ? ' is-active' : ''}`} data-premium-scene="3">
+                <div>
+                  <Eyebrow>How Admyt works</Eyebrow>
+                  <h2>Start with what matters to you.</h2>
+                  <p>Talk to Sage like a person. Your goals, your budget, and the kind of place that would feel like home start becoming a clearer picture.</p>
+                </div>
+              </article>
+
+              <article className={`premium-scroll-panel${activeScene === 4 ? ' is-active' : ''}`} data-premium-scene="4">
+                <div>
+                  <Eyebrow>Your matches</Eyebrow>
+                  <h2>Discover schools that fit your life.</h2>
+                  <p>Sage connects what you care about to real colleges — including places you might never have found on someone else’s list.</p>
+                  <div className="premium-inline-sage">
+                    <SageOrb size={64} />
+                    <span>This one checks more of your boxes than you might expect.</span>
+                  </div>
+                </div>
+              </article>
+
+              <article id="vibe" className={`premium-scroll-panel premium-scroll-vibe${activeScene === 5 ? ' is-active' : ''}`} data-premium-scene="5">
+                <div>
+                  <Eyebrow tone="violet">Vibe Check</Eyebrow>
+                  <h2>Would you actually vibe there?</h2>
+                  <p>A school can look perfect on paper and feel completely wrong in person. Sage gives you the honest read before you commit four years of your life.</p>
+                </div>
+              </article>
+            </div>
+
+            <div className="premium-scroll-visual-column" aria-live="polite">
+              <div className="premium-scroll-visual-sticky">
+                <CampusWorld className={`premium-scroll-world${activeScene === 1 ? ' is-muted' : ''}`}>
+                  <div className={`premium-scene-layer${activeScene === 0 ? ' is-active' : ''}`}>
+                    <div className="premium-hero-prompt">What would make a place feel like yours?</div>
+                  </div>
+
+                  <div className={`premium-scene-layer${activeScene === 1 ? ' is-active' : ''}`}>
+                    <div className="premium-pressure-pill premium-pressure-one">#42</div>
+                    <div className="premium-pressure-pill premium-pressure-two">Most selective</div>
+                    <div className="premium-pressure-pill premium-pressure-three">Reach</div>
+                    <div className="premium-pressure-pill premium-pressure-four">Acceptance rate</div>
+                    <div className="premium-pressure-pill premium-pressure-five">Everyone says I should apply</div>
+                  </div>
+
+                  <div className={`premium-scene-layer${activeScene === 2 ? ' is-active' : ''}`}>
+                    <div className="premium-question-pill premium-question-one">Will I be lonely there?</div>
+                    <div className="premium-question-pill premium-question-two">Can I actually afford it?</div>
+                    <div className="premium-question-pill premium-question-three">What’s it really like?</div>
+                    <div className="premium-sage-bubble">You can ask me the real questions.</div>
+                  </div>
+
+                  <div className={`premium-scene-layer${activeScene === 3 ? ' is-active' : ''}`}>
+                    <div className="premium-signal-map">
+                      {preferenceSignals.map((signal, index) => (
+                        <div className={`premium-signal-pill premium-signal-pill-${index + 1}`} key={signal}>
+                          <span />
+                          {signal}
+                        </div>
+                      ))}
+                      <div className="premium-sage-bubble premium-map-bubble">Okay. That gives me somewhere real to start.</div>
+                    </div>
+                  </div>
+
+                  <div className={`premium-scene-layer${activeScene === 4 ? ' is-active' : ''}`}>
+                    <div className="premium-match-signals">
+                      {preferenceSignals.slice(0, 4).map(signal => <span key={signal}>{signal}</span>)}
+                    </div>
+                    <article className="premium-match-card">
+                      <div className="premium-match-monogram">L&amp;C</div>
+                      <div>
+                        <h3>Lewis &amp; Clark College</h3>
+                        <p>Portland, OR · liberal arts · strong aid profile</p>
+                      </div>
+                      <strong>91% <small>fit</small></strong>
+                      <p className="premium-match-why">Small classes, a creative culture, and the outdoors are part of everyday life.</p>
+                    </article>
+                  </div>
+
+                  <div className={`premium-scene-layer${activeScene === 5 ? ' is-active' : ''}`}>
+                    <div className="premium-vibe-score premium-vibe-score-one"><span>Creative energy</span><strong>9/10</strong></div>
+                    <div className="premium-vibe-score premium-vibe-score-two"><span>Finding your people</span><strong>8/10</strong></div>
+                    <div className="premium-vibe-score premium-vibe-score-three"><span>Traditional school spirit</span><strong>4/10</strong></div>
+                    <div className="premium-vibe-read">
+                      <strong>Real talk:</strong> the creative culture fits. The traditional school-spirit side may feel quieter than you expect.
+                    </div>
+                  </div>
+
+                  <div ref={orbRef} className={`premium-scroll-orb premium-scroll-orb-scene-${activeScene}`}>
+                    <SageOrb size={112} animate />
+                  </div>
+                </CampusWorld>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="landing-section" id="trust">
-        <div className="landing-inner">
-          <div className="landing-section-head fade-up">
-            <div>
-              <div className="landing-eyebrow"><span className="landing-signal" />What we stand for</div>
-              <h2>What we stand for</h2>
-            </div>
-            <p>The right school is the one where you'll thrive. Not the one that scores highest on someone else's list.</p>
+        <section id="trust" className="premium-story-trust" aria-labelledby="trust-title">
+          <div className="premium-reveal">
+            <Eyebrow>What we stand for</Eyebrow>
+            <h2 id="trust-title">The right school is<br />the one where you’ll thrive.</h2>
+            <p>Not the one that scores highest on someone else’s list.</p>
           </div>
-          <div className="landing-value-grid">
+          <div className="premium-trust-grid">
             {[
-              ['Fit beats rank', "The right school is the one where you'll show up, plug in, and become yourself.", 'var(--admyt-indigo)'],
-              ['Everyone deserves a guide', "Great college guidance shouldn't cost thousands or depend on which counselor you got.", 'var(--admyt-teal)'],
-              ['Affordability is part of fit', "A school you can't afford isn't a fit, no matter how good it looks.", 'var(--admyt-coral)'],
-              ['Only on your side', 'We never sell your data. We never take money to promote schools. No sponsored results, ever.', 'var(--admyt-gold)'],
-            ].map(([title, body, color], i) => (
-              <article className="landing-value fade-up" key={title} style={{ transitionDelay: `${i * .08}s` }}>
-                <div className="dot" style={{ background: color }} />
+              ['Fit beats rank', 'The right place matters more than the famous name.'],
+              ['Everyone deserves a guide', 'Great guidance shouldn’t cost thousands.'],
+              ['Affordability is part of fit', 'A school you can’t afford isn’t a fit.'],
+              ['Only on your side', 'No sponsored schools. No selling your data.'],
+            ].map(([title, body], index) => (
+              <article className={`premium-trust-value premium-reveal premium-trust-value-${index + 1}`} key={title}>
+                <span />
                 <h3>{title}</h3>
                 <p>{body}</p>
               </article>
             ))}
           </div>
-        </div>
-      </section>
+          <div className="premium-trust-orb premium-reveal"><SageOrb size={78} /></div>
+        </section>
 
-      <section className="landing-section landing-audience">
-        <div className="landing-inner landing-audience-layout">
-          <div className="fade-up">
-            <div className="landing-eyebrow"><span className="landing-signal" />Built for students</div>
-            <h2>Built for you — especially if no one's helped before.</h2>
-            <p className="landing-wide-copy">
-              Maybe you're the first in your family to do this. Maybe you're drowning in everyone else's expectations. Maybe you just need a school you can actually afford. Whoever you are — Admyt is a place to begin.
-            </p>
-            <div className="landing-avatar-mini-row" aria-label="A few human Sage avatars">
-              {[humanSage01, humanSage05, humanSage07].map(src => (
-                <div className="landing-human-avatar" key={src}><img src={src} alt="Human Sage avatar portrait" /></div>
-              ))}
-            </div>
+        <section className="premium-story-audience" aria-labelledby="audience-title">
+          <div className="premium-story-copy premium-reveal">
+            <Eyebrow>Built for you</Eyebrow>
+            <h2 id="audience-title">Especially if no one’s helped before.</h2>
+            <p>Maybe you’re the first in your family to do this. Maybe you’re buried in everyone else’s expectations. Maybe you just need somewhere honest to begin.</p>
+            <strong>Whoever you are, Sage starts with you.</strong>
           </div>
-          <div className="landing-quote-stack">
-            <div className="landing-quote-card"><strong>First-gen?</strong> Sage explains the process without assuming you already know the rules.</div>
-            <div className="landing-quote-card"><strong>Overwhelmed?</strong> Hey, take a breath. You do not have to figure it all out today.</div>
-            <div className="landing-quote-card"><strong>Feeling pressured?</strong> Sage helps you separate what sounds impressive from what might actually make you happy.</div>
+          <div className="premium-portrait-constellation premium-reveal" aria-label="Students Sage is built to support">
+            <div className="premium-portrait premium-portrait-one"><img src={sageCutout01} alt="Student portrait" /></div>
+            <div className="premium-portrait premium-portrait-two"><img src={sageCutout02} alt="Student portrait" /></div>
+            <div className="premium-portrait premium-portrait-three"><img src={sageCutout03} alt="Student portrait" /></div>
+            <span className="premium-portrait-label premium-portrait-label-one">First-gen?</span>
+            <span className="premium-portrait-label premium-portrait-label-two">Feeling overwhelmed?</span>
+            <span className="premium-portrait-label premium-portrait-label-three">Not sure where to start?</span>
+            <div className="premium-portrait-orb"><SageOrb size={74} animate /></div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="landing-final">
-        <div className="landing-inner fade-up">
-          <h2>Your future starts with a conversation.</h2>
-          <p>No forms. No pressure. No cost. Just an honest conversation about where you actually belong.</p>
-          <CTAButton onClick={goToChat} large />
-        </div>
-      </section>
-
-      <footer style={{ background: 'white', borderTop: '1px solid var(--admyt-line)', padding: '24px 0' }}>
-        <div className="landing-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-          <a style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--admyt-ink)', textDecoration: 'none', fontWeight: 760 }} href="#">
-            <SageOrb size={30} />
-            <span>adm<GradText>y</GradText>t</span>
-          </a>
-          <div style={{ display: 'flex', gap: 20, color: 'var(--admyt-muted)', fontSize: 13 }}>
-            <span>Find where you fit.</span>
-            <span>The y is for you.</span>
+        <section className="premium-story-final" aria-labelledby="final-title">
+          <div className="premium-final-orb premium-reveal"><SageOrb size={124} animate /></div>
+          <div className="premium-reveal">
+            <Eyebrow>The y is for you</Eyebrow>
+            <h2 id="final-title">Your future starts<br />with a conversation.</h2>
+            <p>No forms. No pressure. Just an honest place to begin.</p>
+            <CTAButton onClick={goToChat} large />
           </div>
-        </div>
+        </section>
+      </main>
+
+      <footer className="premium-landing-footer">
+        <a className="premium-wordmark" href="#" aria-label="Admyt home">adm<GradText>y</GradText>t</a>
+        <span>Find where you fit.</span>
+        <span>The y is for you.</span>
       </footer>
-
     </div>
   )
 }

@@ -124,6 +124,8 @@ All tables have Row Level Security enabled. Users can only access their own data
 - **Implementation:** Bespoke hand-written CSS, NOT a UI library. The full UI was redesigned from HTML mockups (`docs/redesign/`) into a custom CSS system in `src/styles/global.css` (native CSS `@layer` cascade layers — works without any build-time CSS framework) + `src/styles/tokens.css`, plus inline styles. **Tailwind CSS and shadcn/ui were removed** — they had been added but never wired into the Vite build (the `@tailwind` directives shipped as dead text), so shadcn components rendered unstyled. Modals are now the bespoke `Modal.tsx`; form inputs use the `.field` class; buttons use `.btn` / `AdmytButton`. Do not re-introduce Tailwind/shadcn — extend the CSS system instead.
 - **The `y` accent:** indigo (`#818CF8` on dark / `#6366F1` on light) gradient treatment on the wordmark.
 - **Landing → Sage motion:** the canonical `src/assets/sage/sage-orb.webp` is the shared visual identity. The landing CTA moves that same visible orb into the spatial chat shell; never redraw or substitute the orb for this transition. Reduced-motion users receive a short dissolve.
+- **Premium landing story:** the landing page is a continuous nine-beat visual narrative, not a premium hero followed by generic marketing cards. From the hero through Vibe Check, it uses one pinned campus world and one mounted canonical Sage orb; the copy, signals, labels, and lighting transform around that shared scene as the user scrolls. Do not remount or repeat the campus image for each chapter. After the pinned sequence releases, the story continues through trust principles, the personal student promise, and the final invitation. Preserve the warm-paper-to-midnight spatial world, glass signal surfaces, and full-viewport pacing when editing it.
+- **Premium product continuity:** use “same house, different room.” Landing is cinematic, Sage chat is immersive, Vibe Check is the signature guided-analysis moment, and Browse/School Detail are calmer premium work surfaces. All school recommendations use `src/components/sage/PremiumSchoolCard.tsx`; do not fork Browse and chat card designs again. Preserve search/filter density, scoring behavior, Vibe streaming/persistence/receipts, and the canonical Sage orb while evolving presentation.
 
 ## Navigation
 - **Desktop:** Top nav — logo, Browse link, ProfileAvatar
@@ -147,7 +149,7 @@ All tables have Row Level Security enabled. Users can only access their own data
 - [x] Removed Tailwind + shadcn/ui; rebuilt modals on bespoke `Modal.tsx` + `.field`
 - [x] Fixed preferences modal UX (was unstyled shadcn inputs)
 - [x] Brand copy / voice pass across the app
-- [x] Landing/marketing page (pre-auth, tells the Admyt story)
+- [x] Premium full-story landing page (pre-auth, tells the Admyt story from hero through final CTA)
 - [x] Optimized image assets (PNG → WebP)
 
 ### Soon

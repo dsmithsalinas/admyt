@@ -114,7 +114,7 @@ export default function CollegeDetail() {
   ].filter(Boolean) as string[]
 
   return (
-    <div className="app-frame">
+    <div className="app-frame detail-page">
       <div className="frame-head">
         <button className="crumb" onClick={() => navigate('/search')} style={{ border: 0, background: 'transparent', cursor: 'pointer' }}>
           <span>←</span>
@@ -157,7 +157,7 @@ export default function CollegeDetail() {
           </div>
         </div>
 
-        <aside className="fit-card">
+        <aside className="fit-card premium-detail-fit-card">
           <div className="school-head">
             <div>
               <span className="mini-title">Sage fit read</span>
@@ -173,9 +173,9 @@ export default function CollegeDetail() {
         </aside>
       </section>
 
-      <div className="detail-body">
+      <div className="detail-body premium-detail-body">
         <main style={{ display: 'grid', gap: 14 }}>
-          <section className="mock-card section-pad">
+          <section className="mock-card section-pad detail-surface-card detail-summary-card">
             <span className="mini-title">Real-talk summary</span>
             {descriptionLoading ? (
               <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
@@ -189,13 +189,13 @@ export default function CollegeDetail() {
           </section>
 
           <div className="two-list">
-            <section className="mock-card section-pad">
+            <section className="mock-card section-pad detail-surface-card">
               <span className="mini-title">Could fit because</span>
               <div className="learn-list" style={{ marginTop: 12 }}>
                 {reasons.map(reason => <div className="suggestion" key={reason}><p>{reason}</p></div>)}
               </div>
             </section>
-            <section className="mock-card section-pad">
+            <section className="mock-card section-pad detail-surface-card">
               <span className="mini-title">Watch out for</span>
               <div className="learn-list" style={{ marginTop: 12 }}>
                 {watchOut.map(item => <div className="suggestion" key={item}><p>{item}</p></div>)}
@@ -204,7 +204,7 @@ export default function CollegeDetail() {
           </div>
 
           {orderedMajors.length > 0 && (
-            <section className="mock-card section-pad">
+            <section className="mock-card section-pad detail-surface-card">
               <span className="mini-title">Programs that might matter</span>
               <div className="filters" style={{ marginTop: 12 }}>
                 {orderedMajors.map(major => <span className="pill" key={major}>{major}</span>)}
@@ -213,8 +213,8 @@ export default function CollegeDetail() {
           )}
         </main>
 
-        <aside className="sage-panel">
-          <section className="mock-soft-card section-pad">
+        <aside className="sage-panel premium-detail-sage-panel">
+          <section className="mock-soft-card section-pad detail-surface-card">
             <span className="mini-title">Ask Sage</span>
             <div className="suggestion-list" style={{ marginTop: 12 }}>
               {[
@@ -229,7 +229,7 @@ export default function CollegeDetail() {
             </div>
           </section>
 
-          <section className="callout">
+          <section className="callout premium-detail-callout">
             <strong>Vibe Check</strong>
             <p>Does {shortName}'s culture actually fit your day-to-day life?</p>
             <button className="btn" onClick={() => navigate(`/college/${college.id}/vibe`)} style={{ marginTop: 14, width: '100%' }}>
@@ -237,7 +237,7 @@ export default function CollegeDetail() {
             </button>
           </section>
 
-          <section className="mock-card section-pad">
+          <section className="mock-card section-pad detail-surface-card">
             <span className="mini-title">Quick stats</span>
             <div className="learn-list" style={{ marginTop: 12 }}>
               {hasStatValue(college.avgGpa) && <div className="learn-item"><span>Average GPA</span><span>{college.avgGpa.toFixed(2)}</span></div>}
