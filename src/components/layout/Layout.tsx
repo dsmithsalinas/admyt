@@ -51,10 +51,10 @@ export default function Layout() {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--admyt-paper)' }}>
+    <div className={isHome ? 'app-layout app-layout-sage' : 'app-layout'} style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--admyt-paper)' }}>
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
-      <nav style={{
+      <nav className={isHome ? 'app-top-nav app-top-nav-sage' : 'app-top-nav'} style={{
         background: 'rgba(255, 253, 250, 0.88)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--admyt-line)',
@@ -114,7 +114,7 @@ export default function Layout() {
       </nav>
 
       {/* ── Main content ────────────────────────────────────────── */}
-      <main style={isHome ? {
+      <main className={isHome ? 'app-main app-main-sage' : 'app-main'} style={isHome ? {
         flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column',
         paddingBottom: isMobile ? '70px' : 0,
       } : {

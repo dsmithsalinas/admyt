@@ -7,7 +7,7 @@ import SchoolCard from '@/components/sage/SchoolCard'
 import AuthModal from '@/components/ui/AuthModal'
 import { useAuth } from '@/context/AuthContext'
 import WhatSageKnows from '@/components/sage/WhatSageKnows'
-import AdmytCard from '@/components/ui/AdmytCard'
+import { useSageTransition } from '@/context/SageTransitionContext'
 
 interface VibeContext {
   collegeId: string
@@ -42,6 +42,7 @@ function TypingDots() {
 export default function Home() {
   const { messages, sendMessage, loading, initializing } = useChat()
   const { user } = useAuth()
+  const { destinationRef, isTransitioning } = useSageTransition()
   const location = useLocation()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
@@ -101,191 +102,111 @@ export default function Home() {
   const isEmpty = visibleMessages.length === 0 && !loading && !initializing
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'radial-gradient(circle at 12% 6%, rgba(33,184,165,.12), transparent 28%), radial-gradient(circle at 86% 4%, rgba(255,122,102,.12), transparent 28%), var(--admyt-paper)', padding: '28px clamp(16px, 3vw, 42px)' }}>
-      <div style={{ flex: 1, overflow: 'hidden', maxWidth: '1120px', width: '100%', margin: '0 auto', border: '1px solid var(--admyt-line)', borderBottom: 'none', borderRadius: '12px 12px 0 0', background: 'rgba(255,255,255,.72)', boxShadow: 'var(--admyt-shadow)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ minHeight: '54px', borderBottom: '1px solid var(--admyt-line)', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(255,255,255,.82)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--admyt-muted)', fontSize: '13px', fontWeight: 760 }}>
-            <SageOrb size={30} />
-            Chat with Sage
-          </div>
+    <div className={`sage-space${isTransitioning ? ' is-arriving' : ''}`}>
+      <div className="sage-space-stars" aria-hidden="true" />
+      <div className="sage-space-orbit" aria-hidden="true" />
+
+      <aside className="sage-presence">
+        <div ref={destinationRef} className="sage-arrival-orb">
+          <SageOrb size={112} animate={!isTransitioning} />
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, background: 'linear-gradient(180deg, #fffdfa 0%, #faf8ff 100%)' }}>
-        <div className="sage-home-grid" style={{ minHeight: '100%', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 330px', gap: 0, alignItems: 'stretch', margin: '0 auto' }}>
-          <div style={{ minWidth: 0, padding: '24px clamp(16px, 3vw, 48px)' }}>
+        <div className="sage-presence-copy">
+          <span className="sage-presence-status"><i /> Sage is here</span>
+          <h1>Let’s find your place.</h1>
+          <p>No perfect answers needed. Just tell me what’s on your mind.</p>
+        </div>
+      </aside>
 
-          {isEmpty && (
-            <div style={{ animation: 'sageFadeUp 0.35s ease' }}>
-              <AdmytCard tone="soft" style={{ textAlign: 'left', marginBottom: '18px', padding: '22px', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ position: 'absolute', inset: '-60px -40px auto auto', width: '190px', height: '190px', background: 'rgba(33,184,165,0.16)', borderRadius: '50%' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px' }}>
-                  <SageOrb size={48} animate />
-                  <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--admyt-ink)', letterSpacing: '0', margin: 0 }}>
-                  Hey, I'm Sage 👋
-                  </h1>
+      <section className="sage-conversation-shell">
+        <div className="sage-conversation-scroll">
+          <div className="sage-conversation-inner">
+            {isEmpty && (
+              <div className="sage-empty-state">
+                <span className="sage-empty-kicker">A conversation, not a questionnaire</span>
+                <h2>Hey — I’m Sage.</h2>
+                <p>Let’s figure out what kind of place would feel like yours.</p>
+                <div className="sage-mobile-knows">
+                  <WhatSageKnows compact />
                 </div>
-                <p style={{ fontSize: '15px', color: 'var(--admyt-slate)', margin: 0, lineHeight: 1.65, maxWidth: '660px' }}>
-                  I'm here to help you find where you actually fit — not just where you're supposed to go. Where's your head at?
-                </p>
-              </AdmytCard>
-              <div className="sage-mobile-knows" style={{ display: 'none', marginBottom: '14px' }}>
-                <WhatSageKnows compact />
+                <div className="sage-action-grid">
+                  {ACTION_TILES.map(tile => (
+                    <button
+                      key={tile.message}
+                      onClick={() => { if (!loading) sendMessage(tile.message) }}
+                      className="sage-action-chip"
+                    >
+                      <span className="sage-action-icon" style={{ background: tile.bg }}>
+                        <tile.Icon size={17} />
+                      </span>
+                      <span>{tile.label}</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="sage-action-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
-                {ACTION_TILES.map(tile => (
-                  <button
-                    key={tile.message}
-                    onClick={() => { if (!loading) sendMessage(tile.message) }}
-                    style={{
-                      background: 'white', borderRadius: '999px', padding: '10px 12px', minHeight: 'auto',
-                      border: '1px solid var(--admyt-line)', cursor: 'pointer', display: 'flex', flexDirection: 'row',
-                      justifyContent: 'flex-start', alignItems: 'center', color: 'var(--admyt-slate)', textAlign: 'left',
-                      boxShadow: 'none', gap: '12px',
-                    }}
-                  >
-                    <div style={{
-                      width: '32px', height: '32px', borderRadius: '10px',
-                      background: tile.bg,
-                      color: 'white',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <tile.Icon size={17} />
-                    </div>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 740, lineHeight: 1.35 }}>
-                      {tile.label} <ArrowRight size={14} />
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
 
-          {initializing && (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--admyt-faint)', fontSize: '13px' }}>
-              Picking up where you left off...
-            </div>
-          )}
+            {initializing && <div className="sage-initializing">Picking up where you left off...</div>}
 
-          {visibleMessages.map((msg) => {
-            const assistantText = msg.role === 'assistant' ? msg.content.trim() : ''
-            return (
-              <div key={msg.id} style={{ marginBottom: '18px', animation: 'sageFadeUp 0.3s ease' }}>
-                {msg.role === 'user' ? (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <div style={{
-                      background: 'var(--admyt-grad)', color: 'white',
-                      borderRadius: '16px 16px 4px 16px', padding: '11px 15px',
-                      fontSize: '13px', lineHeight: 1.6, maxWidth: '80%', wordBreak: 'break-word',
-                      boxShadow: 'var(--shadow-float)',
-                    }}>
-                      {msg.content}
+            {visibleMessages.map((msg) => {
+              const assistantText = msg.role === 'assistant' ? msg.content.trim() : ''
+              return (
+                <div key={msg.id} className="sage-message-row">
+                  {msg.role === 'user' ? (
+                    <div className="sage-user-wrap">
+                      <div className="sage-user-message">{msg.content}</div>
                     </div>
-                  </div>
-                ) : (
-                  <>
-                    {assistantText && (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                        <SageOrb size={30} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '11px', color: '#A8A8BC', fontWeight: 600, marginBottom: '5px', letterSpacing: '0.03em' }}>
-                            Sage
-                          </div>
-                          <div style={{
-                            background: 'rgba(255,253,250,0.96)', border: '1px solid var(--admyt-line)',
-                            borderRadius: '4px 16px 16px 16px', padding: '11px 14px',
-                            fontSize: '13px', color: 'var(--admyt-slate)', lineHeight: 1.6,
-                            display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word',
-                            boxShadow: 'var(--shadow-soft)',
-                          }}>
-                            {assistantText}
+                  ) : (
+                    <>
+                      {assistantText && (
+                        <div className="sage-assistant-wrap">
+                          <SageOrb size={30} />
+                          <div className="sage-assistant-content">
+                            <div className="sage-message-label">Sage</div>
+                            <div className="sage-assistant-message">{assistantText}</div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                    {msg.metadata?.schoolIds && msg.metadata.schoolIds.length > 0 && (
-                      <div className="sage-school-stack" style={{ marginTop: '12px', paddingLeft: '40px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {msg.metadata.schoolIds.map(id => (
-                          <SchoolCard key={id} collegeId={id} />
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )
-          })}
+                      )}
+                      {msg.metadata?.schoolIds && msg.metadata.schoolIds.length > 0 && (
+                        <div className="sage-school-stack">
+                          {msg.metadata.schoolIds.map(id => <SchoolCard key={id} collegeId={id} />)}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
 
-          {loading && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '18px' }}>
-              <SageOrb size={30} />
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--admyt-faint)', fontWeight: 700, marginBottom: '5px', letterSpacing: '0.03em' }}>Sage</div>
-                <div style={{ background: 'rgba(255,253,250,0.96)', border: '1px solid var(--admyt-line)', borderRadius: '4px 16px 16px 16px', padding: '12px 16px', boxShadow: 'var(--shadow-soft)' }}>
-                  <TypingDots />
+            {loading && (
+              <div className="sage-assistant-wrap sage-message-row">
+                <SageOrb size={30} />
+                <div>
+                  <div className="sage-message-label">Sage</div>
+                  <div className="sage-assistant-message"><TypingDots /></div>
                 </div>
               </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+        </div>
+
+        <div className="sage-composer-dock">
+          {!user && visibleMessages.length >= 4 && (
+            <div className="sage-save-nudge">
+              <span>Save this conversation so you can come back to it</span>
+              <button onClick={() => setShowAuthModal(true)}>Save it</button>
             </div>
           )}
-
-          <div ref={bottomRef} />
-          </div>
-          <aside className="sage-desktop-knows" style={{ borderLeft: '1px solid var(--admyt-line)', background: 'rgba(255,255,255,.68)', padding: '18px' }}>
-            <WhatSageKnows />
-          </aside>
-        </div>
-        </div>
-      </div>
-
-      <div style={{ flexShrink: 0, maxWidth: '1120px', width: '100%', margin: '0 auto', background: 'rgba(255,253,250,0.9)', border: '1px solid var(--admyt-line)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 16px', backdropFilter: 'blur(14px)' }}>
-        {!user && visibleMessages.length >= 4 && (
-          <div style={{
-            maxWidth: '680px', margin: '0 auto 10px',
-            background: 'var(--admyt-grad-soft)', border: '1px solid var(--admyt-line)',
-            borderRadius: '12px', padding: '9px 14px',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-          }}>
-            <span style={{ fontSize: '12px', color: 'var(--admyt-indigo)', fontWeight: 700 }}>Save this conversation so you can come back to it</span>
-            <button
-              onClick={() => setShowAuthModal(true)}
-              style={{
-                fontSize: '11px', fontWeight: 500, color: 'white',
-                background: 'var(--admyt-grad)',
-                border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', flexShrink: 0,
-              }}
-            >
-              Save it
-            </button>
-          </div>
-        )}
-        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
           {vibeContext && (
-            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'flex-start' }}>
-              <span className="pill" style={{ maxWidth: '100%', whiteSpace: 'normal' }}>
+            <div className="sage-vibe-context">
+              <span className="pill">
                 Discussing: {vibeContext.collegeName} Vibe Check · {vibeContext.fitScore}
-                <button
-                  type="button"
-                  onClick={() => setVibeContext(null)}
-                  aria-label="Stop discussing this Vibe Check"
-                  style={{
-                    border: 0,
-                    background: 'transparent',
-                    color: 'var(--admyt-muted)',
-                    cursor: 'pointer',
-                    font: 'inherit',
-                    fontWeight: 850,
-                    padding: '0 0 0 2px',
-                    lineHeight: 1,
-                  }}
-                >
-                  ×
-                </button>
+                <button type="button" onClick={() => setVibeContext(null)} aria-label="Stop discussing this Vibe Check">×</button>
               </span>
             </div>
           )}
-          <div style={{
-            display: 'flex', gap: '8px', alignItems: 'flex-end',
-            background: 'white', borderRadius: '12px', border: '1px solid var(--admyt-line)',
-            padding: '11px 11px 11px 16px', boxShadow: 'var(--shadow-input)',
-          }}>
+          <div className="sage-composer">
             <textarea
               ref={textareaRef}
               value={input}
@@ -294,51 +215,21 @@ export default function Home() {
               placeholder={placeholder}
               rows={1}
               disabled={loading}
-              style={{
-                flex: 1, border: 'none', background: 'none',
-                fontSize: '14px', color: 'var(--admyt-ink)',
-                resize: 'none', outline: 'none', lineHeight: 1.5,
-                maxHeight: '120px', overflowY: 'auto', fontFamily: 'inherit',
-              }}
             />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || loading}
-              aria-label="Send message"
-              style={{
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: !input.trim() || loading ? '#E8E6FD' : 'var(--admyt-grad)',
-                border: 'none', cursor: !input.trim() || loading ? 'default' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, transition: 'background 0.15s',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M2 8H14M8 2L14 8L8 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+            <button onClick={handleSend} disabled={!input.trim() || loading} aria-label="Send message">
+              <ArrowRight size={17} />
             </button>
           </div>
         </div>
-      </div>
+      </section>
+
+      <aside className="sage-knowledge-satellite">
+        <WhatSageKnows />
+      </aside>
 
       {showAuthModal && (
         <AuthModal trigger="general" onClose={() => setShowAuthModal(false)} onSuccess={() => setShowAuthModal(false)} />
       )}
-
-      <style>{`
-        @keyframes sageDotsbounce { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(-5px);opacity:1} }
-        @keyframes sageFadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes heartPop { 0%{transform:scale(1)} 50%{transform:scale(1.45)} 100%{transform:scale(1)} }
-        @media (max-width: 900px) {
-          .sage-home-grid { grid-template-columns: 1fr !important; max-width: 720px !important; }
-          .sage-desktop-knows { display: none !important; }
-          .sage-mobile-knows { display: block !important; }
-        }
-        @media (max-width: 520px) {
-          .sage-action-grid { grid-template-columns: 1fr !important; }
-          .sage-school-stack { padding-left: 0 !important; }
-        }
-      `}</style>
     </div>
   )
 }

@@ -13,6 +13,7 @@ import CollegeDetail from '@/pages/CollegeDetail'
 import VibeCheck from '@/pages/VibeCheck'
 import Profile from '@/pages/Profile'
 import SageOrb from '@/components/sage/SageOrb'
+import { SageTransitionProvider } from '@/context/SageTransitionContext'
 
 function LoadingOrb() {
   return (
@@ -39,16 +40,18 @@ export default function App() {
         <SavedVibesProvider>
           <CollegeProvider>
             <ChatProvider>
-              <Routes>
-                <Route path="/" element={<RootRoute />} />
-                <Route element={<Layout />}>
-                  <Route path="/chat" element={<Home />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/college/:id" element={<CollegeDetail />} />
-                  <Route path="/college/:id/vibe" element={<VibeCheck />} />
-                  <Route path="/profile" element={<Profile />} />
-                </Route>
-              </Routes>
+              <SageTransitionProvider>
+                <Routes>
+                  <Route path="/" element={<RootRoute />} />
+                  <Route element={<Layout />}>
+                    <Route path="/chat" element={<Home />} />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/college/:id" element={<CollegeDetail />} />
+                    <Route path="/college/:id/vibe" element={<VibeCheck />} />
+                    <Route path="/profile" element={<Profile />} />
+                  </Route>
+                </Routes>
+              </SageTransitionProvider>
             </ChatProvider>
           </CollegeProvider>
         </SavedVibesProvider>

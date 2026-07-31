@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 import SageOrb from '@/components/sage/SageOrb'
-import sageCutout01 from '@/assets/sage/sage-cutout-01.webp'
-import sageCutout02 from '@/assets/sage/sage-cutout-02.webp'
-import sageCutout03 from '@/assets/sage/sage-cutout-03.webp'
-import sageCutout04 from '@/assets/sage/sage-cutout-04.webp'
+import campusHorizon from '@/assets/landing/campus-horizon.webp'
 import humanSage01 from '@/assets/sage/human-sage-01.webp'
 import humanSage02 from '@/assets/sage/human-sage-02.webp'
 import humanSage03 from '@/assets/sage/human-sage-03.webp'
@@ -13,6 +11,7 @@ import humanSage05 from '@/assets/sage/human-sage-05.webp'
 import humanSage06 from '@/assets/sage/human-sage-06.webp'
 import humanSage07 from '@/assets/sage/human-sage-07.webp'
 import humanSage08 from '@/assets/sage/human-sage-08.webp'
+import { useSageTransition } from '@/context/SageTransitionContext'
 
 const GradText = ({ children }: { children: React.ReactNode }) => (
   <span style={{
@@ -29,69 +28,36 @@ function CTAButton({ onClick, large }: { onClick: () => void; large?: boolean })
   return (
     <button
       onClick={onClick}
+      className="landing-primary-cta"
       style={{
-        background: 'var(--admyt-grad)',
+        background: 'linear-gradient(110deg, #4748f2 0%, #8057f4 52%, #e552ae 100%)',
         color: 'white',
         border: 'none',
-        borderRadius: large ? '24px' : '20px',
-        padding: large ? '14px 28px' : '12px 24px',
+        borderRadius: '999px',
+        padding: large ? '15px 25px' : '12px 22px',
         fontSize: large ? '15px' : '14px',
-        fontWeight: 500,
+        fontWeight: 720,
         cursor: 'pointer',
-        boxShadow: '0 6px 20px rgba(99,102,241,0.25)',
+        boxShadow: '0 15px 36px rgba(99,72,232,.32), 0 0 36px rgba(229,82,174,.13)',
         fontFamily: 'Inter, sans-serif',
-        transition: 'opacity 0.15s, box-shadow 0.15s',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '14px',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.opacity = '0.9'
-        e.currentTarget.style.boxShadow = '0 8px 28px rgba(99,102,241,0.35)'
+        e.currentTarget.style.transform = 'translateY(-2px)'
+        e.currentTarget.style.boxShadow = '0 20px 44px rgba(99,72,232,.4), 0 0 42px rgba(229,82,174,.18)'
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.opacity = '1'
-        e.currentTarget.style.boxShadow = '0 6px 20px rgba(99,102,241,0.25)'
+        e.currentTarget.style.transform = 'translateY(0)'
+        e.currentTarget.style.boxShadow = '0 15px 36px rgba(99,72,232,.32), 0 0 36px rgba(229,82,174,.13)'
       }}
     >
       Start chatting with Sage
+      <ArrowRight size={18} />
     </button>
-  )
-}
-
-function SageHeroAnimation() {
-  const cutouts = [
-    { src: sageCutout01, delay: '0s' },
-    { src: sageCutout02, delay: '.4s' },
-    { src: sageCutout03, delay: '.2s' },
-    { src: sageCutout04, delay: '.6s' },
-  ]
-
-  return (
-    <div className="hero-visual" style={{
-      gridColumn: '1 / -1',
-      position: 'relative',
-      minHeight: '188px',
-      maxWidth: '100%',
-      overflow: 'hidden',
-      border: '1px solid var(--admyt-line)',
-      borderRadius: '22px',
-      background: 'radial-gradient(ellipse at center, rgba(99,102,241,.11), transparent 45%), rgba(255,255,255,.76)',
-      boxShadow: '0 20px 58px rgba(46,37,111,.09)',
-    }}>
-      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '50%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(99,102,241,.18), rgba(27,154,156,.18), transparent)' }} />
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '188px', gap: 'clamp(14px, 4vw, 42px)' }}>
-        {cutouts.slice(0, 2).map(cutout => (
-          <img key={cutout.src} src={cutout.src} alt="" aria-hidden="true" className="sage-hero-cutout" style={{ width: 'clamp(76px, 9vw, 118px)', height: 'clamp(88px, 10vw, 132px)', objectFit: 'contain', filter: 'drop-shadow(0 16px 20px rgba(46,37,111,.15))', animationDelay: cutout.delay }} />
-        ))}
-        <div className="hero-orb-wrap" style={{ position: 'relative', display: 'grid', placeItems: 'center', flex: '0 0 clamp(110px, 13vw, 154px)', width: 'clamp(110px, 13vw, 154px)', height: 'clamp(110px, 13vw, 154px)' }}>
-          <div className="hero-pulse" />
-          <div className="hero-pulse hero-pulse-two" />
-          <div className="hero-pulse hero-pulse-three" />
-          <SageOrb size={108} animate />
-        </div>
-        {cutouts.slice(2).map(cutout => (
-          <img key={cutout.src} src={cutout.src} alt="" aria-hidden="true" className="sage-hero-cutout" style={{ width: 'clamp(76px, 9vw, 118px)', height: 'clamp(88px, 10vw, 132px)', objectFit: 'contain', filter: 'drop-shadow(0 16px 20px rgba(46,37,111,.15))', animationDelay: cutout.delay }} />
-        ))}
-      </div>
-    </div>
   )
 }
 
@@ -102,8 +68,10 @@ const humanSageAvatars = [
 
 export default function Landing() {
   const navigate = useNavigate()
-  const goToChat = () => navigate('/chat')
+  const { startSageTransition } = useSageTransition()
   const pageRef = useRef<HTMLDivElement>(null)
+  const orbRef = useRef<HTMLDivElement>(null)
+  const goToChat = () => startSageTransition(orbRef.current, navigate)
 
   // Single global observer — watches every .fade-up element on the page
   useEffect(() => {
@@ -138,187 +106,50 @@ export default function Landing() {
     }
   }, [])
 
-  // Hero orb scale-in on mount
-  const orbRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = orbRef.current
-    if (!el) return
-    el.style.transform = 'scale(0.8)'
-    el.style.opacity = '0'
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        el.style.transition = 'transform 0.6s ease, opacity 0.5s ease'
-        el.style.transform = 'scale(1)'
-        el.style.opacity = '1'
-      })
-    })
-  }, [])
-
-  // Hero text fade-in on mount
-  const heroTextRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = heroTextRef.current
-    if (!el) return
-    el.style.opacity = '0'
-    el.style.transform = 'translateY(20px)'
-    setTimeout(() => {
-      el.style.transition = 'opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s'
-      el.style.opacity = '1'
-      el.style.transform = 'translateY(0)'
-    }, 50)
-  }, [])
-
-  // Chat preview animates in shortly after mount (it's above the fold)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 400)
-    return () => clearTimeout(t)
-  }, [])
-
   return (
-    <div ref={pageRef} style={{ fontFamily: 'Inter, sans-serif', color: 'var(--admyt-slate)', background: 'var(--admyt-paper)', overflowX: 'hidden' }}>
+    <div ref={pageRef} className="premium-landing" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--admyt-slate)', background: 'var(--admyt-paper)', overflowX: 'hidden' }}>
 
       {/* ── Nav ─────────────────────────────────────────────── */}
-      <nav className="landing-nav" style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(255,253,250,0.9)', borderBottom: '1px solid var(--admyt-line)', backdropFilter: 'blur(16px)',
-        minHeight: '68px',
-        padding: '0 34px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <a style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 650, color: 'var(--admyt-ink)', textDecoration: 'none' }} href="#">
-          <SageOrb size={30} />
+      <nav className="landing-nav premium-landing-nav">
+        <a className="premium-wordmark" href="#" aria-label="Admyt home">
           <span>adm<GradText>y</GradText>t</span>
         </a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', color: 'var(--admyt-muted)', fontSize: '14px' }}>
+        <div className="premium-landing-links">
           <a href="#how-it-works" style={{ color: 'inherit', textDecoration: 'none' }}>How it works</a>
           <a href="#vibe" style={{ color: 'inherit', textDecoration: 'none' }}>Vibe Check</a>
           <a href="#trust" style={{ color: 'inherit', textDecoration: 'none' }}>Why trust it</a>
-          <button
-            onClick={goToChat}
-            style={{
-              background: 'var(--admyt-grad)',
-              color: 'white', border: 'none',
-              borderRadius: '999px', padding: '0 22px',
-              minHeight: 46,
-              fontSize: '14px', fontWeight: 650, cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-              boxShadow: '0 16px 34px rgba(96,76,223,.28)',
-            }}
-            className="landing-nav-cta"
-          >
-            Start chatting with Sage
-          </button>
         </div>
       </nav>
 
       {/* ── Section 1: Hero ──────────────────────────────────── */}
-      <section className="landing-hero" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, .9fr) minmax(410px, 520px)', gap: '34px 46px', alignItems: 'center', alignContent: 'start', width: 'min(1180px, calc(100% - 48px))', minHeight: 'auto', margin: '0 auto', padding: '34px 0 64px' }}>
-
-        <div ref={orbRef} style={{ gridColumn: '1 / -1' }}>
-          <SageHeroAnimation />
-        </div>
-
-        <div ref={heroTextRef} className="landing-hero-text" style={{ textAlign: 'left', wordBreak: 'break-word' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '10px',
-            color: '#4b3dcc', fontSize: '12px', fontWeight: 760, letterSpacing: '0.12em',
-            textTransform: 'uppercase', marginBottom: '18px',
-          }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--admyt-teal)', boxShadow: '0 0 0 6px rgba(27,154,156,.12)' }} />
+      <section className="landing-hero premium-landing-hero">
+        <div className="premium-hero-glow premium-hero-glow-one" aria-hidden="true" />
+        <div className="premium-hero-glow premium-hero-glow-two" aria-hidden="true" />
+        <div className="landing-hero-text premium-hero-copy">
+          <div className="premium-hero-eyebrow">
+            <span className="premium-hero-signal" />
             The y is for you
           </div>
-
-          <h1 className="landing-hero-title" style={{
-            fontSize: 'clamp(48px, 7vw, 78px)', fontWeight: 820, color: 'var(--admyt-ink)',
-            letterSpacing: '-.04em', margin: '0 0 24px',
-            lineHeight: .96,
-          }}>
+          <h1 className="landing-hero-title premium-hero-title">
             Find where you fit.
           </h1>
-
-          <p style={{
-            fontSize: '20px', color: 'var(--admyt-muted)', lineHeight: 1.65,
-            maxWidth: '500px', margin: '0 0 32px',
-          }}>
-            College isn't about the rankings. It's about finding the place where you'll actually thrive. Admyt helps you discover schools that match who you are — not just your GPA.
+          <p className="premium-hero-subtitle">
+            Sage helps you discover colleges that fit the person you are — and the life you want.
           </p>
-
-          <div className="landing-hero-cta-row" style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div className="landing-hero-cta-row">
             <CTAButton onClick={goToChat} large />
-            <button
-              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{
-                background: '#fff', border: '1px solid var(--admyt-line)', cursor: 'pointer',
-                fontSize: '15px', color: '#4b3dcc', fontFamily: 'Inter, sans-serif', padding: '0 22px',
-                minHeight: 46, borderRadius: 999, fontWeight: 650,
-              }}
-            >
-              See how it works
-            </button>
           </div>
         </div>
 
-        {/* Chat preview mockup — fade in on mount since it's above the fold */}
-        <div
-          className={`fade-up${mounted ? ' visible' : ''} landing-chat-preview`}
-          style={{ transitionDelay: '0.15s', marginTop: 0, width: '100%', border: '1px solid var(--admyt-line)', borderRadius: '20px', boxShadow: 'var(--admyt-shadow)', background: '#ffffff', overflow: 'hidden' }}
-        >
-          <div style={{ minHeight: 74, borderBottom: '1px solid var(--admyt-line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: '16px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <SageOrb size={44} />
-              <div>
-                <strong style={{ display: 'block', color: 'var(--admyt-ink)' }}>Sage</strong>
-                <span style={{ display: 'block', color: 'var(--admyt-muted)', fontSize: 13 }}>the older sibling you wish you had</span>
-              </div>
-            </div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--admyt-muted)', fontSize: 13 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--admyt-teal)', boxShadow: '0 0 0 6px rgba(27,154,156,.12)' }} />
-              live preview
-            </span>
+        <div className="premium-hero-scene" aria-label="A college campus opening into an energetic city">
+          <img src={campusHorizon} alt="" aria-hidden="true" />
+          <div className="premium-scene-orbit premium-scene-orbit-one" aria-hidden="true" />
+          <div className="premium-scene-orbit premium-scene-orbit-two" aria-hidden="true" />
+          <div ref={orbRef} className="premium-hero-orb">
+            <SageOrb size={112} animate />
           </div>
-          <div style={{ padding: '20px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-              <SageOrb size={28} />
-              <div style={{ background: '#F4F3FE', borderRadius: '0 14px 14px 14px', padding: '10px 14px', fontSize: '13px', color: '#3A3A4D', lineHeight: 1.55, maxWidth: '80%' }}>
-                Hey, I'm Sage 👋 Tell me what you're looking for in a college — or just that you have no idea. Both are totally fine.
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', borderRadius: '14px 14px 0 14px', padding: '10px 14px', fontSize: '13px', color: 'white', lineHeight: 1.55, maxWidth: '80%' }}>
-                Honestly? I have no idea where to start.
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-              <SageOrb size={28} />
-              <div style={{ background: '#F4F3FE', borderRadius: '0 14px 14px 14px', padding: '10px 14px', fontSize: '13px', color: '#3A3A4D', lineHeight: 1.55, maxWidth: '80%' }}>
-                Perfect starting point. Let's figure it out together.
-              </div>
-            </div>
-            <div style={{ border: '1px solid var(--admyt-line)', borderRadius: 16, padding: 16, boxShadow: 'var(--admyt-shadow-small)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-                <div>
-                  <strong style={{ display: 'block', color: 'var(--admyt-ink)', fontSize: 18 }}>Lewis & Clark College</strong>
-                  <span style={{ color: 'var(--admyt-muted)', fontSize: 13 }}>Portland, OR · liberal arts · strong aid profile</span>
-                </div>
-                <span style={{ borderRadius: 999, background: 'rgba(27,154,156,.12)', color: '#087a70', padding: '7px 10px', fontWeight: 760, whiteSpace: 'nowrap' }}>91% fit</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
-                <div style={{ background: '#fbfaff', borderRadius: 10, padding: 10, color: 'var(--admyt-slate)', fontSize: 12 }}>Outdoors are part of the rhythm there, not just brochure scenery.</div>
-                <div style={{ background: '#fbfaff', borderRadius: 10, padding: 10, color: 'var(--admyt-slate)', fontSize: 12 }}>Small classes could make it easier to find your people early.</div>
-              </div>
-            </div>
-          </div>
-          <div style={{ borderTop: '1px solid #F0EEFB', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ flex: 1, background: '#F8F8FC', border: '1px solid #EEECFB', borderRadius: '12px', padding: '9px 14px', fontSize: '13px', color: '#A8A8BC' }}>
-              Ask me anything...
-            </div>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+          <div className="premium-hero-prompt">
+            What would make a place feel like yours?
           </div>
         </div>
       </section>
@@ -464,7 +295,6 @@ export default function Landing() {
           <h2>Your future starts with a conversation.</h2>
           <p>No forms. No pressure. No cost. Just an honest conversation about where you actually belong.</p>
           <CTAButton onClick={goToChat} large />
-          <p style={{ marginTop: 12, fontSize: 13 }}>Free forever · No account needed to start</p>
         </div>
       </section>
 
@@ -481,65 +311,6 @@ export default function Landing() {
         </div>
       </footer>
 
-      <style>{`
-        .hero-pulse {
-          position: absolute;
-          inset: 4px;
-          border: 2px solid rgba(99,102,241,.2);
-          border-radius: 50%;
-          animation: heroPulse 2.8s ease-out infinite;
-        }
-        .hero-pulse-two {
-          border-color: rgba(27,154,156,.18);
-          animation-delay: .7s;
-        }
-        .hero-pulse-three {
-          border-color: rgba(240,171,252,.2);
-          animation-delay: 1.4s;
-        }
-        @media (max-width: 479px) {
-          .landing-nav-cta { display: none !important; }
-          /* The live chat preview is the landing's strongest, most student-shaped
-             element — keep it on phones (where most teens land) instead of hiding it. */
-          .landing-chat-preview { margin-top: 8px !important; }
-        }
-        @media (max-width: 900px) {
-          .landing-hero {
-            grid-template-columns: 1fr !important;
-            min-height: auto !important;
-            width: min(100% - 32px, 720px) !important;
-          }
-          .landing-hero-title { font-size: 36px !important; }
-        }
-        @media (max-width: 720px) {
-          .landing-sage-section { grid-template-columns: 1fr !important; }
-          .landing-sage-section > img { order: 2; max-width: 240px !important; }
-          .sage-hero-cutout { width: 68px !important; height: 68px !important; }
-        }
-        @media (max-width: 639px) {
-          .landing-hero-text { padding: 0 16px !important; }
-          .landing-hero-title { font-size: 28px !important; }
-          /* Flanking student avatars are decorative — hide on small screens */
-          .sage-hero-cutout { display: none !important; }
-          /* Shrink the orb (size set via inline style) by scaling the wrapper */
-          .hero-orb-wrap { transform: scale(0.74); }
-          .landing-hero-cta-row {
-            flex-direction: column !important;
-            align-items: stretch !important;
-          }
-        }
-        .sage-hero-cutout {
-          animation: sageHeroFloat 5s ease-in-out infinite;
-        }
-        @keyframes sageHeroFloat {
-          0%, 100% { margin-top: 0; }
-          50% { margin-top: -8px; }
-        }
-        @keyframes heroPulse {
-          0% { transform: scale(.82); opacity: .72; }
-          100% { transform: scale(1.22); opacity: 0; }
-        }
-      `}</style>
     </div>
   )
 }

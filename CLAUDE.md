@@ -52,6 +52,8 @@ src/
 
 │   ├── ChatContext.tsx   # Sage conversation state, hearts, persists to Supabase
 
+│   ├── SageTransitionContext.tsx # Shared landing → chat Sage-orb transition
+
 │   ├── CollegeContext.tsx # Fetches + caches 1,000 colleges from Supabase
 
 │   └── ProfileContext.tsx # Student profile (location prefs, major, career goals)
@@ -121,6 +123,7 @@ All tables have Row Level Security enabled. Users can only access their own data
 - **Font:** Inter
 - **Implementation:** Bespoke hand-written CSS, NOT a UI library. The full UI was redesigned from HTML mockups (`docs/redesign/`) into a custom CSS system in `src/styles/global.css` (native CSS `@layer` cascade layers — works without any build-time CSS framework) + `src/styles/tokens.css`, plus inline styles. **Tailwind CSS and shadcn/ui were removed** — they had been added but never wired into the Vite build (the `@tailwind` directives shipped as dead text), so shadcn components rendered unstyled. Modals are now the bespoke `Modal.tsx`; form inputs use the `.field` class; buttons use `.btn` / `AdmytButton`. Do not re-introduce Tailwind/shadcn — extend the CSS system instead.
 - **The `y` accent:** indigo (`#818CF8` on dark / `#6366F1` on light) gradient treatment on the wordmark.
+- **Landing → Sage motion:** the canonical `src/assets/sage/sage-orb.webp` is the shared visual identity. The landing CTA moves that same visible orb into the spatial chat shell; never redraw or substitute the orb for this transition. Reduced-motion users receive a short dissolve.
 
 ## Navigation
 - **Desktop:** Top nav — logo, Browse link, ProfileAvatar
