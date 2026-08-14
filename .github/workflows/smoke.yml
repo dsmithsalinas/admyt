@@ -1,0 +1,38 @@
+name: Production smoke test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 14 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      APP_URL: https://youradmyt.vercel.app
+    steps:
+      - name: Check landing page and SPA deep link
+        shell: bash
+        run: |
+          set -euo pipefail
+          landing="$(curl --fail --silent --show-error --location "$APP_URL/")"
+          search="$(curl --fail --silent --show-error --location "$APP_URL/search")"
+          grep -Fq '<title>Admyt — find your fit</title>' <<<"$landing"
+          grep -Fq '<div id="root"></div>' <<<"$search"
+
+      - name: Check production JavaScript bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          landing="$(curl --fail --silent --show-error --location "$APP_URL/")"
+          bundle="$(grep -oE '/assets/index-[^" ]+\.js' <<<"$landing" | head -1)"
+          test -n "$bundle"
+          curl --fail --silent --show-error --location --output /dev/null "$APP_URL$bundle"

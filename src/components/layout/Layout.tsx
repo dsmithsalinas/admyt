@@ -23,7 +23,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const { user } = useAuth()
-  const { heartedSchools, authNudgeOpen, dismissAuthNudge } = useChat()
+  const { heartedSchools, authNudgeOpen, dismissAuthNudge, syncError, dismissSyncError } = useChat()
   const isHome = location.pathname === '/chat'
   const savedCount = heartedSchools.size
 
@@ -128,6 +128,12 @@ export default function Layout() {
         ) : (
           <div style={{ maxWidth: '1060px', margin: '0 auto', padding: isMobile ? '24px 16px' : '36px 24px' }}>
             <Outlet />
+            <footer className="app-trust-footer">
+              <Link to="/data-and-privacy">Data & privacy</Link>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/terms">Terms</Link>
+              <span>Sage is AI. Check important facts with official sources.</span>
+            </footer>
           </div>
         )}
       </main>
@@ -259,6 +265,24 @@ export default function Layout() {
           onClose={dismissAuthNudge}
           onSuccess={dismissAuthNudge}
         />
+      )}
+
+      {syncError && (
+        <div
+          role="alert"
+          style={{
+            position: 'fixed', left: '50%', bottom: isMobile ? 82 : 24,
+            transform: 'translateX(-50%)', zIndex: 120,
+            display: 'flex', alignItems: 'center', gap: 12,
+            maxWidth: 'min(92vw, 520px)', padding: '12px 14px',
+            borderRadius: 12, border: '1px solid var(--admyt-line)',
+            background: 'white', color: 'var(--admyt-ink)',
+            boxShadow: 'var(--admyt-shadow)', fontSize: 13, fontWeight: 700,
+          }}
+        >
+          <span>{syncError}</span>
+          <button className="btn secondary" onClick={dismissSyncError} style={{ padding: '6px 10px' }}>Dismiss</button>
+        </div>
       )}
 
     </div>

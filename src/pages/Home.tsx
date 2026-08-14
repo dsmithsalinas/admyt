@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ArrowRight, Compass, Scale, Sparkles, Target } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useChat } from '@/context/ChatContext'
 import SageOrb from '@/components/sage/SageOrb'
 import SchoolCard from '@/components/sage/SchoolCard'
@@ -220,6 +220,7 @@ export default function Home() {
               <ArrowRight size={17} />
             </button>
           </div>
+          <p className="sage-ai-note">Sage is AI and can get details wrong. Check important facts with official sources. <Link to="/data-and-privacy">Learn how Admyt uses data.</Link></p>
         </div>
       </section>
 

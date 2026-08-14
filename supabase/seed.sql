@@ -1,0 +1,3 @@
+-- The college catalog is intentionally not committed as a large SQL fixture.
+-- Populate it with `npm run data:colleges` after configuring the College
+-- Scorecard and Supabase service-role secrets documented in README.md.

@@ -24,8 +24,9 @@ interface ChatContextType {
   loading: boolean
   initializing: boolean
   heartedSchools: Set<string>
-  toggleHeart: (college: College) => void
-  proactivePref: 'yes' | 'no' | null
+  toggleHeart: (college: College, nextActive?: boolean) => Promise<boolean>
+  syncError: string | null
+  dismissSyncError: () => void
   // A guest just hearted their first school this session — prompt them to make
   // an account so it actually saves. Rendered once at the app shell (Layout).
   authNudgeOpen: boolean
@@ -152,6 +153,10 @@ async function callEdge(msgs: { role: string; content: string }[], profile?: Sag
   // Throw on failure so the caller's catch shows a transient error instead of
   // persisting an error string to chat_messages as a real Sage turn.
   if (resp.status === 429) throw new Error('rate_limited')
+  if (resp.status === 503) {
+    const body = await resp.json().catch(() => null)
+    if (body?.error === 'ai_budget_exhausted') throw new Error('ai_budget_exhausted')
+  }
   if (!resp.ok) throw new Error(`chat function error: ${resp.status}`)
   const data = await resp.json()
   const text = data.content?.[0]?.text
@@ -181,7 +186,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // hearts still hydrate from localStorage.
   const [authNudgeOpen, setAuthNudgeOpen] = useState(false)
   const heartNudgeShownRef = useRef(false)
-  const [proactivePref] = useState<'yes' | 'no' | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
   const [userPrefs, setUserPrefs] = useState<ProfilePreferenceColumns | null>(null)
   const userPrefsRef = useRef<typeof userPrefs>(null)
   userPrefsRef.current = userPrefs
@@ -228,6 +233,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       wasGuest ? messagesRef.current : [],
       wasGuest ? heartedSchoolsRef.current : new Set<string>(),
     )
+  // loadUserData and clearProfile intentionally use the latest refs and must not
+  // restart this one-time account hydration when provider callbacks are recreated.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading])
 
   useEffect(() => {
@@ -489,10 +497,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (user) await persistMsg(assistantMsg, user.id)
     } catch (e) {
       const rateLimited = e instanceof Error && e.message === 'rate_limited'
+      const budgetExhausted = e instanceof Error && e.message === 'ai_budget_exhausted'
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(), role: 'assistant',
         content: rateLimited
           ? "Whoa, you're going faster than I can keep up — give it a few seconds and try again."
+          : budgetExhausted
+            ? "I’ve reached today’s conversation limit. Your saved work is safe—please try me again later."
           : "Hmm, something went wrong. Try sending that again.",
       }])
     } finally {
@@ -531,21 +542,36 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function toggleHeart(college: College) {
-    const isHearted = heartedSchools.has(college.id)
+  async function toggleHeart(college: College, nextActive?: boolean) {
+    const isHearted = nextActive === undefined
+      ? heartedSchools.has(college.id)
+      : !nextActive
+    setSyncError(null)
 
     setHeartedSchools(prev => {
       const next = new Set(prev)
-      isHearted ? next.delete(college.id) : next.add(college.id)
+      if (isHearted) next.delete(college.id)
+      else next.add(college.id)
       if (!user) saveGuestHearts(next)
       return next
     })
 
     if (user) {
-      if (isHearted) {
-        await supabase.from('hearted_schools').delete().eq('user_id', user.id).eq('college_id', college.id)
-      } else {
-        await supabase.from('hearted_schools').insert({ user_id: user.id, college_id: college.id, college_name: college.name })
+      const { error } = isHearted
+        ? await supabase.from('hearted_schools').delete().eq('user_id', user.id).eq('college_id', college.id)
+        : await supabase.from('hearted_schools').insert({ user_id: user.id, college_id: college.id, college_name: college.name })
+
+      if (error) {
+        // Roll the optimistic update back so the heart never claims a save that
+        // did not reach Supabase.
+        setHeartedSchools(prev => {
+          const rollback = new Set(prev)
+          if (isHearted) rollback.add(college.id)
+          else rollback.delete(college.id)
+          return rollback
+        })
+        setSyncError("That school didn't save. Mind trying once more?")
+        return false
       }
     }
 
@@ -556,7 +582,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       heartActionCountRef.current = newCount
       setHeartActionCount(newCount)
       if (user) {
-        supabase.from('user_preferences').upsert({ user_id: user.id, heart_action_count: newCount }, { onConflict: 'user_id' })
+        const { error } = await supabase
+          .from('user_preferences')
+          .upsert({ user_id: user.id, heart_action_count: newCount }, { onConflict: 'user_id' })
+        if (error) setSyncError("Your school saved, but Sage couldn't update your preferences just yet.")
       } else if (!heartNudgeShownRef.current) {
         // Guest just saved their first heart of the session. Let them know it
         // won't stick without an account — without blocking the heart itself,
@@ -569,16 +598,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         sendSystemEvent(`[HEARTED: ${college.name}]`)
       }
     }
+
+    return true
   }
 
   function dismissAuthNudge() {
     setAuthNudgeOpen(false)
   }
 
+  function dismissSyncError() {
+    setSyncError(null)
+  }
+
   return (
     <ChatContext.Provider value={{
       messages, sendMessage, loading, initializing,
-      heartedSchools, toggleHeart, proactivePref,
+      heartedSchools, toggleHeart, syncError, dismissSyncError,
       authNudgeOpen, dismissAuthNudge,
     }}>
       {children}

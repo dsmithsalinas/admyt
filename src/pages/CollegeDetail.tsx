@@ -162,7 +162,7 @@ export default function CollegeDetail() {
             <div>
               <span className="mini-title">Sage fit read</span>
               <h3 style={{ margin: '6px 0', fontSize: 24 }}>{matchLabel(score)}</h3>
-              <p className="match-note">Based on what Sage knows so far. More conversation makes this sharper.</p>
+              <p className="match-note">Based on what Sage knows so far. Fit Score is a guide, not an admissions prediction.</p>
               {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
             </div>
             <HeartButton active={isHearted} onClick={() => toggleHeart(college)} size={38} />
@@ -172,6 +172,7 @@ export default function CollegeDetail() {
           </div>
         </aside>
       </section>
+      <p className="trust-note">School facts come from the U.S. Department of Education College Scorecard and may lag the school’s website. Confirm costs and admissions details with the school.</p>
 
       <div className="detail-body premium-detail-body">
         <main style={{ display: 'grid', gap: 14 }}>

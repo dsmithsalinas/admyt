@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile, type StudentProfile } from '@/context/ProfileContext'
 import { useChat } from '@/context/ChatContext'
@@ -11,6 +11,7 @@ import { scoreCollege } from '@/lib/matchScore'
 import { REGION_TO_STATES } from '@/lib/regions'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
+import { buildAccountExport, clearAdmytBrowserData, deleteAdmytAccount, downloadJson } from '@/lib/accountData'
 import SageOrb from '@/components/sage/SageOrb'
 import {
   ensureDeadline,
@@ -324,6 +325,44 @@ function PreferencesModal({
   )
 }
 
+function DeleteAccountModal({ onClose, onDelete }: { onClose: () => void; onDelete: () => Promise<void> }) {
+  const [confirmation, setConfirmation] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function confirmDelete() {
+    setDeleting(true)
+    setError('')
+    try {
+      await onDelete()
+    } catch {
+      setError('We couldn’t delete your account just now. Nothing else was changed—please try again.')
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <Modal onClose={onClose} labelledBy="delete-account-title" panelStyle={{ maxWidth: 500 }}>
+      <span className="mini-title">Permanent action</span>
+      <h2 id="delete-account-title" style={{ margin: '10px 0 8px' }}>Delete your Admyt account?</h2>
+      <p className="match-note">
+        This permanently removes your chats, saved schools, Vibe Checks, preferences, and sign-in. Recovery backups age out within 7 days.
+      </p>
+      <label style={{ display: 'grid', gap: 8, marginTop: 18, fontWeight: 750 }}>
+        Type DELETE to confirm
+        <input className="field" value={confirmation} onChange={event => setConfirmation(event.target.value)} autoComplete="off" />
+      </label>
+      {error && <p role="alert" className="form-error" style={{ marginTop: 12 }}>{error}</p>}
+      <div className="filters" style={{ marginTop: 20, justifyContent: 'flex-end' }}>
+        <button className="btn secondary" onClick={onClose} disabled={deleting}>Keep my account</button>
+        <button className="btn danger" onClick={confirmDelete} disabled={confirmation !== 'DELETE' || deleting}>
+          {deleting ? 'Deleting…' : 'Delete account'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
 export default function Profile() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
@@ -333,6 +372,9 @@ export default function Profile() {
   const { vibeScoreFor } = useSavedVibes()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPrefsModal, setShowPrefsModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [accountMessage, setAccountMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [hearts, setHearts] = useState<HeartedSchool[]>([])
   const [vibes, setVibes] = useState<SavedVibe[]>([])
@@ -400,14 +442,38 @@ export default function Profile() {
   )
   const todayISO = new Date().toISOString().slice(0, 10)
 
+  async function handleExport() {
+    if (!user) return
+    setExporting(true)
+    setAccountMessage('')
+    try {
+      const data = await buildAccountExport(user)
+      downloadJson(`admyt-data-${new Date().toISOString().slice(0, 10)}.json`, data)
+      setAccountMessage('Your data download is ready.')
+    } catch {
+      setAccountMessage('We couldn’t prepare your download. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    await deleteAdmytAccount()
+    clearAdmytBrowserData()
+    await supabase.auth.signOut({ scope: 'local' })
+    window.location.assign('/')
+  }
+
   async function handleUnheart(collegeId: string) {
     if (!user) {
       const college = collegeById.get(collegeId)
       if (college) toggleHeart(college)
       return
     }
-    await supabase.from('hearted_schools').delete().eq('user_id', user.id).eq('college_id', collegeId)
-    setHearts(prev => prev.filter(h => h.college_id !== collegeId))
+    const college = collegeById.get(collegeId)
+    if (!college) return
+    const saved = await toggleHeart(college, false)
+    if (saved) setHearts(prev => prev.filter(h => h.college_id !== collegeId))
   }
 
   async function persistProfile(update: Partial<StudentProfile>) {
@@ -733,6 +799,31 @@ export default function Profile() {
               )}
             </div>
           </section>
+
+          <section className="mock-card section-pad">
+            <div className="school-head">
+              <div>
+                <span className="mini-title">Data & privacy</span>
+                <p className="match-note" style={{ marginTop: 8 }}>
+                  See what Admyt stores, where school facts come from, and what Sage sends to its AI provider.
+                </p>
+              </div>
+              <Link className="pill teal" to="/data-and-privacy">Plain-English details</Link>
+            </div>
+            {user && (
+              <div className="account-controls">
+                <div>
+                  <strong>Your data stays until you delete it.</strong>
+                  <p className="match-note">Download a copy anytime. Account deletion is permanent; encrypted recovery backups age out within 7 days.</p>
+                </div>
+                <div className="filters">
+                  <button className="btn secondary" onClick={handleExport} disabled={exporting}>{exporting ? 'Preparing…' : 'Download my data'}</button>
+                  <button className="btn danger" onClick={() => setShowDeleteModal(true)}>Delete account</button>
+                </div>
+                {accountMessage && <p role="status" className="match-note account-message">{accountMessage}</p>}
+              </div>
+            )}
+          </section>
         </main>
 
         <aside className="sage-panel">
@@ -757,6 +848,7 @@ export default function Profile() {
 
       {showPrefsModal && <PreferencesModal prefs={prefs} sageProfile={sageProfile} onSave={handleSavePrefs} onClose={() => setShowPrefsModal(false)} />}
       {showAuthModal && <AuthModal trigger="general" onClose={() => setShowAuthModal(false)} onSuccess={() => setShowAuthModal(false)} />}
+      {showDeleteModal && <DeleteAccountModal onClose={() => setShowDeleteModal(false)} onDelete={handleDeleteAccount} />}
       <style>{`@keyframes profilePulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
     </div>
   )

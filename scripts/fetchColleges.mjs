@@ -207,12 +207,25 @@ async function run() {
       .upsert(batch, { onConflict: 'id' })
 
     if (error) {
-      console.error(`Batch ${i / batchSize + 1} error:`, error.message)
+      throw new Error(`Batch ${i / batchSize + 1} failed: ${error.message}`)
     } else {
       inserted += batch.length
       console.log(`Inserted ${inserted} / ${allColleges.length}...`)
     }
   }
+
+  const refreshedAt = new Date().toISOString()
+  const { error: statusError } = await supabase
+    .from('data_source_status')
+    .upsert({
+      source: 'college_scorecard',
+      last_refreshed_at: refreshedAt,
+      record_count: inserted,
+      details: { provider: 'U.S. Department of Education College Scorecard' },
+      updated_at: refreshedAt,
+    }, { onConflict: 'source' })
+
+  if (statusError) throw new Error(`Could not record catalog freshness: ${statusError.message}`)
 
   console.log(`Done. ${inserted} colleges loaded into Supabase.`)
 }

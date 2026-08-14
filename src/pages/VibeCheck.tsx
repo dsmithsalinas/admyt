@@ -304,7 +304,8 @@ export default function VibeCheck() {
   function toggleDimension(key: string) {
     setSelected(prev => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }
@@ -422,6 +423,10 @@ export default function VibeCheck() {
           profile: profile ?? undefined,
         }),
       })
+      if (resp.status === 503) {
+        const body = await resp.json().catch(() => null)
+        if (body?.error === 'ai_budget_exhausted') throw new Error('ai_budget_exhausted')
+      }
       if (!resp.ok) throw new Error(`vibe request failed: ${resp.status}`)
 
       if (!resp.body) {
@@ -459,7 +464,9 @@ export default function VibeCheck() {
         result: finalResult,
       }))
     } catch (err) {
-      setError("Hmm, something didn't work. Try it again in a second.")
+      setError(err instanceof Error && err.message === 'ai_budget_exhausted'
+        ? "Sage has reached today’s Vibe Check limit. Your saved work is safe—please try again later."
+        : "Hmm, something didn't work. Try it again in a second.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -518,6 +525,7 @@ export default function VibeCheck() {
                 <span>I’m reading this with you.</span>
               </div>
             </section>
+            <p className="trust-note">Vibe Check is AI-generated. Use it to find better questions, not as a substitute for a visit or a conversation with current students.</p>
 
             <div className="premium-vibe-mobile-action">
               <div>

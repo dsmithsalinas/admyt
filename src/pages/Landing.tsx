@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import SageOrb from '@/components/sage/SageOrb'
 import campusHorizon from '@/assets/landing/campus-horizon.webp'
@@ -292,7 +292,11 @@ export default function Landing() {
       <footer className="premium-landing-footer">
         <a className="premium-wordmark" href="#" aria-label="Admyt home">adm<GradText>y</GradText>t</a>
         <span>Find where you fit.</span>
-        <span>The y is for you.</span>
+        <nav className="landing-legal-links" aria-label="Legal and privacy">
+          <Link to="/data-and-privacy">Data & privacy</Link>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
+        </nav>
       </footer>
     </div>
   )

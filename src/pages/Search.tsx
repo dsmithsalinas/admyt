@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useColleges } from '@/context/CollegeContext'
 import { useProfile } from '@/context/ProfileContext'
@@ -12,6 +12,7 @@ import PremiumSchoolCard from '@/components/sage/PremiumSchoolCard'
 // (~$72k), so parking the slider here means "no tuition limit" rather than
 // silently filtering out the priciest schools.
 const TUITION_MAX = 80000
+const RESULTS_PAGE_SIZE = 60
 
 const REGION_OPTIONS = [
   'pacific northwest',
@@ -83,7 +84,7 @@ function SkeletonCard() {
 
 export default function Search() {
   const { profile } = useProfile()
-  const { colleges, loading } = useColleges()
+  const { colleges, loading, error } = useColleges()
   const { vibeScoreFor } = useSavedVibes()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
@@ -97,13 +98,20 @@ export default function Search() {
   const [selectedAdmitRate, setSelectedAdmitRate] = useState('')
   const [selectedAffiliation, setSelectedAffiliation] = useState('')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(RESULTS_PAGE_SIZE)
 
   const allMajors = useMemo(() => Array.from(new Set(colleges.flatMap(c => c.majors))).sort(), [colleges])
 
   const filtered = useMemo(() => {
     return colleges
       .filter(c => {
-        if (query && !c.name.toLowerCase().includes(query.toLowerCase()) && !c.location.toLowerCase().includes(query.toLowerCase())) return false
+        const normalizedQuery = query.trim().toLowerCase()
+        if (
+          normalizedQuery &&
+          !c.name.toLowerCase().includes(normalizedQuery) &&
+          !c.location.toLowerCase().includes(normalizedQuery) &&
+          !c.majors.some(major => major.toLowerCase().includes(normalizedQuery))
+        ) return false
         if (selectedState && c.state !== selectedState) return false
         if (selectedRegion && !REGION_TO_STATES[selectedRegion]?.includes(c.state)) return false
         if (selectedSize && c.size !== selectedSize) return false
@@ -130,6 +138,10 @@ export default function Search() {
   }, [colleges, query, selectedState, selectedRegion, selectedSize, selectedType, selectedSetting, selectedAdmitRate, selectedAffiliation, maxTuition, selectedMajor, profile, vibeScoreFor])
 
   const activeFilters = [selectedState, selectedRegion, selectedSize, selectedType, selectedMajor, selectedSetting, selectedAdmitRate, selectedAffiliation].filter(Boolean).length + (maxTuition < TUITION_MAX ? 1 : 0)
+
+  useEffect(() => {
+    setVisibleCount(RESULTS_PAGE_SIZE)
+  }, [query, selectedState, selectedRegion, selectedSize, selectedType, selectedMajor, selectedSetting, selectedAdmitRate, selectedAffiliation, maxTuition])
 
   function clearFilters() {
     setSelectedState(''); setSelectedSize(''); setSelectedType('')
@@ -162,7 +174,7 @@ export default function Search() {
           className="search-box"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder='Search by school name, city, state, major, or "NYC but warmer"'
+          placeholder="Search by school name, city, state, or major"
           style={{ width: '100%', outline: 'none' }}
         />
 
@@ -272,7 +284,12 @@ export default function Search() {
         </div>
       )}
 
-      {loading ? (
+      {error ? (
+        <div className="callout" role="alert" style={{ textAlign: 'center' }}>
+          <strong>Sage couldn't load the school catalog.</strong>
+          <p>Check your connection and refresh to try again.</p>
+        </div>
+      ) : loading ? (
         <div className="premium-school-grid">
           {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
@@ -286,9 +303,17 @@ export default function Search() {
         </div>
       ) : (
         <div className="premium-school-grid">
-          {filtered.map(college => (
+          {filtered.slice(0, visibleCount).map(college => (
             <PremiumSchoolCard key={college.id} college={college} />
           ))}
+        </div>
+      )}
+
+      {!loading && !error && visibleCount < filtered.length && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+          <button className="btn secondary" onClick={() => setVisibleCount(count => count + RESULTS_PAGE_SIZE)}>
+            Show more schools
+          </button>
         </div>
       )}
 

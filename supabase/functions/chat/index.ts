@@ -12,12 +12,14 @@ import {
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Expose-Headers': 'x-request-id',
 }
 
 // Per-IP rate limit. Generous by default because students may share a school/library
 // IP; tune these two numbers to trade abuse-resistance against shared-network use.
 const RATE_LIMIT = 40
 const RATE_WINDOW_SECONDS = 60
+const DEFAULT_DAILY_AI_REQUEST_LIMIT = 100
 
 const COLLEGE_FIELDS = 'id,name,location,type,size,enrollment,acceptance_rate,tuition_in_state,tuition_out_state,majors,religious_affiliation'
 
@@ -32,6 +34,56 @@ function json(body: unknown, status = 200, extraHeaders: Record<string, string> 
   })
 }
 
+function logEvent(level: 'info' | 'warn' | 'error', event: string, fields: Record<string, unknown> = {}) {
+  const entry = JSON.stringify({ timestamp: new Date().toISOString(), service: 'chat', level, event, ...fields })
+  if (level === 'error') console.error(entry)
+  else if (level === 'warn') console.warn(entry)
+  else console.log(entry)
+}
+
+function dailyAiRequestLimit(): number {
+  const configured = Number(env('ANTHROPIC_DAILY_REQUEST_LIMIT'))
+  return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_DAILY_AI_REQUEST_LIMIT
+}
+
+class AiBudgetExceededError extends Error {
+  constructor() {
+    super('ai_budget_exhausted')
+    this.name = 'AiBudgetExceededError'
+  }
+}
+
+async function reserveAiBudget(): Promise<{ count: number; limit: number }> {
+  const url = env('SUPABASE_URL')
+  const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY')
+  const limit = dailyAiRequestLimit()
+  if (!url || !serviceKey) throw new Error('ai_budget_configuration_missing')
+
+  const response = await fetch(`${url}/rest/v1/rpc/consume_ai_request_budget`, {
+    method: 'POST',
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_limit: limit }),
+  })
+  if (!response.ok) throw new Error(`ai_budget_check_failed:${response.status}`)
+  const budget = await response.json() as { allowed?: boolean; count?: number; limit?: number }
+  if (budget.allowed !== true) throw new AiBudgetExceededError()
+  return { count: Number(budget.count ?? 0), limit: Number(budget.limit ?? limit) }
+}
+
+async function fetchAnthropic(payload: Record<string, unknown>): Promise<Response> {
+  const budget = await reserveAiBudget()
+  logEvent('info', 'ai_budget_reserved', { budget_count: budget.count, budget_limit: budget.limit })
+  return fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': env('ANTHROPIC_API_KEY'),
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(payload),
+  })
+}
+
 // Returns true when the caller has exceeded the limit. Fails OPEN on any error so
 // the limiter can never take the app down.
 async function isRateLimited(req: Request): Promise<boolean> {
@@ -43,10 +95,17 @@ async function isRateLimited(req: Request): Promise<boolean> {
   if (!ip) return false
 
   try {
+    // Store a stable one-way identifier rather than the caller's raw IP address.
+    // The service key salts the digest and never leaves the server environment.
+    const digest = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(`${serviceKey}:${ip}`),
+    )
+    const identifier = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
     const resp = await fetch(`${url}/rest/v1/rpc/check_rate_limit`, {
       method: 'POST',
       headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_key: `ip:${ip}`, p_limit: RATE_LIMIT, p_window_seconds: RATE_WINDOW_SECONDS }),
+      body: JSON.stringify({ p_key: `ip:${identifier}`, p_limit: RATE_LIMIT, p_window_seconds: RATE_WINDOW_SECONDS }),
     })
     if (!resp.ok) return false
     return (await resp.json()) === false
@@ -167,18 +226,10 @@ async function handleDeadline(body: { collegeId?: unknown }): Promise<Response> 
 
   // The web-search server tool runs a loop; if it pauses (pause_turn) re-send to continue.
   for (let guard = 0; guard < 4; guard++) {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': env('ANTHROPIC_API_KEY'),
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1500, system: built.system, tools, messages }),
-    })
+    const resp = await fetchAnthropic({ model: 'claude-sonnet-4-6', max_tokens: 1500, system: built.system, tools, messages })
     data = await resp.json()
     if (!resp.ok) {
-      console.error('Deadline lookup upstream error:', resp.status, JSON.stringify(data))
+      logEvent('error', 'anthropic_upstream_error', { request_type: 'deadline', upstream_status: resp.status })
       return json({ error: 'upstream_error', status: resp.status }, 502)
     }
     if (data?.stop_reason === 'pause_turn') {
@@ -266,7 +317,7 @@ function streamAnthropicText(response: Response): ReadableStream<Uint8Array> {
         }
         controller.close()
       } catch (err) {
-        console.error('Anthropic stream error:', err)
+        logEvent('error', 'anthropic_stream_error')
         controller.error(err)
       } finally {
         reader.releaseLock()
@@ -276,6 +327,19 @@ function streamAnthropicText(response: Response): ReadableStream<Uint8Array> {
 }
 
 serve(async (req) => {
+  const requestId = crypto.randomUUID()
+  const startedAt = Date.now()
+  const finish = (response: Response, requestType = 'unknown') => {
+    response.headers.set('x-request-id', requestId)
+    logEvent(response.status >= 500 ? 'error' : response.status >= 400 ? 'warn' : 'info', 'request_completed', {
+      request_id: requestId,
+      request_type: requestType,
+      status: response.status,
+      duration_ms: Date.now() - startedAt,
+    })
+    return response
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -283,12 +347,12 @@ serve(async (req) => {
   try {
     // Per-IP rate limit first — cheapest guard, uses only headers.
     if (await isRateLimited(req)) {
-      return json({ error: 'rate_limited' }, 429, { 'Retry-After': String(RATE_WINDOW_SECONDS) })
+      return finish(json({ error: 'rate_limited' }, 429, { 'Retry-After': String(RATE_WINDOW_SECONDS) }))
     }
 
     const rawBody = await req.text()
     if (rawBody.length > 1_000_000) {
-      return json({ error: 'payload_too_large' }, 413)
+      return finish(json({ error: 'payload_too_large' }, 413))
     }
 
     const body = JSON.parse(rawBody)
@@ -297,7 +361,7 @@ serve(async (req) => {
     // Deadlines are fully self-contained (cache + web search + store) — they don't
     // share the single-shot Anthropic call the other types fall through to.
     if (type === 'deadline') {
-      return await handleDeadline(body)
+      return finish(await handleDeadline(body), type)
     }
 
     // Build the prompt server-side by request type. The endpoint never accepts a
@@ -310,90 +374,78 @@ serve(async (req) => {
     if (type === 'sage') {
       const msgs = body.messages
       if (!Array.isArray(msgs) || msgs.length === 0 || msgs.length > 1000) {
-        return json({ error: 'invalid_messages' }, 400)
+        return finish(json({ error: 'invalid_messages' }, 400), type)
       }
       const catalog = await getCatalog()
       system = buildSagePrompt(catalog, body.profile as SageProfile | undefined)
       messages = msgs
     } else if (type === 'vibe') {
       const college = await fetchCollege(String(body.collegeId ?? ''))
-      if (!college) return json({ error: 'college_not_found' }, 404)
+      if (!college) return finish(json({ error: 'college_not_found' }, 404), type)
       const dimensionKeys = Array.isArray(body.dimensionKeys) ? body.dimensionKeys.map(String) : []
       const built = buildVibePrompt(college, dimensionKeys, body.profile as SageProfile | undefined)
       system = built.system
       messages = [{ role: 'user', content: built.userMessage }]
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': env('ANTHROPIC_API_KEY'),
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: Math.min(maxTokens, 2048),
-          system,
-          messages,
-          stream: true,
-        }),
+      const response = await fetchAnthropic({
+        model: 'claude-sonnet-4-6',
+        max_tokens: Math.min(maxTokens, 2048),
+        system,
+        messages,
+        stream: true,
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        console.error('Anthropic API error:', response.status, JSON.stringify(data))
-        return json({ error: 'upstream_error', status: response.status }, 502)
+        logEvent('error', 'anthropic_upstream_error', { request_type: type, upstream_status: response.status })
+        return finish(json({ error: 'upstream_error', status: response.status }, 502), type)
       }
 
-      return new Response(streamAnthropicText(response), {
+      return finish(new Response(streamAnthropicText(response), {
         headers: { ...corsHeaders, 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' },
-      })
+      }), type)
     } else if (type === 'description') {
       const college = await fetchCollege(String(body.collegeId ?? ''))
-      if (!college) return json({ error: 'college_not_found' }, 404)
+      if (!college) return finish(json({ error: 'college_not_found' }, 404), type)
       const built = buildDescriptionPrompt(college)
       system = built.system
       messages = [{ role: 'user', content: built.userMessage }]
       maxTokens = 150
       cacheDescriptionCollegeId = college.id
     } else {
-      return json({ error: 'unknown_type' }, 400)
+      return finish(json({ error: 'unknown_type' }, 400), type)
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': env('ANTHROPIC_API_KEY'),
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: Math.min(maxTokens, 2048),
-        system,
-        messages,
-      }),
+    const response = await fetchAnthropic({
+      model: 'claude-sonnet-4-6',
+      max_tokens: Math.min(maxTokens, 2048),
+      system,
+      messages,
     })
 
     const data = await response.json()
 
     if (!response.ok) {
-      console.error('Anthropic API error:', response.status, JSON.stringify(data))
-      return json({ error: 'upstream_error', status: response.status }, 502)
+      logEvent('error', 'anthropic_upstream_error', { request_type: type, upstream_status: response.status })
+      return finish(json({ error: 'upstream_error', status: response.status }, 502), type)
     }
 
     const text = data?.content?.[0]?.text?.trim()
     if (cacheDescriptionCollegeId && typeof text === 'string' && text) {
       try {
         await cacheCollegeDescription(cacheDescriptionCollegeId, text)
-      } catch (e) {
-        console.error('Failed to cache description:', e)
+      } catch {
+        logEvent('warn', 'description_cache_failed')
       }
     }
 
-    return new Response(JSON.stringify(data), {
+    return finish(new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    }), type)
   } catch (err) {
-    return json({ error: String(err) }, 500)
+    if (err instanceof AiBudgetExceededError) {
+      logEvent('warn', 'ai_budget_exhausted', { request_id: requestId, budget_limit: dailyAiRequestLimit() })
+      return finish(json({ error: 'ai_budget_exhausted' }, 503, { 'Retry-After': '3600' }))
+    }
+    logEvent('error', 'request_failed', { request_id: requestId, error_type: err instanceof Error ? err.name : 'unknown' })
+    return finish(json({ error: 'internal_error' }, 500))
   }
 })

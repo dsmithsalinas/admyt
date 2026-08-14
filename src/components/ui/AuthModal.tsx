@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import Modal from '@/components/ui/Modal'
 import SageOrb from '@/components/sage/SageOrb'
+import { Link } from 'react-router-dom'
 
 interface AuthModalProps {
   onClose: () => void
@@ -17,6 +18,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [confirmSent, setConfirmSent] = useState(false)
+  const [legalConsent, setLegalConsent] = useState(false)
 
   const headline = trigger === 'vibecheck'
     ? 'Save your Vibe Check'
@@ -35,7 +37,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
     setLoading(true)
     setError(null)
     if (mode === 'signup') {
-      const { error, needsEmailConfirmation } = await signUpWithEmail(email, password)
+      const { error, needsEmailConfirmation } = await signUpWithEmail(email, password, legalConsent)
       setLoading(false)
       if (error) setError(error)
       else if (needsEmailConfirmation) setConfirmSent(true)
@@ -90,8 +92,16 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
         </div>
       ) : (
       <>
+      <label className="auth-legal-consent">
+        <input type="checkbox" checked={legalConsent} onChange={event => setLegalConsent(event.target.checked)} />
+        <span>
+          I agree to the <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms</Link> and <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>. I’m at least 13 and, if I’m under 18, I have permission from a parent or guardian.
+        </span>
+      </label>
+
       <button
-        onClick={signInWithGoogle}
+        onClick={() => signInWithGoogle(legalConsent)}
+        disabled={!legalConsent}
         className="btn secondary"
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, height: 42, borderRadius: 999, color: 'var(--admyt-ink)' }}
       >
@@ -141,9 +151,9 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
 
       <button
         onClick={handleEmailSubmit}
-        disabled={loading || !email || !password}
+        disabled={loading || !email || !password || (mode === 'signup' && !legalConsent)}
         className="btn"
-        style={{ width: '100%', height: 42, marginBottom: 16, borderRadius: 999, boxShadow: 'var(--shadow-float)', opacity: loading || !email || !password ? 0.58 : 1 }}
+        style={{ width: '100%', height: 42, marginBottom: 16, borderRadius: 999, boxShadow: 'var(--shadow-float)', opacity: loading || !email || !password || (mode === 'signup' && !legalConsent) ? 0.58 : 1 }}
       >
         {loading ? 'One sec...' : mode === 'signup' ? 'Create free account' : 'Sign in'}
       </button>

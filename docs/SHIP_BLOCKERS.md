@@ -1,5 +1,11 @@
 # Ship-blocker fixes — what shipped in code vs. what you must run
 
+> Historical audit note: the repository now includes a canonical, idempotent
+> baseline migration and local Supabase configuration. Use `npx supabase db push
+> --dry-run` followed by `npx supabase db push` instead of copying individual SQL
+> files into the dashboard. Production application of those migrations is still
+> a manual, owner-controlled step.
+
 Five confirmed launch blockers. Code changes are committed; three of them also
 need a manual step against Supabase/Vercel that can't be done from the repo alone.
 
@@ -12,9 +18,9 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 - **Code:** removed the browser-side `colleges` write in `CollegeDetail.tsx`;
   description caching now happens in the `chat` edge function using the
   service-role key.
-- **Run the SQL:** open Supabase → SQL Editor → run
-  `supabase/migrations/20260708_ship_blockers.sql` (drops the permissive UPDATE
-  policy, leaves the table read-only for anon).
+- **Run the migrations:** `npx supabase db push` applies the canonical schema
+  baseline, removes permissive dashboard-era policies, and leaves the catalog
+  read-only for browser clients.
 - **Redeploy the edge function** so it can cache descriptions server-side:
   ```
   supabase functions deploy chat
@@ -43,7 +49,8 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 ---
 
 ### Manual checklist before you flip the switch
-- [ ] Run `supabase/migrations/20260708_ship_blockers.sql` in the SQL Editor
+- [ ] Back up the linked project, review `npx supabase db push --dry-run`, then
+      run `npx supabase db push`
 - [ ] `supabase functions deploy chat`
 - [ ] Push to `main` (Vercel auto-deploys `vercel.json`)
 - [ ] Smoke-test: hard-refresh `/search`, save a guest conversation, browse to USC
@@ -63,7 +70,9 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 
 ## Anti-abuse hardening (post-audit)
 
-- **Per-IP rate limiting** — Postgres-backed sliding window (40 req/60s, tunable), verified live. Migrations `20260709_rate_limit.sql` + optional `20260709_rate_limit_cleanup.sql`.
+- **Per-IP rate limiting** — Postgres-backed sliding window (40 req/60s,
+  tunable). The canonical migrations install both the atomic RPC and scheduled
+  cleanup job.
 - **Server-side prompt construction** ⚠️ needs `supabase functions deploy chat`. The edge function now builds every prompt itself, keyed by a `type` field (`sage` | `vibe` | `description`), and **never accepts a client-supplied `system`** — so the endpoint can't be used as a general-purpose Claude proxy. Catalog is fetched + cached server-side (10-min TTL); clients send only `{type, ...}` (no more 180KB catalog over the wire). Prompt logic lives in `supabase/functions/chat/prompt.ts`, verified byte-identical to the old client builder.
   - Clean cutover: redeploy the function right after the client deploys, then hard-refresh once (pre-launch, so the brief window is a non-issue).
 
@@ -72,7 +81,8 @@ need a manual step against Supabase/Vercel that can't be done from the repo alon
 Mostly pure code (live on next Vercel deploy). One needs an edge redeploy:
 
 - **#12 edge-function abuse guards** ⚠️ needs SQL + `supabase functions deploy chat`. Clamps `max_tokens` (≤2048), rejects oversized payloads (>1MB) / absurd message counts, and now **per-IP rate limits** (40 req/60s, tunable) via a Postgres-backed atomic counter.
-  - Run `supabase/migrations/20260709_rate_limit.sql` (creates `rate_limits` + `check_rate_limit()`), then redeploy the function.
+  - Run `npx supabase db push` (creates `rate_limits`, `check_rate_limit()`, and
+    its cleanup job), then redeploy the function.
   - Fails open (never blocks legit traffic if the limiter errors). Limit is generous for shared school/library IPs; tune `RATE_LIMIT` / `RATE_WINDOW_SECONDS` in the function.
 - **#13** API/edge errors no longer get persisted as permanent "Sage" messages — `callEdge` throws so the error stays transient. ✅ code only.
 - **#14** A re-run Vibe Check can be saved again (the `saved` flag resets on each new result). ✅ code only.
@@ -86,7 +96,6 @@ Mostly pure code (live on next Vercel deploy). One needs an edge redeploy:
   (authoritative, cross-device) loaded in `loadUserData`. `applyPrefs` now *merges*
   incoming preferences (case-insensitive union for arrays, non-empty major wins)
   instead of replacing — so a later PREFS with empty arrays can't wipe what Sage knew.
-- **Run the SQL:** open Supabase → SQL Editor → run
-  `supabase/migrations/20260708_sage_profile.sql` (adds the `sage_profile` column).
+- **Run the migrations:** `npx supabase db push` adds the `sage_profile` column.
   Until you run it, guests/reload still work via localStorage; only cross-device
   sync for signed-in users is inactive.

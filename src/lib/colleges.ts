@@ -69,8 +69,7 @@ export async function getColleges(): Promise<College[]> {
       .range(from, from + pageSize - 1)
 
     if (error) {
-      console.error('Failed to fetch colleges:', error.message)
-      break
+      throw new Error(`Failed to fetch colleges: ${error.message}`)
     }
 
     const page = (data ?? []).map(mapRow)
@@ -80,6 +79,8 @@ export async function getColleges(): Promise<College[]> {
     from += pageSize
   }
 
+  // Cache only a complete, successful fetch. A transient API/RLS failure should
+  // remain retryable instead of turning into a permanently empty catalog.
   cachedColleges = colleges
   return cachedColleges
 }
@@ -101,6 +102,20 @@ export async function getCollege(id: string): Promise<College | null> {
 
 export function clearCollegeCache() {
   cachedColleges = null
+}
+
+export async function getCollegeCatalogStatus(): Promise<{ lastRefreshedAt: string; recordCount: number } | null> {
+  const { data, error } = await supabase
+    .from('data_source_status')
+    .select('last_refreshed_at,record_count')
+    .eq('source', 'college_scorecard')
+    .maybeSingle()
+
+  if (error || !data) return null
+  return {
+    lastRefreshedAt: String(data.last_refreshed_at),
+    recordCount: Number(data.record_count),
+  }
 }
 
 // Human label for a school's ownership type. `private_np` is College Scorecard
