@@ -42,10 +42,9 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
 
   function hasLegalConsent() {
     if (legalConsent) return true
-    setError('Check the box above to agree to the Terms and Privacy Policy, then try again.')
+    setError('Check the box to agree to the Terms and Privacy Policy, then try again.')
     window.requestAnimationFrame(() => {
-      legalConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      legalConsentRef.current?.focus({ preventScroll: true })
+      legalConsentRef.current?.focus()
     })
     return false
   }
@@ -162,13 +161,6 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
         </div>
       ) : (
       <>
-      <label className="auth-legal-consent">
-        <input ref={legalConsentRef} type="checkbox" checked={legalConsent} onChange={event => { setLegalConsent(event.target.checked); setError(null) }} />
-        <span>
-          I agree to the <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms</Link> and <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>. I’m at least 13 and, if I’m under 18, I have permission from a parent or guardian.
-        </span>
-      </label>
-
       <button
         onClick={() => void handleProvider('google')}
         disabled={loading !== null}
@@ -214,6 +206,13 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
           onKeyDown={handleKey}
         />
       </div>
+
+      <label className="auth-legal-consent">
+        <input ref={legalConsentRef} type="checkbox" checked={legalConsent} onChange={event => { setLegalConsent(event.target.checked); setError(null) }} />
+        <span>
+          I agree to the <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms</Link> and <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>. I’m at least 13 and, if I’m under 18, I have permission from a parent or guardian.
+        </span>
+      </label>
 
       {error && <AuthError message={error} />}
 

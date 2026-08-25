@@ -1261,15 +1261,19 @@
 }
 
 .auth-modal-overlay {
-  place-items: start center;
+  --auth-modal-gutter: clamp(24px, 8dvh, 64px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   box-sizing: border-box;
-  overflow-y: auto;
-  padding-top: clamp(36px, 10dvh, 80px);
-  padding-bottom: max(20px, 4dvh);
+  overflow: hidden;
+  padding-top: var(--auth-modal-gutter);
+  padding-bottom: var(--auth-modal-gutter);
 }
 
 .auth-modal-overlay .admyt-modal-panel {
-  max-height: 100%;
+  flex: 0 1 auto;
+  max-height: calc(100dvh - var(--auth-modal-gutter) - var(--auth-modal-gutter));
 }
 
 @keyframes admytOverlayIn {
