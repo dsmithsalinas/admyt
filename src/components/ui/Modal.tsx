@@ -31,7 +31,8 @@ export default function Modal({ onClose, children, overlayClassName, panelStyle,
     }
   }, [onClose])
 
-  // Focus trap: move focus into the dialog on open and keep Tab cycling inside it.
+  // Focus trap: focus the dialog itself on open so browsers do not scroll a tall
+  // panel to its first control, then keep Tab cycling inside it.
   useEffect(() => {
     const panel = panelRef.current
     if (!panel) return
@@ -41,7 +42,8 @@ export default function Modal({ onClose, children, overlayClassName, panelStyle,
         'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       ),
     )
-    focusables()[0]?.focus()
+    panel.focus({ preventScroll: true })
+    panel.scrollTop = 0
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return
@@ -49,7 +51,10 @@ export default function Modal({ onClose, children, overlayClassName, panelStyle,
       if (items.length === 0) return
       const first = items[0]
       const last = items[items.length - 1]
-      if (e.shiftKey && document.activeElement === first) {
+      if (document.activeElement === panel) {
+        e.preventDefault()
+        ;(e.shiftKey ? last : first).focus()
+      } else if (e.shiftKey && document.activeElement === first) {
         e.preventDefault()
         last.focus()
       } else if (!e.shiftKey && document.activeElement === last) {
@@ -74,6 +79,7 @@ export default function Modal({ onClose, children, overlayClassName, panelStyle,
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
+        tabIndex={-1}
       >
         {children}
       </div>

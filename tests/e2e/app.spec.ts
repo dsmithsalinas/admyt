@@ -107,6 +107,9 @@ test('auth modal stays below the viewport edge at short desktop heights', async 
   await page.getByRole('button', { name: 'Create a free account' }).click()
 
   const panel = page.locator('.admyt-modal-panel')
+  await expect(panel).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).not.toBeFocused()
+  expect(await panel.evaluate(element => element.scrollTop)).toBe(0)
   const panelBox = await panel.boundingBox()
   expect(panelBox?.y).toBeGreaterThanOrEqual(35)
   await expect(page.getByRole('heading', { name: 'Find where you fit' })).toBeInViewport()
