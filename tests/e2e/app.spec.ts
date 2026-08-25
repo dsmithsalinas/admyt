@@ -119,3 +119,20 @@ test('auth modal stays below the viewport edge at short desktop heights', async 
   const panelAfterConsentPrompt = await panel.boundingBox()
   expect(panelAfterConsentPrompt?.height).toBeGreaterThan(300)
 })
+
+test('header login opens as a full-page modal above the Sage interface', async ({ page }) => {
+  await mockSupabase(page)
+  await page.setViewportSize({ width: 800, height: 500 })
+  await page.goto('/chat')
+  await page.getByRole('button', { name: 'Profile' }).click()
+
+  const overlay = page.locator('body > .auth-modal-overlay')
+  await expect(overlay).toHaveCount(1)
+  const overlayBox = await overlay.boundingBox()
+  expect(overlayBox).toEqual({ x: 0, y: 0, width: 800, height: 500 })
+
+  const panel = overlay.locator('.admyt-modal-panel')
+  await expect(panel).toBeFocused()
+  await expect(page.getByRole('heading', { name: 'Find where you fit' })).toBeInViewport()
+  expect(await panel.evaluate(element => element.scrollTop)).toBe(0)
+})

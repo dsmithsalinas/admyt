@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ModalProps {
   onClose: () => void
@@ -69,7 +70,7 @@ export default function Modal({ onClose, children, overlayClassName, panelStyle,
     }
   }, [])
 
-  return (
+  return createPortal(
     <div className={`admyt-overlay${overlayClassName ? ` ${overlayClassName}` : ''}`} onClick={onClose}>
       <div
         ref={panelRef}
@@ -83,6 +84,7 @@ export default function Modal({ onClose, children, overlayClassName, panelStyle,
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
