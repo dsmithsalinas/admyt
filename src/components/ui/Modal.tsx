@@ -3,6 +3,8 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 interface ModalProps {
   onClose: () => void
   children: ReactNode
+  /** Optional modifier for dialog-specific overlay positioning. */
+  overlayClassName?: string
   /** Overrides on the panel (e.g. maxWidth, padding). */
   panelStyle?: CSSProperties
   /** id of the element that labels the dialog, for a11y. */
@@ -13,7 +15,7 @@ interface ModalProps {
  * Lightweight modal built on the bespoke Admyt CSS system.
  * Closes on backdrop click and Escape, and locks body scroll while open.
  */
-export default function Modal({ onClose, children, panelStyle, labelledBy }: ModalProps) {
+export default function Modal({ onClose, children, overlayClassName, panelStyle, labelledBy }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function Modal({ onClose, children, panelStyle, labelledBy }: Mod
   }, [])
 
   return (
-    <div className="admyt-overlay" onClick={onClose}>
+    <div className={`admyt-overlay${overlayClassName ? ` ${overlayClassName}` : ''}`} onClick={onClose}>
       <div
         ref={panelRef}
         className="admyt-modal-panel"

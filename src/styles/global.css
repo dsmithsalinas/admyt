@@ -1260,6 +1260,18 @@
   animation: admytModalIn 0.18s ease-out;
 }
 
+.auth-modal-overlay {
+  place-items: start center;
+  box-sizing: border-box;
+  overflow-y: auto;
+  padding-top: clamp(36px, 10dvh, 80px);
+  padding-bottom: max(20px, 4dvh);
+}
+
+.auth-modal-overlay .admyt-modal-panel {
+  max-height: 100%;
+}
+
 @keyframes admytOverlayIn {
   from { opacity: 0; }
   to { opacity: 1; }

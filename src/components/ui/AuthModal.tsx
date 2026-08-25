@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import Modal from '@/components/ui/Modal'
 import SageOrb from '@/components/sage/SageOrb'
@@ -20,6 +20,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
   const [codeSent, setCodeSent] = useState(false)
   const [resendSeconds, setResendSeconds] = useState(0)
   const [legalConsent, setLegalConsent] = useState(false)
+  const legalConsentRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (resendSeconds <= 0) return
@@ -39,8 +40,18 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
     ? "Hearting helps Sage learn your taste. Make a free account so your schools are still here when you come back."
     : "It's free. Save your schools, your Vibe Checks, and your conversation with Sage."
 
+  function hasLegalConsent() {
+    if (legalConsent) return true
+    setError('Check the box above to agree to the Terms and Privacy Policy, then try again.')
+    window.requestAnimationFrame(() => {
+      legalConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      legalConsentRef.current?.focus({ preventScroll: true })
+    })
+    return false
+  }
+
   async function handleProvider(provider: 'google' | 'apple') {
-    if (loading) return
+    if (loading || !hasLegalConsent()) return
     setLoading(provider)
     setError(null)
     const providerError = provider === 'google'
@@ -53,7 +64,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
   }
 
   async function handleSendCode(isResend = false) {
-    if (!email.trim() || loading || (!isResend && !legalConsent)) return
+    if (!email.trim() || loading || (!isResend && !hasLegalConsent())) return
     setLoading(isResend ? 'resend' : 'email')
     setError(null)
     const sendError = await sendEmailCode(email, legalConsent)
@@ -83,7 +94,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
   }
 
   return (
-    <Modal onClose={onClose} labelledBy="auth-modal-title" panelStyle={{ maxWidth: 420, padding: '28px 24px' }}>
+    <Modal onClose={onClose} labelledBy="auth-modal-title" overlayClassName="auth-modal-overlay" panelStyle={{ maxWidth: 420, padding: '28px 24px' }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
           <SageOrb size={58} animate />
@@ -152,7 +163,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
       ) : (
       <>
       <label className="auth-legal-consent">
-        <input type="checkbox" checked={legalConsent} onChange={event => setLegalConsent(event.target.checked)} />
+        <input ref={legalConsentRef} type="checkbox" checked={legalConsent} onChange={event => { setLegalConsent(event.target.checked); setError(null) }} />
         <span>
           I agree to the <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms</Link> and <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>. I’m at least 13 and, if I’m under 18, I have permission from a parent or guardian.
         </span>
@@ -160,7 +171,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
 
       <button
         onClick={() => void handleProvider('google')}
-        disabled={!legalConsent || loading !== null}
+        disabled={loading !== null}
         className="btn secondary"
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, height: 42, borderRadius: 999, color: 'var(--admyt-ink)' }}
       >
@@ -176,7 +187,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
       {appleAuthEnabled && (
         <button
           onClick={() => void handleProvider('apple')}
-          disabled={!legalConsent || loading !== null}
+          disabled={loading !== null}
           className="btn secondary"
           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, height: 42, borderRadius: 999, color: 'var(--admyt-ink)' }}
         >
@@ -208,9 +219,9 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
 
       <button
         onClick={() => void handleSendCode()}
-        disabled={loading !== null || !email.trim() || !legalConsent}
+        disabled={loading !== null || !email.trim()}
         className="btn"
-        style={{ width: '100%', height: 42, marginBottom: 8, borderRadius: 999, boxShadow: 'var(--shadow-float)', opacity: loading !== null || !email.trim() || !legalConsent ? 0.58 : 1 }}
+        style={{ width: '100%', height: 42, marginBottom: 8, borderRadius: 999, boxShadow: 'var(--shadow-float)', opacity: loading !== null || !email.trim() ? 0.58 : 1 }}
       >
         {loading === 'email' ? 'Sending...' : 'Continue with email'}
       </button>
