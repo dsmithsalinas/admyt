@@ -22,7 +22,7 @@ export default function Privacy() {
       <LegalSection title="2. Information we collect">
         <h3>Information you provide</h3>
         <ul>
-          <li><strong>Account information:</strong> email address, account identifier, and, if you use Google sign-in, information Google makes available such as your name, profile image, and provider identifier.</li>
+          <li><strong>Account information:</strong> email address, account identifier, and, if you use Google or Apple sign-in, information that provider makes available such as your name, profile image, private relay email address, or provider identifier.</li>
           <li><strong>Conversation content:</strong> messages you send to Sage and Sage’s responses.</li>
           <li><strong>College-search preferences:</strong> intended majors, locations, budget, school size, institution type, career goals, and other preferences you choose to share.</li>
           <li><strong>Saved activity:</strong> saved schools, Vibe Checks, Fit Scores, and related notes or results.</li>
@@ -64,6 +64,7 @@ export default function Privacy() {
           <li><strong>Anthropic:</strong> AI generation described above.</li>
           <li><strong>Vercel:</strong> website hosting, delivery, and operational security.</li>
           <li><strong>Google:</strong> when you choose Google sign-in; Google also sends sign-in information to Admyt.</li>
+          <li><strong>Apple:</strong> when you choose Apple sign-in; Apple also sends sign-in information to Admyt and may provide a private relay email address if you choose Hide My Email.</li>
           <li><strong>Authorities or other parties:</strong> when required by law or reasonably necessary to protect rights, safety, users, or the service.</li>
           <li><strong>A successor:</strong> in a merger, financing, acquisition, reorganization, or sale, subject to applicable law and this Policy.</li>
         </ul>

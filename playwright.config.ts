@@ -21,6 +21,7 @@ export default defineConfig({
       ...process.env,
       VITE_SUPABASE_URL: 'https://example.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+      VITE_APPLE_AUTH_ENABLED: 'true',
     },
   },
 })

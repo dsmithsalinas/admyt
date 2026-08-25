@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import Modal from '@/components/ui/Modal'
 import SageOrb from '@/components/sage/SageOrb'
@@ -11,14 +11,21 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: AuthModalProps) {
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth()
-  const [mode, setMode] = useState<'signup' | 'signin'>('signup')
+  const { signInWithGoogle, signInWithApple, sendEmailCode, verifyEmailCode } = useAuth()
+  const appleAuthEnabled = import.meta.env.VITE_APPLE_AUTH_ENABLED === 'true'
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [confirmSent, setConfirmSent] = useState(false)
+  const [loading, setLoading] = useState<'google' | 'apple' | 'email' | 'verify' | 'resend' | null>(null)
+  const [codeSent, setCodeSent] = useState(false)
+  const [resendSeconds, setResendSeconds] = useState(0)
   const [legalConsent, setLegalConsent] = useState(false)
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return
+    const timer = window.setTimeout(() => setResendSeconds(seconds => seconds - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [resendSeconds])
 
   const headline = trigger === 'vibecheck'
     ? 'Save your Vibe Check'
@@ -32,26 +39,47 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
     ? "Hearting helps Sage learn your taste. Make a free account so your schools are still here when you come back."
     : "It's free. Save your schools, your Vibe Checks, and your conversation with Sage."
 
-  async function handleEmailSubmit() {
-    if (!email || !password || loading) return
-    setLoading(true)
+  async function handleProvider(provider: 'google' | 'apple') {
+    if (loading) return
+    setLoading(provider)
     setError(null)
-    if (mode === 'signup') {
-      const { error, needsEmailConfirmation } = await signUpWithEmail(email, password, legalConsent)
-      setLoading(false)
-      if (error) setError(error)
-      else if (needsEmailConfirmation) setConfirmSent(true)
-      else onSuccess()
-    } else {
-      const err = await signInWithEmail(email, password)
-      setLoading(false)
-      if (err) setError(err)
-      else onSuccess()
+    const providerError = provider === 'google'
+      ? await signInWithGoogle(legalConsent)
+      : await signInWithApple(legalConsent)
+    if (providerError) {
+      setError(providerError)
+      setLoading(null)
     }
   }
 
+  async function handleSendCode(isResend = false) {
+    if (!email.trim() || loading || (!isResend && !legalConsent)) return
+    setLoading(isResend ? 'resend' : 'email')
+    setError(null)
+    const sendError = await sendEmailCode(email, legalConsent)
+    setLoading(null)
+    if (sendError) {
+      setError(sendError)
+      return
+    }
+    setCodeSent(true)
+    setResendSeconds(60)
+  }
+
+  async function handleVerifyCode() {
+    if (code.length !== 6 || loading) return
+    setLoading('verify')
+    setError(null)
+    const verifyError = await verifyEmailCode(email, code)
+    setLoading(null)
+    if (verifyError) setError(verifyError)
+    else onSuccess()
+  }
+
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') handleEmailSubmit()
+    if (e.key !== 'Enter') return
+    if (codeSent) void handleVerifyCode()
+    else void handleSendCode()
   }
 
   return (
@@ -77,18 +105,49 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
         </p>
       </div>
 
-      {confirmSent ? (
+      {codeSent ? (
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--admyt-slate)' }}>
-            Check your email — we sent a confirmation link to <strong>{email}</strong>. Click it to finish setting up your account, then come back and sign in.
+            Check your email — we sent a six-digit code to <strong>{email}</strong>.
           </p>
+          <input
+            className="field"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            aria-label="Six-digit code"
+            placeholder="6-digit code"
+            value={code}
+            maxLength={6}
+            autoFocus
+            onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            onKeyDown={handleKey}
+            style={{ marginTop: 12, textAlign: 'center', letterSpacing: '0.2em', fontWeight: 800 }}
+          />
+          {error && <AuthError message={error} />}
           <button
             className="btn"
-            onClick={() => { setConfirmSent(false); setMode('signin'); setPassword('') }}
-            style={{ width: '100%', height: 42, marginTop: 16, borderRadius: 999 }}
+            onClick={handleVerifyCode}
+            disabled={loading !== null || code.length !== 6}
+            style={{ width: '100%', height: 42, marginTop: 12, borderRadius: 999, opacity: loading !== null || code.length !== 6 ? 0.58 : 1 }}
           >
-            Back to sign in
+            {loading === 'verify' ? 'Checking...' : 'Continue'}
           </button>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 14, fontSize: 12 }}>
+            <button
+              onClick={() => void handleSendCode(true)}
+              disabled={loading !== null || resendSeconds > 0}
+              style={{ background: 'none', border: 0, padding: 0, color: 'var(--admyt-indigo)', cursor: resendSeconds > 0 ? 'default' : 'pointer', font: 'inherit', fontWeight: 700 }}
+            >
+              {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : loading === 'resend' ? 'Sending...' : 'Resend code'}
+            </button>
+            <button
+              onClick={() => { setCodeSent(false); setCode(''); setError(null); setResendSeconds(0) }}
+              style={{ background: 'none', border: 0, padding: 0, color: 'var(--admyt-muted)', cursor: 'pointer', font: 'inherit' }}
+            >
+              Change email
+            </button>
+          </div>
         </div>
       ) : (
       <>
@@ -100,8 +159,8 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
       </label>
 
       <button
-        onClick={() => signInWithGoogle(legalConsent)}
-        disabled={!legalConsent}
+        onClick={() => void handleProvider('google')}
+        disabled={!legalConsent || loading !== null}
         className="btn secondary"
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, height: 42, borderRadius: 999, color: 'var(--admyt-ink)' }}
       >
@@ -111,8 +170,22 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
           <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
           <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
         </svg>
-        Continue with Google
+        {loading === 'google' ? 'One sec...' : 'Continue with Google'}
       </button>
+
+      {appleAuthEnabled && (
+        <button
+          onClick={() => void handleProvider('apple')}
+          disabled={!legalConsent || loading !== null}
+          className="btn secondary"
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, height: 42, borderRadius: 999, color: 'var(--admyt-ink)' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.79 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.1zM12.03 7.25C11.88 5.02 13.69 3.18 15.77 3c.29 2.58-2.34 4.5-3.74 4.25z" />
+          </svg>
+          {loading === 'apple' ? 'One sec...' : 'Continue with Apple'}
+        </button>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: 1, height: 1, background: 'var(--admyt-line)' }} />
@@ -120,7 +193,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
         <div style={{ flex: 1, height: 1, background: 'var(--admyt-line)' }} />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <input
           className="field"
           type="email"
@@ -129,43 +202,21 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
           onChange={e => setEmail(e.target.value)}
           onKeyDown={handleKey}
         />
-        <input
-          className="field"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          onKeyDown={handleKey}
-        />
       </div>
 
-      {error && (
-        <div style={{
-          fontSize: 12, color: '#DC2626',
-          background: '#FEF2F2', border: '1px solid #FECACA',
-          borderRadius: 10, padding: '8px 12px', marginBottom: 12,
-        }}>
-          {error}
-        </div>
-      )}
+      {error && <AuthError message={error} />}
 
       <button
-        onClick={handleEmailSubmit}
-        disabled={loading || !email || !password || (mode === 'signup' && !legalConsent)}
+        onClick={() => void handleSendCode()}
+        disabled={loading !== null || !email.trim() || !legalConsent}
         className="btn"
-        style={{ width: '100%', height: 42, marginBottom: 16, borderRadius: 999, boxShadow: 'var(--shadow-float)', opacity: loading || !email || !password || (mode === 'signup' && !legalConsent) ? 0.58 : 1 }}
+        style={{ width: '100%', height: 42, marginBottom: 8, borderRadius: 999, boxShadow: 'var(--shadow-float)', opacity: loading !== null || !email.trim() || !legalConsent ? 0.58 : 1 }}
       >
-        {loading ? 'One sec...' : mode === 'signup' ? 'Create free account' : 'Sign in'}
+        {loading === 'email' ? 'Sending...' : 'Continue with email'}
       </button>
 
-      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--admyt-muted)' }}>
-        {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-        <button
-          onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError(null) }}
-          style={{ background: 'none', border: 0, padding: 0, fontSize: 13, fontWeight: 700, color: 'var(--admyt-indigo)', cursor: 'pointer', font: 'inherit' }}
-        >
-          {mode === 'signup' ? 'Sign in' : 'Sign up'}
-        </button>
+      <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--admyt-faint)', marginBottom: 8 }}>
+        No password needed. We’ll email you a code.
       </div>
       </>
       )}
@@ -179,5 +230,17 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
         </button>
       </div>
     </Modal>
+  )
+}
+
+function AuthError({ message }: { message: string }) {
+  return (
+    <div style={{
+      fontSize: 12, color: '#DC2626', textAlign: 'left',
+      background: '#FEF2F2', border: '1px solid #FECACA',
+      borderRadius: 10, padding: '8px 12px', marginTop: 12, marginBottom: 12,
+    }}>
+      {message}
+    </div>
   )
 }

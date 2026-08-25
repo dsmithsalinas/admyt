@@ -138,7 +138,7 @@ Public legal pages live at `/terms` and `/privacy`. Account creation requires af
 ## Auth model
 - Guest-first — full app usable without signing in
 - Sign-up prompt appears after running a Vibe Check (highest-value moment)
-- Supports Google OAuth and email/password via Supabase Auth
+- Supports Google OAuth, Apple OAuth, and passwordless email codes via Supabase Auth
 - Signed-in users get: persistent Sage conversation, saved schools, saved vibes, preferences
 
 ## Known UX issues (fix in polish pass)

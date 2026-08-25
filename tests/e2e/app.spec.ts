@@ -58,8 +58,18 @@ test('data and privacy disclosures are reachable without signing in', async ({ p
   await expect(page.getByText(/3,881 schools/i)).toBeVisible()
 })
 
-test('Terms and Privacy Policy are public and signup requires acceptance', async ({ page }) => {
+test('Terms and Privacy Policy are public and passwordless signup requires acceptance', async ({ page }) => {
   await mockSupabase(page)
+  let otpRequestedFor: string | null = null
+  await page.route('https://example.supabase.co/auth/v1/otp', async route => {
+    const requestBody = route.request().postDataJSON() as { email?: string }
+    otpRequestedFor = requestBody.email ?? null
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{}',
+    })
+  })
 
   await page.goto('/terms')
   await expect(page.getByRole('heading', { name: 'The ground rules for using Admyt.' })).toBeVisible()
@@ -71,10 +81,19 @@ test('Terms and Privacy Policy are public and signup requires acceptance', async
 
   await page.goto('/profile')
   await page.getByRole('button', { name: 'Create a free account' }).click()
-  const createButton = page.getByRole('button', { name: 'Create free account' })
+  const emailButton = page.getByRole('button', { name: 'Continue with email' })
+  await expect(page.getByRole('button', { name: 'Continue with Apple' })).toBeDisabled()
   await page.getByPlaceholder('Email').fill('student@example.com')
-  await page.getByPlaceholder('Password').fill('a-secure-test-password')
-  await expect(createButton).toBeDisabled()
+  await expect(emailButton).toBeDisabled()
   await page.getByRole('checkbox').check()
-  await expect(createButton).toBeEnabled()
+  await expect(emailButton).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Continue with Apple' })).toBeEnabled()
+
+  await emailButton.click()
+  await expect(page.getByText(/sent a six-digit code/i)).toBeVisible()
+  await expect(page.getByLabel('Six-digit code')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeDisabled()
+  await page.getByLabel('Six-digit code').fill('123456')
+  await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeEnabled()
+  expect(otpRequestedFor).toBe('student@example.com')
 })

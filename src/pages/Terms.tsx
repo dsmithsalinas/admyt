@@ -45,7 +45,7 @@ export default function Terms() {
 
       <LegalSection title="6. Admyt content and third-party services">
         <p>Admyt’s software, design, branding, and original content belong to Admyt or its licensors. These Terms do not transfer those rights to you. You may use the service only for personal, non-commercial college exploration unless we agree otherwise in writing.</p>
-        <p>Admyt uses and links to third-party services and information, including Google sign-in, College Scorecard data, Supabase, Vercel, Anthropic, and college websites. Their services and content are governed by their own terms. Admyt is not responsible for third-party websites or changes to their information.</p>
+        <p>Admyt uses and links to third-party services and information, including Google and Apple sign-in, College Scorecard data, Supabase, Vercel, Anthropic, and college websites. Their services and content are governed by their own terms. Admyt is not responsible for third-party websites or changes to their information.</p>
       </LegalSection>
 
       <LegalSection title="7. Changes, suspension, and termination">

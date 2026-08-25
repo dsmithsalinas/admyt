@@ -36,6 +36,28 @@ Run a restore drill before launch and after material schema changes:
 
 Database backups do not restore Supabase Storage objects. Admyt does not currently depend on Storage, but add a separate object-backup procedure before introducing uploads.
 
+## Authentication provider setup
+
+The repository configures passwordless email codes and Apple OAuth locally, but hosted Auth settings and provider secrets must be managed outside Git.
+
+For email codes in the Supabase Dashboard:
+
+1. Configure custom SMTP with a verified sender domain. The default Supabase mail service is not for production delivery.
+2. Under **Authentication → Email Templates → Magic Link**, use `Your admyt sign-in code` as the subject and copy the HTML from `supabase/templates/sign-in-code.html`. The template must contain `{{ .Token }}`; using only `{{ .ConfirmationURL }}` sends a link instead of the code the UI expects.
+3. Under the Email provider settings, set OTP length to 6, expiration to 600 seconds, and minimum resend frequency to 60 seconds.
+4. Send and verify a code with a disposable address outside the Supabase organization before deploying the frontend change.
+
+For Apple OAuth:
+
+1. In Apple Developer, create and configure the Admyt Services ID, website domain, and Sign in with Apple key.
+2. Register `https://bwegkzzeiasdbuwatglc.supabase.co/auth/v1/callback` as the return URL.
+3. In **Supabase → Authentication → Providers → Apple**, enable Apple and enter the Services ID and generated client secret.
+4. Verify `https://youradmyt.vercel.app` is the Auth Site URL or an allowed redirect URL.
+5. Set `VITE_APPLE_AUTH_ENABLED=true` in Vercel and redeploy. The button stays hidden until this flag is enabled, so incomplete provider setup does not create a broken login option.
+6. Rotate the Apple web client secret before its six-month expiration and immediately run a production Apple sign-in smoke test.
+
+Never commit SMTP credentials, the Apple `.p8` key, or generated Apple client secrets.
+
 ## Deployment order
 
 ```bash

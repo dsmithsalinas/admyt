@@ -7,9 +7,10 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signInWithGoogle: (legalConsent: boolean) => Promise<void>
-  signInWithEmail: (email: string, password: string) => Promise<string | null>
-  signUpWithEmail: (email: string, password: string, legalConsent: boolean) => Promise<{ error: string | null; needsEmailConfirmation: boolean }>
+  signInWithGoogle: (legalConsent: boolean) => Promise<string | null>
+  signInWithApple: (legalConsent: boolean) => Promise<string | null>
+  sendEmailCode: (email: string, legalConsent: boolean) => Promise<string | null>
+  verifyEmailCode: (email: string, code: string) => Promise<string | null>
   signOut: () => Promise<void>
 }
 
@@ -17,17 +18,21 @@ const AuthContext = createContext<AuthContextType | null>(null)
 const PENDING_LEGAL_ACCEPTANCE_KEY = 'admyt_pending_legal_acceptance'
 let legalAcceptanceWriteInFlight = false
 
+function legalAcceptanceMetadata() {
+  return {
+    admyt_terms_version: LEGAL_VERSION,
+    admyt_terms_accepted_at: new Date().toISOString(),
+    admyt_age_13_plus_confirmed: true,
+    admyt_guardian_permission_confirmed_if_required: true,
+  }
+}
+
 async function recordPendingLegalAcceptance(session: Session | null) {
   if (!session || legalAcceptanceWriteInFlight || localStorage.getItem(PENDING_LEGAL_ACCEPTANCE_KEY) !== LEGAL_VERSION) return
   legalAcceptanceWriteInFlight = true
   try {
     const { error } = await supabase.auth.updateUser({
-      data: {
-        admyt_terms_version: LEGAL_VERSION,
-        admyt_terms_accepted_at: new Date().toISOString(),
-        admyt_age_13_plus_confirmed: true,
-        admyt_guardian_permission_confirmed_if_required: true,
-      },
+      data: legalAcceptanceMetadata(),
     })
     if (!error) localStorage.removeItem(PENDING_LEGAL_ACCEPTANCE_KEY)
   } finally {
@@ -57,39 +62,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  async function signInWithGoogle(legalConsent: boolean) {
-    if (!legalConsent) return
+  async function signInWithProvider(provider: 'google' | 'apple', legalConsent: boolean): Promise<string | null> {
+    if (!legalConsent) return 'Please agree to the Terms and Privacy Policy to continue.'
     localStorage.setItem(PENDING_LEGAL_ACCEPTANCE_KEY, LEGAL_VERSION)
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       options: { redirectTo: window.location.origin },
     })
     if (error) localStorage.removeItem(PENDING_LEGAL_ACCEPTANCE_KEY)
-  }
-
-  async function signInWithEmail(email: string, password: string): Promise<string | null> {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
     return error?.message ?? null
   }
 
-  async function signUpWithEmail(email: string, password: string, legalConsent: boolean): Promise<{ error: string | null; needsEmailConfirmation: boolean }> {
-    if (!legalConsent) return { error: 'Please agree to the Terms and Privacy Policy to create an account.', needsEmailConfirmation: false }
-    const acceptedAt = new Date().toISOString()
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+  async function signInWithGoogle(legalConsent: boolean) {
+    return signInWithProvider('google', legalConsent)
+  }
+
+  async function signInWithApple(legalConsent: boolean) {
+    return signInWithProvider('apple', legalConsent)
+  }
+
+  async function sendEmailCode(email: string, legalConsent: boolean): Promise<string | null> {
+    if (!legalConsent) return 'Please agree to the Terms and Privacy Policy to continue.'
+    localStorage.setItem(PENDING_LEGAL_ACCEPTANCE_KEY, LEGAL_VERSION)
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
       options: {
-        data: {
-          admyt_terms_version: LEGAL_VERSION,
-          admyt_terms_accepted_at: acceptedAt,
-          admyt_age_13_plus_confirmed: true,
-          admyt_guardian_permission_confirmed_if_required: true,
-        },
+        shouldCreateUser: true,
+        data: legalAcceptanceMetadata(),
       },
     })
-    // If the project requires email confirmation, sign-up succeeds with no error
-    // and no session — the user is not actually logged in yet.
-    return { error: error?.message ?? null, needsEmailConfirmation: !error && !data.session }
+    if (error) localStorage.removeItem(PENDING_LEGAL_ACCEPTANCE_KEY)
+    return error?.message ?? null
+  }
+
+  async function verifyEmailCode(email: string, code: string): Promise<string | null> {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code,
+      type: 'email',
+    })
+    if (!error) await recordPendingLegalAcceptance(data.session)
+    return error?.message ?? null
   }
 
   async function signOut() {
@@ -99,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, session, loading,
-      signInWithGoogle, signInWithEmail, signUpWithEmail, signOut,
+      signInWithGoogle, signInWithApple, sendEmailCode, verifyEmailCode, signOut,
     }}>
       {children}
     </AuthContext.Provider>
