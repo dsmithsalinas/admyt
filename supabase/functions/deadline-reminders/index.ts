@@ -1,6 +1,8 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
 import { emailFingerprint } from "../_shared/email-fingerprint.ts";
+import { createUnsubscribeUrl } from "../_shared/email-unsubscribe.ts";
+import { recordEmailWorkerRun } from "../_shared/email-worker-run.ts";
 
 const MAX_USERS_PER_RUN = 500;
 const MAX_CACHE_AGE_DAYS = 7;
@@ -155,7 +157,7 @@ function formatDate(iso: string): string {
     timeZone: "UTC",
   }).format(new Date(`${iso}T00:00:00Z`));
 }
-function emailContent(reminders: Reminder[]) {
+function emailContent(reminders: Reminder[], unsubscribeUrl: string) {
   const one = reminders.length === 1;
   const subject = one
     ? `${reminders[0].collegeName} has a deadline coming up`
@@ -182,7 +184,7 @@ function emailContent(reminders: Reminder[]) {
       escapeHtml(intro)
     }</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f4fb"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fff;border-radius:18px;padding:32px"><tr><td><div style="font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#5754d8">admyt</div><h1 style="margin:14px 0 8px;font-size:26px;line-height:1.2;color:#26233a">A calm deadline heads-up.</h1><p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:#5c5870">${
       escapeHtml(intro)
-    }</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows}</table><p style="margin:22px 0 0;font-size:12px;line-height:1.6;color:#777287">Deadline information can change. Always confirm on the school’s official admissions page before relying on it.</p><a href="${APP_URL}" style="display:inline-block;margin-top:22px;padding:12px 18px;border-radius:999px;background:#5754d8;color:#fff;text-decoration:none;font-size:14px;font-weight:700">Open My Schools</a><p style="margin:28px 0 0;font-size:11px;line-height:1.5;color:#8a8698">You opted in to deadline emails in Admyt. <a href="${APP_URL}" style="color:#68647a">Manage reminders</a></p></td></tr></table></td></tr></table></body></html>`;
+    }</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows}</table><p style="margin:22px 0 0;font-size:12px;line-height:1.6;color:#777287">Deadline information can change. Always confirm on the school’s official admissions page before relying on it.</p><a href="${APP_URL}" style="display:inline-block;margin-top:22px;padding:12px 18px;border-radius:999px;background:#5754d8;color:#fff;text-decoration:none;font-size:14px;font-weight:700">Open My Schools</a><p style="margin:28px 0 0;font-size:11px;line-height:1.5;color:#8a8698">You opted in to deadline emails in Admyt. <a href="${APP_URL}" style="color:#68647a">Manage reminders</a> · <a href="${escapeHtml(unsubscribeUrl)}" style="color:#68647a">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>`;
   const text = [
     "A calm deadline heads-up.",
     intro,
@@ -195,6 +197,7 @@ function emailContent(reminders: Reminder[]) {
     ]),
     "Deadline information can change. Always confirm on the school’s official admissions page before relying on it.",
     `Manage reminders: ${APP_URL}`,
+    `Unsubscribe: ${unsubscribeUrl}`,
   ].join("\n");
   return { subject, html, text };
 }
@@ -219,6 +222,7 @@ async function idempotencyKey(
 Deno.serve(async (req) => {
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const startedAt = Date.now();
+  const startedAtIso = new Date(startedAt).toISOString();
   try {
     if (req.method !== "POST") {
       return json({ error: "method_not_allowed" }, 405, requestId);
@@ -227,6 +231,7 @@ Deno.serve(async (req) => {
     const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
     const resendKey = env("RESEND_API_KEY");
     const suppressionHashKey = env("EMAIL_SUPPRESSION_HASH_KEY");
+    const unsubscribeSigningKey = env("EMAIL_UNSUBSCRIBE_SIGNING_KEY");
     const testUserId = env("EMAIL_REMINDERS_TEST_USER_ID");
     if (!url || !serviceKey) throw new Error("missing_supabase_configuration");
     if (!hasVerifiedServiceRole(req.headers.get("Authorization"), url)) {
@@ -237,10 +242,13 @@ Deno.serve(async (req) => {
         request_id: requestId,
         duration_ms: Date.now() - startedAt,
       });
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "deadline_reminders", requestId, status: "disabled", metrics: { sent_count: 0, failure_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json({ enabled: false, sent: 0 }, 200, requestId);
     }
     if (!resendKey) throw new Error("missing_resend_configuration");
     if (!suppressionHashKey) throw new Error("missing_suppression_configuration");
+    if (!unsubscribeSigningKey) throw new Error("missing_unsubscribe_configuration");
+    const unsubscribeEndpoint = `${url}/functions/v1/email-unsubscribe`;
 
     const admin = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -261,6 +269,7 @@ Deno.serve(async (req) => {
     }
     const enabled = (preferences ?? []) as PreferenceRow[];
     if (enabled.length === 0) {
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "deadline_reminders", requestId, status: "success", metrics: { users_considered: 0, sent_count: 0, failure_count: 0, suppressed_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json({ enabled: true, users: 0, sent: 0 }, 200, requestId);
     }
 
@@ -273,6 +282,7 @@ Deno.serve(async (req) => {
     const heartRows = (hearts ?? []) as HeartRow[];
     const collegeIds = [...new Set(heartRows.map((row) => row.college_id))];
     if (collegeIds.length === 0) {
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "deadline_reminders", requestId, status: "success", metrics: { users_considered: enabled.length, sent_count: 0, failure_count: 0, suppressed_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json(
         { enabled: true, users: enabled.length, sent: 0 },
         200,
@@ -403,7 +413,13 @@ Deno.serve(async (req) => {
       if (reserved.length === 0) continue;
       claimed += reserved.length;
 
-      const content = emailContent(reserved);
+      const unsubscribeUrl = await createUnsubscribeUrl(
+        unsubscribeEndpoint,
+        preference.user_id,
+        "deadline_reminders",
+        unsubscribeSigningKey,
+      );
+      const content = emailContent(reserved, unsubscribeUrl);
       const resendResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -417,6 +433,10 @@ Deno.serve(async (req) => {
           subject: content.subject,
           html: content.html,
           text: content.text,
+          headers: {
+            "List-Unsubscribe": `<${unsubscribeUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
         }),
       });
       if (!resendResponse.ok) {
@@ -456,16 +476,46 @@ Deno.serve(async (req) => {
       suppressed_recipients: suppressed,
       duration_ms: Date.now() - startedAt,
     });
+    await recordEmailWorkerRun({
+      supabaseUrl: url,
+      serviceKey,
+      worker: "deadline_reminders",
+      requestId,
+      status: "success",
+      metrics: {
+        users_considered: enabled.length,
+        sent_count: sent,
+        failure_count: failed,
+        suppressed_count: suppressed,
+        deliveries_claimed: claimed,
+        deadline_refreshes_attempted: refreshTargets.length,
+        deadline_refreshes_succeeded: refreshSucceeded,
+      },
+      startedAt: startedAtIso,
+      durationMs: Date.now() - startedAt,
+    });
     return json(
       { enabled: true, users: enabled.length, claimed, sent, failed, suppressed },
       200,
       requestId,
     );
   } catch (error) {
+    const errorCode = error instanceof Error ? error.message : "unknown_error";
+    await recordEmailWorkerRun({
+      supabaseUrl: env("SUPABASE_URL"),
+      serviceKey: env("SUPABASE_SERVICE_ROLE_KEY"),
+      worker: "deadline_reminders",
+      requestId,
+      status: "failed",
+      metrics: { sent_count: 0, failure_count: 1 },
+      errorCode,
+      startedAt: startedAtIso,
+      durationMs: Date.now() - startedAt,
+    });
     log("error", "run_failed", {
       request_id: requestId,
       duration_ms: Date.now() - startedAt,
-      error: error instanceof Error ? error.message : "unknown_error",
+      error: errorCode,
     });
     return json({ error: "deadline_reminder_run_failed" }, 500, requestId);
   }

@@ -34,7 +34,7 @@ Admyt exists because fit matters more than rank. The right school for you is the
 - **API proxy:** Supabase Edge Function at `supabase/functions/chat/index.ts` — all Claude API calls go through here, never directly from the browser
 - **Deployment:** Vercel — live at `youradmyt.com` (`youradmyt.vercel.app` remains the Vercel fallback), auto-deploys on every push to `main` (Vercel GitHub integration). Per-deploy/preview URLs are gated by Vercel Deployment Protection; the production domain is public. Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars set in the Vercel project.
 - **Auth email:** Passwordless six-digit sign-in codes are delivered through Supabase Auth using Resend custom SMTP. `youradmyt.com` is verified in Resend; production sends from `Sage from admyt <sign-in@youradmyt.com>`. The canonical template is `supabase/templates/sign-in-code.html` and must stay synchronized with the hosted Supabase Magic Link / OTP template.
-- **Application email:** `supabase/functions/welcome-email` sends one deduplicated, transactional welcome after a new account successfully signs in. The opt-in reminder pipeline lives in `supabase/functions/deadline-reminders`; Supabase Cron invokes it daily at 15:00 UTC and sends at 30 and 7 days only for recently checked official-source dates. `supabase/functions/email-programs` runs hourly and sends eligible messages around 9:00 in each student's saved time zone: a three-step getting-started sequence at roughly 1, 3, and 7 days after opt-in, plus a Monday My Schools digest for students with saved schools. Profile holds independent opt-ins for all three optional programs. Signed Resend events enter through `supabase/functions/resend-webhook`; delivery states update the shared ledger, while bounces, complaints, and suppressions prevent future sends using a privacy-minimized email hash. `WELCOME_EMAIL_ENABLED`, `EMAIL_REMINDERS_ENABLED`, and `EMAIL_PROGRAMS_ENABLED` are immediate server-side kill switches. Operational details live in `docs/OPERATIONS.md`.
+- **Application email:** `supabase/functions/welcome-email` sends one deduplicated, transactional welcome after a new account successfully signs in. The opt-in reminder pipeline lives in `supabase/functions/deadline-reminders`; Supabase Cron invokes it daily at 15:00 UTC and sends at 30 and 7 days only for recently checked official-source dates. `supabase/functions/email-programs` runs hourly and sends eligible messages around 9:00 in each student's saved time zone: a three-step getting-started sequence at roughly 1, 3, and 7 days after opt-in, plus a Monday My Schools digest for students with saved schools. Profile holds independent opt-ins for all three optional programs. Every optional message includes a signed, program-specific unsubscribe link and RFC 8058 one-click headers handled by `email-unsubscribe`. Worker runs store privacy-minimized health counters for 90 days; the token-protected `email-health` endpoint is checked hourly from GitHub Actions so missed schedules, failures, and abnormal volume fail externally. Signed Resend events enter through `supabase/functions/resend-webhook`; delivery states update the shared ledger, while bounces, complaints, and suppressions prevent future sends using a privacy-minimized email hash. `WELCOME_EMAIL_ENABLED`, `EMAIL_REMINDERS_ENABLED`, and `EMAIL_PROGRAMS_ENABLED` are immediate server-side kill switches. Operational details live in `docs/OPERATIONS.md`.
 - **Data:** The College Scorecard import currently yields roughly 3,800 schools in Supabase. Browse loads the full paginated catalog; Sage's server-side prompt catalog is intentionally capped at 1,000 schools to control prompt size.
 
 ## Project structure
@@ -106,6 +106,10 @@ supabase/
 
 ├── email-programs/index.ts # Opt-in guidance sequence and weekly digest worker
 
+├── email-unsubscribe/index.ts # Signed confirmation and one-click opt-out endpoint
+
+├── email-health/index.ts # Token-protected scheduled-worker health endpoint
+
 └── resend-webhook/index.ts # Signed Resend delivery events and suppressions
 ## Supabase tables
 | Table | Purpose |
@@ -119,6 +123,7 @@ supabase/
 | `notification_deliveries` | Application-email delivery ledger and duplicate protection |
 | `email_delivery_events` | Privacy-minimized, replay-safe Resend delivery events |
 | `email_suppressions` | Hashed addresses that must not receive application email |
+| `email_worker_runs` | Privacy-minimized scheduled-email health counters (90 days) |
 | `data_source_status` | Public catalog provenance and last successful refresh |
 
 All tables have Row Level Security enabled. Users can only access their own data. The `colleges` table is publicly readable (no auth required).

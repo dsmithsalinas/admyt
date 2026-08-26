@@ -1,6 +1,8 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
 import { emailFingerprint } from "../_shared/email-fingerprint.ts";
+import { createUnsubscribeUrl } from "../_shared/email-unsubscribe.ts";
+import { recordEmailWorkerRun } from "../_shared/email-worker-run.ts";
 import {
   guidanceEmailContent,
   weeklyDigestEmailContent,
@@ -149,22 +151,27 @@ async function idempotencyKey(dedupeKey: string): Promise<string> {
 Deno.serve(async (req) => {
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const startedAt = Date.now();
+  const startedAtIso = new Date(startedAt).toISOString();
   try {
     if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, requestId);
     const url = env("SUPABASE_URL");
     const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
     const resendKey = env("RESEND_API_KEY");
     const suppressionHashKey = env("EMAIL_SUPPRESSION_HASH_KEY");
+    const unsubscribeSigningKey = env("EMAIL_UNSUBSCRIBE_SIGNING_KEY");
     const testUserId = env("EMAIL_PROGRAMS_TEST_USER_ID");
     if (!url || !serviceKey) throw new Error("missing_supabase_configuration");
     if (!hasVerifiedServiceRole(req.headers.get("Authorization"), url)) {
       return json({ error: "unauthorized" }, 401, requestId);
     }
     if (env("EMAIL_PROGRAMS_ENABLED") !== "true") {
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "email_programs", requestId, status: "disabled", metrics: { sent_count: 0, failure_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json({ enabled: false, guidance_sent: 0, digests_sent: 0 }, 200, requestId);
     }
     if (!resendKey) throw new Error("missing_resend_configuration");
     if (!suppressionHashKey) throw new Error("missing_suppression_configuration");
+    if (!unsubscribeSigningKey) throw new Error("missing_unsubscribe_configuration");
+    const unsubscribeEndpoint = `${url}/functions/v1/email-unsubscribe`;
 
     const admin = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -178,6 +185,7 @@ Deno.serve(async (req) => {
     if (preferenceError) throw new Error(`preferences_query_failed:${preferenceError.code ?? "unknown"}`);
     const preferences = (preferenceData ?? []) as PreferenceRow[];
     if (preferences.length === 0) {
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "email_programs", requestId, status: "success", metrics: { users_considered: 0, sent_count: 0, failure_count: 0, suppressed_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json({ enabled: true, users: 0, guidance_sent: 0, digests_sent: 0 }, 200, requestId);
     }
 
@@ -220,6 +228,7 @@ Deno.serve(async (req) => {
       dedupeKey: string,
       from: string,
       content: EmailContent,
+      unsubscribeUrl: string,
     ): Promise<"sent" | "skipped" | "failed" | "suppressed"> {
       const { data: authData, error: authError } = await admin.auth.admin.getUserById(preference.user_id);
       const email = authData?.user?.email;
@@ -254,6 +263,10 @@ Deno.serve(async (req) => {
           subject: content.subject,
           html: content.html,
           text: content.text,
+          headers: {
+            "List-Unsubscribe": `<${unsubscribeUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
         }),
       });
       if (!resendResponse.ok) {
@@ -289,12 +302,19 @@ Deno.serve(async (req) => {
         });
         if (stageIndex >= 0) {
           const stage = (stageIndex + 1) as 1 | 2 | 3;
+          const unsubscribeUrl = await createUnsubscribeUrl(
+            unsubscribeEndpoint,
+            preference.user_id,
+            "getting_started",
+            unsubscribeSigningKey,
+          );
           const result = await sendProgramEmail(
             preference,
             "getting_started",
             `getting-started|${preference.user_id}|${stage}`,
             "Sage from admyt <guidance@youradmyt.com>",
-            guidanceEmailContent(stage, { savedSchoolCount: userHearts.length, vibeCheckCount: userVibes.length }),
+            guidanceEmailContent(stage, { savedSchoolCount: userHearts.length, vibeCheckCount: userVibes.length }, unsubscribeUrl),
+            unsubscribeUrl,
           );
           if (result === "sent") {
             guidanceSent += 1;
@@ -329,12 +349,19 @@ Deno.serve(async (req) => {
         }
       }
       digestDeadlines.sort((left, right) => left.date.localeCompare(right.date));
+      const unsubscribeUrl = await createUnsubscribeUrl(
+        unsubscribeEndpoint,
+        preference.user_id,
+        "weekly_digest",
+        unsubscribeSigningKey,
+      );
       const result = await sendProgramEmail(
         preference,
         "weekly_digest",
         digestKey,
         "Sage from admyt <digest@youradmyt.com>",
-        weeklyDigestEmailContent({ schools: digestSchools, totalSchoolCount: userHearts.length, deadlines: digestDeadlines }),
+        weeklyDigestEmailContent({ schools: digestSchools, totalSchoolCount: userHearts.length, deadlines: digestDeadlines }, unsubscribeUrl),
+        unsubscribeUrl,
       );
       if (result === "sent") digestsSent += 1;
       else if (result === "failed") failed += 1;
@@ -351,12 +378,41 @@ Deno.serve(async (req) => {
       suppressed_recipients: suppressed,
       duration_ms: Date.now() - startedAt,
     });
+    await recordEmailWorkerRun({
+      supabaseUrl: url,
+      serviceKey,
+      worker: "email_programs",
+      requestId,
+      status: "success",
+      metrics: {
+        users_considered: preferences.length,
+        sent_count: guidanceSent + digestsSent,
+        guidance_sent: guidanceSent,
+        digests_sent: digestsSent,
+        failure_count: failed,
+        suppressed_count: suppressed,
+      },
+      startedAt: startedAtIso,
+      durationMs: Date.now() - startedAt,
+    });
     return json({ enabled: true, users: preferences.length, guidance_sent: guidanceSent, digests_sent: digestsSent, failed, suppressed }, 200, requestId);
   } catch (error) {
+    const errorCode = error instanceof Error ? error.message : "unknown_error";
+    await recordEmailWorkerRun({
+      supabaseUrl: env("SUPABASE_URL"),
+      serviceKey: env("SUPABASE_SERVICE_ROLE_KEY"),
+      worker: "email_programs",
+      requestId,
+      status: "failed",
+      metrics: { sent_count: 0, failure_count: 1 },
+      errorCode,
+      startedAt: startedAtIso,
+      durationMs: Date.now() - startedAt,
+    });
     log("error", "run_failed", {
       request_id: requestId,
       duration_ms: Date.now() - startedAt,
-      error: error instanceof Error ? error.message : "unknown_error",
+      error: errorCode,
     });
     return json({ error: "email_program_run_failed" }, 500, requestId);
   }

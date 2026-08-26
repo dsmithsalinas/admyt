@@ -26,7 +26,7 @@ export default function Privacy() {
           <li><strong>Conversation content:</strong> messages you send to Sage and Sage’s responses.</li>
           <li><strong>College-search preferences:</strong> intended majors, locations, budget, school size, institution type, career goals, and other preferences you choose to share.</li>
           <li><strong>Saved activity:</strong> saved schools, Vibe Checks, Fit Scores, and related notes or results.</li>
-          <li><strong>Email preferences and delivery:</strong> whether you opt in to deadline reminders, getting-started guidance, or a weekly My Schools digest; your time zone; delivery status; records needed to prevent duplicate delivery; and a one-way email-address fingerprint when a message bounces, is reported as spam, or is suppressed.</li>
+          <li><strong>Email preferences and delivery:</strong> whether you opt in to deadline reminders, getting-started guidance, or a weekly My Schools digest; your time zone; delivery status; records needed to prevent duplicate delivery; aggregate worker-health counters; and a one-way email-address fingerprint when a message bounces, is reported as spam, or is suppressed.</li>
           <li><strong>Communications:</strong> information included when you contact us.</li>
         </ul>
         <h3>Information collected automatically</h3>
@@ -82,12 +82,13 @@ export default function Privacy() {
           <li><strong>Abuse-prevention identifiers:</strong> rate-limit records are removed after the rate-limit window ends and scheduled cleanup runs, generally within 48 hours.</li>
           <li><strong>Anthropic API data:</strong> handled under the retention practice described in the AI section above.</li>
           <li><strong>Email suppression records:</strong> a one-way address fingerprint may be retained after account deletion when needed to honor a bounce, spam complaint, or do-not-send restriction. Admyt does not retain the address itself in this suppression record.</li>
+          <li><strong>Email worker health:</strong> aggregate run times and send, failure, and suppression counts are retained for up to 90 days. These records do not contain recipient addresses or message content.</li>
           <li><strong>Operational and legal records:</strong> retained only as long as reasonably needed for security, support, dispute resolution, legal compliance, or enforcement.</li>
         </ul>
       </LegalSection>
 
       <LegalSection title="7. Your choices and rights">
-        <p>From Profile, you can review or change preferences, control each optional email program independently, remove saved schools, download a JSON copy of your account data, and permanently delete your account. You can clear guest information through your browser settings.</p>
+        <p>From Profile, you can review or change preferences, control each optional email program independently, remove saved schools, download a JSON copy of your account data, and permanently delete your account. Optional emails also include a program-specific unsubscribe link that works without signing in. You can clear guest information through your browser settings.</p>
         <p>Depending on where you live, you may also have rights to know, access, correct, delete, or receive a copy of personal information; restrict or object to certain processing; appeal a denied request; or opt out of sale, targeted advertising, or certain profiling. Admyt does not sell personal information or use it for targeted advertising.</p>
         <p>Email <a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> to exercise a right that is not available in Profile. We may verify your identity before acting. An authorized agent may submit a request where permitted by law. We will not discriminate against you for exercising a privacy right.</p>
       </LegalSection>

@@ -456,3 +456,15 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/email-programs/deno.json"
 entrypoint = "./functions/email-programs/index.ts"
+
+[functions.email-unsubscribe]
+enabled = true
+verify_jwt = false
+import_map = "./functions/email-unsubscribe/deno.json"
+entrypoint = "./functions/email-unsubscribe/index.ts"
+
+[functions.email-health]
+enabled = true
+verify_jwt = false
+import_map = "./functions/email-health/deno.json"
+entrypoint = "./functions/email-health/index.ts"

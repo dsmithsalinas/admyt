@@ -139,6 +139,30 @@ Shared safety behavior:
 - Guidance sends from `Sage from admyt <guidance@youradmyt.com>` and the digest sends from `Sage from admyt <digest@youradmyt.com>`.
 - Both use the shared delivery ledger, three-attempt retry cap, stable Resend idempotency key, webhook status tracking, and privacy-minimized suppression list.
 
+## One-click unsubscribe
+
+Every optional application email—deadline reminders, getting-started guidance, and the weekly digest—contains a signed program-specific unsubscribe URL served by `email-unsubscribe`.
+
+- The browser-facing `GET` request only shows a confirmation page. This prevents link previews and security scanners from changing a preference.
+- A confirmed browser form `POST` turns off only that program and shows a success page.
+- Each message also carries `List-Unsubscribe: <https://.../email-unsubscribe?token=...>` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. An RFC 8058 provider `POST` performs the same opt-out immediately and returns an empty HTTP 200 response.
+- Tokens contain only the user ID, program, and format version, protected by HMAC-SHA-256. They cannot enable email, read account data, or change another program without a valid signature.
+- `EMAIL_UNSUBSCRIBE_SIGNING_KEY` is shared by the optional-email workers and endpoint. Keep it stable: rotation invalidates links in messages already delivered. If compromise is suspected, rotate it immediately and accept that old unsubscribe links will direct students to Profile instead.
+- `email-unsubscribe` has gateway JWT verification disabled because email recipients may not have an active session. The signed token is its authorization boundary; service-role credentials never leave the function.
+
+## Email operations monitoring
+
+`deadline-reminders` and `email-programs` write one aggregate row to `email_worker_runs` for every authenticated invocation, including disabled and zero-recipient runs. Rows contain the worker name, request ID, status, duration, and aggregate counters only—never recipient addresses, subjects, or message content. `admyt-email-worker-run-cleanup` removes rows older than 90 days each Sunday.
+
+`email-health` is a public-network endpoint protected by the dedicated bearer secret `EMAIL_OPERATIONS_MONITOR_TOKEN`. It returns HTTP 503 when:
+
+- `email-programs` has not recorded a run within 2 hours;
+- `deadline-reminders` has not recorded a run within 27 hours;
+- the latest run failed or reported any delivery failures; or
+- a worker exceeded `EMAIL_OPERATIONS_MAX_SENDS_PER_RUN` in one invocation (default 100).
+
+`.github/workflows/email-operations.yml` calls the endpoint at minute 37 every hour and fails on any HTTP 503. GitHub Actions failure notifications are the external alert path, so a Supabase Cron-wide outage remains detectable. Keep the same random `EMAIL_OPERATIONS_MONITOR_TOKEN` in Supabase Edge Function secrets and the GitHub Actions repository secret. The endpoint never returns addresses or message content.
+
 ## Deployment order
 
 ```bash
@@ -150,6 +174,8 @@ npx supabase functions deploy deadline-reminders
 npx supabase functions deploy resend-webhook --no-verify-jwt
 npx supabase functions deploy welcome-email
 npx supabase functions deploy email-programs
+npx supabase functions deploy email-unsubscribe --no-verify-jwt
+npx supabase functions deploy email-health --no-verify-jwt
 npm run check
 npm run test:e2e
 ```

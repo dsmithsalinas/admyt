@@ -1,0 +1,30 @@
+name: Email operations health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: email-operations-health
+  cancel-in-progress: true
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check scheduled email workers
+        env:
+          MONITOR_TOKEN: ${{ secrets.EMAIL_OPERATIONS_MONITOR_TOKEN }}
+          HEALTH_URL: https://bwegkzzeiasdbuwatglc.supabase.co/functions/v1/email-health
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$MONITOR_TOKEN"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer $MONITOR_TOKEN" \
+            "$HEALTH_URL"
