@@ -207,10 +207,12 @@ test('signed-in students control each optional email program independently', asy
   expect(preferenceWrites[1]).toMatchObject({
     user_id: userId,
     getting_started_enabled: true,
+    getting_started_opted_in_at: expect.any(String),
   })
   expect(preferenceWrites[2]).toMatchObject({
     user_id: userId,
     weekly_digest_enabled: true,
+    weekly_digest_opted_in_at: expect.any(String),
   })
   expect(preferenceWrites.every(write => typeof write.timezone === 'string')).toBe(true)
 })

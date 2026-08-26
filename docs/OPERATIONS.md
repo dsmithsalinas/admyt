@@ -110,6 +110,35 @@ The frontend invokes `welcome-email` only when the authenticated user's account 
 
 For a controlled test, create a disposable confirmed Auth user at a Resend provider-owned test address, sign in as that user, temporarily set `WELCOME_EMAIL_TEST_USER_ID`, invoke the function with the user's JWT, confirm the ledger and webhook event, then delete the user and related test rows before removing the test-user secret.
 
+## Getting-started guidance and weekly digest
+
+`email-programs` is a service-role-only worker invoked hourly by the `admyt-email-programs-hourly` Supabase Cron job. Each run checks the saved IANA time zone and considers a student only around 9:00 local time.
+
+Getting-started guidance:
+
+- Requires the independent `getting_started_enabled` opt-in.
+- Sends at most three messages, eligible roughly 1, 3, and 7 days after the latest opt-in.
+- Covers starting a Sage conversation, using My Schools, and using Vibe Check.
+- Copy adapts to the student's current saved-school and Vibe Check counts.
+- Delivery keys are permanent per user and stage, so toggling the preference does not restart a completed sequence.
+
+Weekly My Schools digest:
+
+- Requires the independent `weekly_digest_enabled` opt-in and at least one saved school.
+- Sends Monday around 9:00 in the student's saved time zone.
+- Shows up to five recently saved schools, their saved Vibe Check scores, up to three upcoming deadlines, and one suggested next step.
+- Includes deadline dates only when the cache was checked within 7 days and has an HTTPS official-source link. Students are still told to confirm dates at the source.
+- Delivery keys include the user's local Monday date, preventing more than one digest per week.
+
+Shared safety behavior:
+
+- `EMAIL_PROGRAMS_ENABLED=true` permits both programs. Set it to `false` for the immediate kill switch.
+- `EMAIL_PROGRAMS_TEST_USER_ID` must remain absent in production. During controlled validation, setting it restricts the worker to one user and bypasses the local-time, weekday, and sequence-delay gates; preference and suppression checks still apply.
+- The database claim rechecks the corresponding opt-in atomically immediately before delivery, closing the opt-out race after the worker's initial query.
+- The worker sends at most one guidance email per user per invocation and skips that user's digest when guidance was sent in the same run.
+- Guidance sends from `Sage from admyt <guidance@youradmyt.com>` and the digest sends from `Sage from admyt <digest@youradmyt.com>`.
+- Both use the shared delivery ledger, three-attempt retry cap, stable Resend idempotency key, webhook status tracking, and privacy-minimized suppression list.
+
 ## Deployment order
 
 ```bash
@@ -120,6 +149,7 @@ npx supabase functions deploy account
 npx supabase functions deploy deadline-reminders
 npx supabase functions deploy resend-webhook --no-verify-jwt
 npx supabase functions deploy welcome-email
+npx supabase functions deploy email-programs
 npm run check
 npm run test:e2e
 ```

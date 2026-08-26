@@ -798,12 +798,9 @@ export default function Profile() {
                 )}
                 <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
                   <div style={{ flex: 1 }}>
-                    <div className="filters" style={{ gap: 8 }}>
-                      <strong style={{ color: 'var(--admyt-ink)' }}>Getting-started guidance</strong>
-                      <span className="pill">Coming next</span>
-                    </div>
+                    <strong style={{ color: 'var(--admyt-ink)' }}>Getting-started guidance</strong>
                     <p className="match-note" style={{ margin: '5px 0 0' }}>
-                      A few short notes to help you get more from Sage, My Schools, and Vibe Check when they launch.
+                      Up to three short notes during the first week after you turn this on, covering Sage, My Schools, and Vibe Check.
                     </p>
                   </div>
                   <EmailPreferenceSwitch
@@ -816,12 +813,9 @@ export default function Profile() {
                 </div>
                 <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
                   <div style={{ flex: 1 }}>
-                    <div className="filters" style={{ gap: 8 }}>
-                      <strong style={{ color: 'var(--admyt-ink)' }}>Weekly My Schools digest</strong>
-                      <span className="pill">Coming next</span>
-                    </div>
+                    <strong style={{ color: 'var(--admyt-ink)' }}>Weekly My Schools digest</strong>
                     <p className="match-note" style={{ margin: '5px 0 0' }}>
-                      One weekly snapshot of useful changes and next steps for your saved schools when it launches.
+                      A Monday snapshot of your saved schools, Vibe Checks, upcoming verified dates, and one useful next step. Sent when you have at least one saved school.
                     </p>
                   </div>
                   <EmailPreferenceSwitch

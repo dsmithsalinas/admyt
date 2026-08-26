@@ -47,15 +47,22 @@ const preferenceColumns: Record<NotificationPreferenceKey, string> = {
   weeklyDigestEnabled: "weekly_digest_enabled",
 };
 
+const optedInAtColumns: Partial<Record<NotificationPreferenceKey, string>> = {
+  gettingStartedEnabled: "getting_started_opted_in_at",
+  weeklyDigestEnabled: "weekly_digest_opted_in_at",
+};
+
 export async function saveNotificationPreference(
   userId: string,
   preference: NotificationPreferenceKey,
   enabled: boolean,
 ): Promise<void> {
+  const optedInAtColumn = optedInAtColumns[preference];
   const { error } = await supabase.from("notification_preferences").upsert(
     {
       user_id: userId,
       [preferenceColumns[preference]]: enabled,
+      ...(optedInAtColumn ? { [optedInAtColumn]: enabled ? new Date().toISOString() : null } : {}),
       timezone: browserTimezone(),
       updated_at: new Date().toISOString(),
     },

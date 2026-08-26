@@ -450,3 +450,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/welcome-email/deno.json"
 entrypoint = "./functions/welcome-email/index.ts"
+
+[functions.email-programs]
+enabled = true
+verify_jwt = true
+import_map = "./functions/email-programs/deno.json"
+entrypoint = "./functions/email-programs/index.ts"
