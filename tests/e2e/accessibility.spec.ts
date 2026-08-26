@@ -41,7 +41,7 @@ async function expectNoMajorAccessibilityViolations(page: Page) {
   expect(summary, JSON.stringify(summary, null, 2)).toEqual([])
 }
 
-for (const route of ['/', '/chat', '/search', '/profile', '/data-and-privacy', '/terms', '/privacy']) {
+for (const route of ['/', '/chat', '/search', '/profile', '/data-and-privacy', '/terms', '/privacy', '/admin', '/email-operations']) {
   test(`${route} has no serious or critical automated accessibility violations`, async ({ page }) => {
     await mockSupabase(page)
     await page.goto(route)

@@ -165,7 +165,9 @@ Every optional application email—deadline reminders, getting-started guidance,
 
 ## Email operations console
 
-The authenticated `/email-operations` route is the internal control surface for application email. It previews the same shared renderers used by the production workers, can send a selected template to the signed-in administrator's own address, and shows opt-in counts, recent worker runs, delivery status, webhook activity, and suppression totals.
+The authenticated `/admin` route is the internal system-health overview. It reports four signals already recorded by Admyt: the rolling Sage AI request budget, College Scorecard record count and refresh age, hourly guidance/digest worker health, and daily deadline-reminder worker health. The page is read-only and returns no student identifiers or message content.
+
+`/email-operations` is the first linked admin module. It previews the same shared renderers used by the production workers, can send a selected template to the signed-in administrator's own address, and shows opt-in counts, recent worker runs, delivery status, webhook activity, and suppression totals.
 
 Access is enforced inside the `email-operations` Edge Function. The frontend route is not an authorization boundary. Set a comma-separated allowlist using the exact email addresses of authorized Supabase Auth accounts:
 
@@ -179,7 +181,7 @@ npx supabase functions deploy email-operations
 - Preview content uses bounded sample data and a sandboxed iframe. It does not load a student's account data.
 - Dashboard responses omit recipient addresses, user IDs, provider message IDs, and suppression hashes.
 - The Resend API key and Supabase service-role key remain inside the Edge Function.
-- Keep the route out of normal student navigation. Authorized operators can bookmark `https://youradmyt.com/email-operations`.
+- Keep both routes out of normal student navigation. Authorized operators can bookmark `https://youradmyt.com/admin`; signed-out and unauthorized visitors receive a generic denial page that does not identify the internal tools.
 
 ## Deployment order
 

@@ -34,6 +34,18 @@ function countBy<T extends string>(values: Array<T | null>, keys: readonly T[]):
   return counts;
 }
 
+interface WorkerHealthRun {
+  worker: "deadline_reminders" | "email_programs";
+  status: "success" | "failed" | "disabled";
+  metrics: Record<string, unknown>;
+  finished_at: string;
+}
+
+function numericMetric(run: WorkerHealthRun, key: string): number {
+  const value = run.metrics?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "GET" && req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -100,6 +112,108 @@ Deno.serve(async (req) => {
       });
       if (!response.ok) return json({ error: "test_send_failed", provider_status: response.status }, 502);
       return json({ sent: true, recipient: email, template: preview.id });
+    }
+    if (body.action === "system_health") {
+      const [workerRuns, budgetRow, catalogRow] = await Promise.all([
+        admin.from("email_worker_runs")
+          .select("worker,status,metrics,finished_at")
+          .order("finished_at", { ascending: false })
+          .limit(20),
+        admin.from("rate_limits")
+          .select("count,window_start")
+          .eq("key", "global:anthropic:rolling-day")
+          .maybeSingle(),
+        admin.from("data_source_status")
+          .select("source,last_refreshed_at,record_count,details")
+          .eq("source", "college_scorecard")
+          .maybeSingle(),
+      ]);
+      const healthQueryError = [workerRuns, budgetRow, catalogRow].find((result) => result.error)?.error;
+      if (healthQueryError) return json({ error: "operations_query_failed" }, 500);
+
+      const issues: string[] = [];
+      const latestRuns = new Map<string, WorkerHealthRun>();
+      for (const run of (workerRuns.data ?? []) as WorkerHealthRun[]) {
+        if (!latestRuns.has(run.worker)) latestRuns.set(run.worker, run);
+      }
+
+      const workerConfigs = [
+        { name: "email_programs" as const, label: "Guidance + digest", staleAfterMs: 2 * 60 * 60 * 1000 },
+        { name: "deadline_reminders" as const, label: "Deadline reminders", staleAfterMs: 27 * 60 * 60 * 1000 },
+      ];
+      const workers = Object.fromEntries(workerConfigs.map((config) => {
+        const run = latestRuns.get(config.name);
+        if (!run) {
+          issues.push(`${config.label} has not recorded a run yet.`);
+          return [config.name, {
+            label: config.label, state: "attention", status: "missing", finished_at: null,
+            sent_count: 0, failure_count: 0,
+          }];
+        }
+        const sentCount = numericMetric(run, "sent_count");
+        const failureCount = numericMetric(run, "failure_count");
+        const ageMs = Date.now() - Date.parse(run.finished_at);
+        let state: "healthy" | "attention" | "paused" = "healthy";
+        if (run.status === "disabled") {
+          state = "paused";
+          issues.push(`${config.label} is paused by its server-side kill switch.`);
+        } else if (run.status === "failed" || failureCount > 0) {
+          state = "attention";
+          issues.push(`${config.label} reported a failed run or delivery failure.`);
+        } else if (!Number.isFinite(ageMs) || ageMs > config.staleAfterMs) {
+          state = "attention";
+          issues.push(`${config.label} has not completed within its expected schedule.`);
+        }
+        return [config.name, {
+          label: config.label, state, status: run.status, finished_at: run.finished_at,
+          sent_count: sentCount, failure_count: failureCount,
+        }];
+      }));
+
+      const configuredAiLimit = Number(env("ANTHROPIC_DAILY_REQUEST_LIMIT"));
+      const aiLimit = Number.isFinite(configuredAiLimit) && configuredAiLimit > 0 ? configuredAiLimit : 100;
+      const storedBudget = budgetRow.data as { count: number; window_start: string } | null;
+      const budgetWindowActive = storedBudget
+        ? Date.now() - Date.parse(storedBudget.window_start) <= 24 * 60 * 60 * 1000
+        : false;
+      const aiUsed = budgetWindowActive ? Math.max(Number(storedBudget?.count ?? 0), 0) : 0;
+      const aiRatio = aiUsed / aiLimit;
+      const aiState = aiRatio >= 0.8 ? "attention" : "healthy";
+      if (aiState === "attention") issues.push(`Sage has used ${aiUsed} of ${aiLimit} requests in the rolling AI budget window.`);
+
+      const catalog = catalogRow.data as {
+        source: string;
+        last_refreshed_at: string;
+        record_count: number;
+        details: { provider?: unknown } | null;
+      } | null;
+      const catalogAgeMs = catalog ? Date.now() - Date.parse(catalog.last_refreshed_at) : Number.POSITIVE_INFINITY;
+      const catalogState = catalog && catalog.record_count > 0 && Number.isFinite(catalogAgeMs) && catalogAgeMs <= 90 * 24 * 60 * 60 * 1000
+        ? "healthy"
+        : "attention";
+      if (catalogState === "attention") issues.push("The college catalog is missing, empty, or more than 90 days old.");
+
+      return json({
+        admin: { email },
+        generated_at: new Date().toISOString(),
+        overall: { state: issues.length === 0 ? "healthy" : "attention", issue_count: issues.length },
+        ai_budget: {
+          state: aiState,
+          used: aiUsed,
+          limit: aiLimit,
+          remaining: Math.max(aiLimit - aiUsed, 0),
+          window_start: budgetWindowActive ? storedBudget?.window_start ?? null : null,
+        },
+        catalog: {
+          state: catalogState,
+          source: catalog?.source ?? "college_scorecard",
+          provider: typeof catalog?.details?.provider === "string" ? catalog.details.provider : "U.S. Department of Education College Scorecard",
+          record_count: Number(catalog?.record_count ?? 0),
+          last_refreshed_at: catalog?.last_refreshed_at ?? null,
+        },
+        workers,
+        issues,
+      });
     }
     if (body.action !== "dashboard") return json({ error: "invalid_request" }, 400);
   }

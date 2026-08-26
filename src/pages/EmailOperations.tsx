@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Activity, CheckCircle2, Mail, RefreshCw, Send, ShieldAlert } from 'lucide-react'
+import AdminShell from '@/components/admin/AdminShell'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 
@@ -158,21 +159,23 @@ export default function EmailOperations() {
   }
 
   if (authLoading || loading) {
-    return <div className="email-ops-page"><div className="mock-card section-pad"><p className="match-note">Loading email operations…</p></div></div>
+    return <div className="email-ops-page"><div className="mock-card section-pad"><p className="match-note">Checking access…</p></div></div>
   }
 
   if (!user) {
-    return <div className="email-ops-page"><div className="mock-card section-pad"><h1>Email operations</h1><p className="match-note">Sign in with an authorized account to continue.</p></div></div>
+    return <div className="email-ops-page"><div className="mock-card section-pad"><h1>Not authorized</h1><p className="match-note">You don’t have access to this page.</p></div></div>
   }
 
   if (error && !dashboard) {
-    return <div className="email-ops-page"><div className="mock-card section-pad email-ops-access-error"><ShieldAlert size={24} /><h1>Email operations</h1><p className="match-note">{error}</p></div></div>
+    const denied = error.includes('does not have access') || error.includes('Sign in again')
+    return <div className="email-ops-page"><div className="mock-card section-pad email-ops-access-error"><ShieldAlert size={24} /><h1>{denied ? 'Not authorized' : 'Admin tools unavailable'}</h1><p className="match-note">{denied ? 'You don’t have access to this page.' : error}</p></div></div>
   }
 
   if (!dashboard) return null
   const last24 = dashboard.summary.last_24_hours
 
   return (
+    <AdminShell>
     <div className="email-ops-page">
       <header className="email-ops-header">
         <div>
@@ -302,5 +305,6 @@ export default function EmailOperations() {
         </div>
       </section>
     </div>
+    </AdminShell>
   )
 }

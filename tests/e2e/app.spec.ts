@@ -58,6 +58,20 @@ test('data and privacy disclosures are reachable without signing in', async ({ p
   await expect(page.getByText(/3,881 schools/i)).toBeVisible()
 })
 
+test('email operations stays undisclosed to signed-out visitors', async ({ page }) => {
+  await mockSupabase(page)
+  await page.goto('/email-operations')
+  await expect(page.getByRole('heading', { name: 'Not authorized' })).toBeVisible()
+  await expect(page.getByText('You don’t have access to this page.')).toBeVisible()
+  await expect(page.getByText('Email operations')).toHaveCount(0)
+  await expect(page).toHaveTitle('Not authorized — admyt')
+
+  await page.goto('/admin')
+  await expect(page.getByRole('heading', { name: 'Not authorized' })).toBeVisible()
+  await expect(page.getByText('System health')).toHaveCount(0)
+  await expect(page).toHaveTitle('Not authorized — admyt')
+})
+
 test('Terms and Privacy Policy are public and passwordless signup requires acceptance', async ({ page }) => {
   await mockSupabase(page)
   let otpRequestedFor: string | null = null
@@ -200,6 +214,8 @@ test('signed-in students control each optional email program independently', asy
   await guidanceSwitch.click()
   await digestSwitch.click()
 
+  await expect.poll(() => preferenceWrites.length).toBe(3)
+
   expect(preferenceWrites[0]).toMatchObject({
     user_id: userId,
     deadline_reminders_enabled: true,
@@ -215,6 +231,67 @@ test('signed-in students control each optional email program independently', asy
     weekly_digest_opted_in_at: expect.any(String),
   })
   expect(preferenceWrites.every(write => typeof write.timezone === 'string')).toBe(true)
+})
+
+test('authorized operators can review system health from the admin overview', async ({ page }) => {
+  await mockSupabase(page)
+  const userId = '33333333-3333-4333-8333-333333333333'
+
+  await page.addInitScript(({ id }) => {
+    const user = {
+      id,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'owner@example.com',
+      app_metadata: {},
+      user_metadata: {},
+      identities: [],
+      created_at: '2026-08-01T00:00:00.000Z',
+    }
+    localStorage.setItem('sb-example-auth-token', JSON.stringify({
+      access_token: 'test-access-token',
+      refresh_token: 'test-refresh-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user,
+    }))
+  }, { id: userId })
+
+  await page.route('https://example.supabase.co/rest/v1/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.route('https://example.supabase.co/functions/v1/email-operations', async route => {
+    expect(route.request().postDataJSON()).toEqual({ action: 'system_health' })
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        admin: { email: 'owner@example.com' },
+        generated_at: '2026-08-25T22:00:00Z',
+        overall: { state: 'healthy', issue_count: 0 },
+        ai_budget: { state: 'healthy', used: 18, limit: 100, remaining: 82, window_start: '2026-08-25T08:00:00Z' },
+        catalog: {
+          state: 'healthy', source: 'college_scorecard', provider: 'U.S. Department of Education College Scorecard',
+          record_count: 3881, last_refreshed_at: '2026-07-10T05:47:00Z',
+        },
+        workers: {
+          email_programs: { label: 'Guidance + digest', state: 'healthy', status: 'success', finished_at: '2026-08-25T21:00:00Z', sent_count: 2, failure_count: 0 },
+          deadline_reminders: { label: 'Deadline reminders', state: 'healthy', status: 'success', finished_at: '2026-08-25T15:00:00Z', sent_count: 1, failure_count: 0 },
+        },
+        issues: [],
+      }),
+    })
+  })
+
+  await page.goto('/admin')
+  await expect(page.getByRole('heading', { name: 'Everything in one calm view.' })).toBeVisible()
+  await expect(page.getByText('All monitored systems look healthy.')).toBeVisible()
+  await expect(page.getByText('18 of 100 requests')).toBeVisible()
+  await expect(page.getByText('3,881 schools')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Email operations' })).toBeVisible()
 })
 
 test('authorized operators can preview templates and send a test only to themselves', async ({ page }) => {

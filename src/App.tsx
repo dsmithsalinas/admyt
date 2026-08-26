@@ -19,6 +19,7 @@ const Profile = lazy(() => import('@/pages/Profile'))
 const DataAndPrivacy = lazy(() => import('@/pages/DataAndPrivacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
+const Admin = lazy(() => import('@/pages/Admin'))
 const EmailOperations = lazy(() => import('@/pages/EmailOperations'))
 
 function LoadingOrb() {
@@ -41,6 +42,7 @@ function RootRoute() {
 
 function RouteAccessibility() {
   const location = useLocation()
+  const { user } = useAuth()
   const previousPath = useRef(location.pathname)
   const pageName = location.pathname === '/'
     ? 'Admyt home'
@@ -56,8 +58,10 @@ function RouteAccessibility() {
     ? 'Terms'
     : location.pathname === '/privacy'
     ? 'Privacy policy'
+    : location.pathname === '/admin'
+    ? user ? 'Admin overview' : 'Not authorized'
     : location.pathname === '/email-operations'
-    ? 'Email operations'
+    ? user ? 'Email operations' : 'Not authorized'
     : location.pathname.includes('/vibe')
     ? 'Vibe Check'
     : 'College details'
@@ -99,6 +103,7 @@ export default function App() {
                       <Route path="/data-and-privacy" element={<DataAndPrivacy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/admin" element={<Admin />} />
                       <Route path="/email-operations" element={<EmailOperations />} />
                     </Route>
                   </Routes>
