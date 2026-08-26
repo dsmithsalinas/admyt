@@ -169,6 +169,8 @@ The authenticated `/admin` route is the internal system-health overview. It repo
 
 `/email-operations` is the first linked admin module. It previews the same shared renderers used by the production workers, can send a selected template to the signed-in administrator's own address, and shows opt-in counts, recent worker runs, delivery status, webhook activity, and suppression totals.
 
+`/admin/data-quality` is the read-only deadline review queue. It aggregates saved-school rows by college, compares them with the shared deadline cache, and reports records that are missing deadlines, missing an HTTPS official source, or older than the seven-day verification window required for application email. Responses include school names and aggregate save counts but never user IDs or recipient addresses. The first version intentionally does not mutate or force-refresh deadline data.
+
 Access is enforced inside the `email-operations` Edge Function. The frontend route is not an authorization boundary. Set a comma-separated allowlist using the exact email addresses of authorized Supabase Auth accounts:
 
 ```bash

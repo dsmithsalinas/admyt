@@ -70,6 +70,11 @@ test('email operations stays undisclosed to signed-out visitors', async ({ page 
   await expect(page.getByRole('heading', { name: 'Not authorized' })).toBeVisible()
   await expect(page.getByText('System health')).toHaveCount(0)
   await expect(page).toHaveTitle('Not authorized — admyt')
+
+  await page.goto('/admin/data-quality')
+  await expect(page.getByRole('heading', { name: 'Not authorized' })).toBeVisible()
+  await expect(page.getByText('College data')).toHaveCount(0)
+  await expect(page).toHaveTitle('Not authorized — admyt')
 })
 
 test('Terms and Privacy Policy are public and passwordless signup requires acceptance', async ({ page }) => {
@@ -292,6 +297,67 @@ test('authorized operators can review system health from the admin overview', as
   await expect(page.getByText('18 of 100 requests')).toBeVisible()
   await expect(page.getByText('3,881 schools')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Email operations' })).toBeVisible()
+})
+
+test('authorized operators can review saved-school deadline quality', async ({ page }) => {
+  await mockSupabase(page)
+  const userId = '44444444-4444-4444-8444-444444444444'
+
+  await page.addInitScript(({ id }) => {
+    const user = {
+      id,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'owner@example.com',
+      app_metadata: {},
+      user_metadata: {},
+      identities: [],
+      created_at: '2026-08-01T00:00:00.000Z',
+    }
+    localStorage.setItem('sb-example-auth-token', JSON.stringify({
+      access_token: 'test-access-token',
+      refresh_token: 'test-refresh-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user,
+    }))
+  }, { id: userId })
+
+  await page.route('https://example.supabase.co/rest/v1/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.route('https://example.supabase.co/functions/v1/email-operations', async route => {
+    expect(route.request().postDataJSON()).toEqual({ action: 'data_quality' })
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        admin: { email: 'owner@example.com' },
+        generated_at: '2026-08-25T22:00:00Z',
+        summary: { saved_school_records: 7, unique_saved_schools: 3, verified: 1, stale: 1, missing_source: 0, missing: 1 },
+        catalog: {
+          source: 'college_scorecard', provider: 'U.S. Department of Education College Scorecard',
+          record_count: 3881, last_refreshed_at: '2026-07-10T05:47:00Z',
+        },
+        schools: [
+          { college_id: '1', college_name: 'Engineering College', saved_count: 4, state: 'missing', updated_at: null, source_url: null, round_count: 0 },
+          { college_id: '2', college_name: 'Liberal Arts University', saved_count: 2, state: 'stale', updated_at: '2026-08-01T10:00:00Z', source_url: 'https://example.edu/admissions', round_count: 2 },
+        ],
+      }),
+    })
+  })
+
+  await page.goto('/admin/data-quality')
+  await expect(page.getByRole('heading', { name: 'Deadline quality, without the digging.' })).toBeVisible()
+  await expect(page.getByText('2 schools need attention')).toBeVisible()
+  await expect(page.getByText('Engineering College')).toBeVisible()
+  await page.getByRole('button', { name: 'Recheck' }).click()
+  await expect(page.getByText('Liberal Arts University')).toBeVisible()
+  await expect(page.getByText('Engineering College')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Official source' })).toHaveAttribute('href', 'https://example.edu/admissions')
 })
 
 test('authorized operators can preview templates and send a test only to themselves', async ({ page }) => {

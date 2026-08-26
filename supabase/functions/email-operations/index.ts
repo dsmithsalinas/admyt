@@ -215,6 +215,98 @@ Deno.serve(async (req) => {
         issues,
       });
     }
+    if (body.action === "data_quality") {
+      const [savedSchools, deadlineRows, catalogRow] = await Promise.all([
+        admin.from("hearted_schools")
+          .select("college_id,college_name")
+          .limit(5000),
+        admin.from("college_deadlines")
+          .select("college_id,deadlines,updated_at")
+          .limit(5000),
+        admin.from("data_source_status")
+          .select("source,last_refreshed_at,record_count,details")
+          .eq("source", "college_scorecard")
+          .maybeSingle(),
+      ]);
+      const qualityQueryError = [savedSchools, deadlineRows, catalogRow].find((result) => result.error)?.error;
+      if (qualityQueryError) return json({ error: "operations_query_failed" }, 500);
+
+      const savedSchoolCounts = new Map<string, { name: string; count: number }>();
+      for (const row of savedSchools.data ?? []) {
+        const id = String(row.college_id ?? "");
+        if (!id) continue;
+        const existing = savedSchoolCounts.get(id);
+        savedSchoolCounts.set(id, {
+          name: String(row.college_name ?? existing?.name ?? "Unknown school"),
+          count: (existing?.count ?? 0) + 1,
+        });
+      }
+
+      const deadlinesByCollege = new Map<string, { deadlines: unknown; updated_at: string }>();
+      for (const row of deadlineRows.data ?? []) {
+        deadlinesByCollege.set(String(row.college_id), {
+          deadlines: row.deadlines,
+          updated_at: String(row.updated_at),
+        });
+      }
+
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const schools = [...savedSchoolCounts.entries()].map(([collegeId, saved]) => {
+        const cached = deadlinesByCollege.get(collegeId);
+        const deadlineObject = cached?.deadlines && typeof cached.deadlines === "object"
+          ? cached.deadlines as { rounds?: unknown; source_url?: unknown }
+          : null;
+        const rounds = Array.isArray(deadlineObject?.rounds) ? deadlineObject.rounds : [];
+        const sourceUrl = typeof deadlineObject?.source_url === "string" ? deadlineObject.source_url : null;
+        const hasOfficialSource = Boolean(sourceUrl?.startsWith("https://"));
+        const ageMs = cached ? Date.now() - Date.parse(cached.updated_at) : Number.POSITIVE_INFINITY;
+        let state: "verified" | "stale" | "missing_source" | "missing" = "verified";
+        if (!cached || rounds.length === 0) state = "missing";
+        else if (!hasOfficialSource) state = "missing_source";
+        else if (!Number.isFinite(ageMs) || ageMs > sevenDaysMs) state = "stale";
+        return {
+          college_id: collegeId,
+          college_name: saved.name,
+          saved_count: saved.count,
+          state,
+          updated_at: cached?.updated_at ?? null,
+          source_url: hasOfficialSource ? sourceUrl : null,
+          round_count: rounds.length,
+        };
+      });
+      const statePriority = { missing: 0, missing_source: 1, stale: 2, verified: 3 } as const;
+      schools.sort((left, right) => statePriority[left.state] - statePriority[right.state]
+        || right.saved_count - left.saved_count
+        || left.college_name.localeCompare(right.college_name));
+
+      const summary = {
+        saved_school_records: savedSchools.data?.length ?? 0,
+        unique_saved_schools: schools.length,
+        verified: schools.filter((school) => school.state === "verified").length,
+        stale: schools.filter((school) => school.state === "stale").length,
+        missing_source: schools.filter((school) => school.state === "missing_source").length,
+        missing: schools.filter((school) => school.state === "missing").length,
+      };
+      const catalog = catalogRow.data as {
+        source: string;
+        last_refreshed_at: string;
+        record_count: number;
+        details: { provider?: unknown } | null;
+      } | null;
+
+      return json({
+        admin: { email },
+        generated_at: new Date().toISOString(),
+        summary,
+        catalog: {
+          source: catalog?.source ?? "college_scorecard",
+          provider: typeof catalog?.details?.provider === "string" ? catalog.details.provider : "U.S. Department of Education College Scorecard",
+          record_count: Number(catalog?.record_count ?? 0),
+          last_refreshed_at: catalog?.last_refreshed_at ?? null,
+        },
+        schools: schools.filter((school) => school.state !== "verified").slice(0, 50),
+      });
+    }
     if (body.action !== "dashboard") return json({ error: "invalid_request" }, 400);
   }
 

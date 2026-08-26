@@ -20,6 +20,7 @@ const DataAndPrivacy = lazy(() => import('@/pages/DataAndPrivacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Admin = lazy(() => import('@/pages/Admin'))
+const AdminDataQuality = lazy(() => import('@/pages/AdminDataQuality'))
 const EmailOperations = lazy(() => import('@/pages/EmailOperations'))
 
 function LoadingOrb() {
@@ -58,6 +59,8 @@ function RouteAccessibility() {
     ? 'Terms'
     : location.pathname === '/privacy'
     ? 'Privacy policy'
+    : location.pathname === '/admin/data-quality'
+    ? user ? 'Data quality' : 'Not authorized'
     : location.pathname === '/admin'
     ? user ? 'Admin overview' : 'Not authorized'
     : location.pathname === '/email-operations'
@@ -104,6 +107,7 @@ export default function App() {
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/admin" element={<Admin />} />
+                      <Route path="/admin/data-quality" element={<AdminDataQuality />} />
                       <Route path="/email-operations" element={<EmailOperations />} />
                     </Route>
                   </Routes>
