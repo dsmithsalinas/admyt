@@ -468,3 +468,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/email-health/deno.json"
 entrypoint = "./functions/email-health/index.ts"
+
+[functions.email-operations]
+enabled = true
+verify_jwt = true
+import_map = "./functions/email-operations/deno.json"
+entrypoint = "./functions/email-operations/index.ts"

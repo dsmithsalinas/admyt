@@ -216,3 +216,91 @@ test('signed-in students control each optional email program independently', asy
   })
   expect(preferenceWrites.every(write => typeof write.timezone === 'string')).toBe(true)
 })
+
+test('authorized operators can preview templates and send a test only to themselves', async ({ page }) => {
+  await mockSupabase(page)
+  const userId = '22222222-2222-4222-8222-222222222222'
+  const actions: Array<Record<string, unknown>> = []
+
+  await page.addInitScript(({ id }) => {
+    const user = {
+      id,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'owner@example.com',
+      app_metadata: {},
+      user_metadata: {},
+      identities: [],
+      created_at: '2026-08-01T00:00:00.000Z',
+    }
+    localStorage.setItem('sb-example-auth-token', JSON.stringify({
+      access_token: 'test-access-token',
+      refresh_token: 'test-refresh-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user,
+    }))
+  }, { id: userId })
+
+  await page.route('https://example.supabase.co/rest/v1/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.route('https://example.supabase.co/functions/v1/email-operations', async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    actions.push(body)
+    if (body.action === 'preview') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ preview: {
+          id: body.template,
+          name: 'Welcome',
+          description: 'Preview',
+          from: 'Sage from admyt <hello@youradmyt.com>',
+          subject: 'You’re in. Let’s find where you fit.',
+          html: '<!doctype html><html><body><h1>Preview ready</h1></body></html>',
+          text: 'Preview ready',
+        } }),
+      })
+      return
+    }
+    if (body.action === 'send_test') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sent: true, recipient: 'owner@example.com' }) })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        admin: { email: 'owner@example.com' },
+        templates: [
+          { id: 'welcome', name: 'Welcome', description: 'The one-time welcome.' },
+          { id: 'weekly_digest', name: 'Weekly digest', description: 'Monday snapshot.' },
+        ],
+        summary: {
+          opted_in: { deadline_reminders: 2, getting_started: 3, weekly_digest: 4 },
+          suppressions: { total: 1, by_reason: { bounce: 1, complaint: 0, provider_suppression: 0, manual: 0 } },
+          last_24_hours: {
+            delivery_status: { pending: 0, sent: 5, failed: 0 },
+            provider_status: { delivered: 5, bounced: 0, complained: 0, suppressed: 0 },
+          },
+        },
+        runs: [{ worker: 'email_programs', status: 'success', metrics: { sent_count: 2, failure_count: 0 }, error_code: null, finished_at: '2026-08-25T19:00:00Z', duration_ms: 412 }],
+        deliveries: [{ kind: 'weekly_digest', status: 'sent', provider_status: 'delivered', error_code: null, sent_at: '2026-08-25T19:00:00Z', created_at: '2026-08-25T19:00:00Z' }],
+        events: [{ event_type: 'email.delivered', occurred_at: '2026-08-25T19:01:00Z', received_at: '2026-08-25T19:01:01Z' }],
+        suppressions: [],
+      }),
+    })
+  })
+
+  await page.goto('/email-operations')
+  await expect(page.getByRole('heading', { name: 'Email operations' })).toBeVisible()
+  await expect(page.getByText('Sent · 24 hours')).toBeVisible()
+  await expect(page.frameLocator('iframe[title="Welcome email preview"]').getByRole('heading', { name: 'Preview ready' })).toBeVisible()
+  await page.getByRole('button', { name: 'Send test to me' }).click()
+  await expect(page.getByText('Test sent to owner@example.com.')).toBeVisible()
+  expect(actions).toContainEqual({ action: 'send_test', template: 'welcome' })
+})

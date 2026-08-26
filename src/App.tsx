@@ -19,6 +19,7 @@ const Profile = lazy(() => import('@/pages/Profile'))
 const DataAndPrivacy = lazy(() => import('@/pages/DataAndPrivacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
+const EmailOperations = lazy(() => import('@/pages/EmailOperations'))
 
 function LoadingOrb() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
                       <Route path="/data-and-privacy" element={<DataAndPrivacy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/email-operations" element={<EmailOperations />} />
                     </Route>
                   </Routes>
                 </Suspense>

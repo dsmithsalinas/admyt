@@ -3,13 +3,12 @@ import { createClient } from "npm:@supabase/supabase-js@2.108.1";
 import { emailFingerprint } from "../_shared/email-fingerprint.ts";
 import { createUnsubscribeUrl } from "../_shared/email-unsubscribe.ts";
 import { recordEmailWorkerRun } from "../_shared/email-worker-run.ts";
+import { deadlineReminderEmailContent } from "../_shared/deadline-email-content.ts";
 
 const MAX_USERS_PER_RUN = 500;
 const MAX_CACHE_AGE_DAYS = 7;
 const MAX_DEADLINE_REFRESHES_PER_RUN = 5;
 const LEAD_DAYS = new Set([7, 30]);
-const APP_URL = "https://youradmyt.com/profile";
-
 interface PreferenceRow {
   user_id: string;
   timezone: string;
@@ -108,16 +107,6 @@ function log(
   if (level === "error") console.error(entry);
   else console.log(entry);
 }
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, (char) =>
-    ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "'": "&#39;",
-      '"': "&quot;",
-    })[char] ?? char);
-}
 function validSourceUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   try {
@@ -148,58 +137,6 @@ function daysBetween(fromIso: string, toIso: string): number | null {
   const to = Date.parse(`${toIso}T00:00:00Z`);
   if (!Number.isFinite(from) || !Number.isFinite(to)) return null;
   return Math.round((to - from) / 86_400_000);
-}
-function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${iso}T00:00:00Z`));
-}
-function emailContent(reminders: Reminder[], unsubscribeUrl: string) {
-  const one = reminders.length === 1;
-  const subject = one
-    ? `${reminders[0].collegeName} has a deadline coming up`
-    : `${reminders.length} school deadlines are coming up`;
-  const intro = one
-    ? `A date you’re tracking is ${reminders[0].leadDays} days away.`
-    : "A few dates you’re tracking are getting close.";
-  const rows = reminders.map((reminder) => `
-    <tr><td style="padding:16px 0;border-bottom:1px solid #e8e5f0">
-      <div style="font-size:16px;font-weight:700;color:#26233a">${
-    escapeHtml(reminder.collegeName)
-  }</div>
-      <div style="margin-top:5px;font-size:14px;line-height:1.5;color:#5c5870">${
-    escapeHtml(reminder.deadlineType)
-  } · ${
-    escapeHtml(formatDate(reminder.deadlineDate))
-  } · ${reminder.leadDays} days away</div>
-      <a href="${
-    escapeHtml(reminder.sourceUrl)
-  }" style="display:inline-block;margin-top:8px;color:#5754d8;font-size:13px;font-weight:700">Confirm on the school’s site</a>
-    </td></tr>`).join("");
-  const html =
-    `<!doctype html><html><body style="margin:0;background:#f6f4fb;font-family:Arial,sans-serif;color:#26233a"><div style="display:none;max-height:0;overflow:hidden">${
-      escapeHtml(intro)
-    }</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f4fb"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fff;border-radius:18px;padding:32px"><tr><td><div style="font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#5754d8">admyt</div><h1 style="margin:14px 0 8px;font-size:26px;line-height:1.2;color:#26233a">A calm deadline heads-up.</h1><p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:#5c5870">${
-      escapeHtml(intro)
-    }</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows}</table><p style="margin:22px 0 0;font-size:12px;line-height:1.6;color:#777287">Deadline information can change. Always confirm on the school’s official admissions page before relying on it.</p><a href="${APP_URL}" style="display:inline-block;margin-top:22px;padding:12px 18px;border-radius:999px;background:#5754d8;color:#fff;text-decoration:none;font-size:14px;font-weight:700">Open My Schools</a><p style="margin:28px 0 0;font-size:11px;line-height:1.5;color:#8a8698">You opted in to deadline emails in Admyt. <a href="${APP_URL}" style="color:#68647a">Manage reminders</a> · <a href="${escapeHtml(unsubscribeUrl)}" style="color:#68647a">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>`;
-  const text = [
-    "A calm deadline heads-up.",
-    intro,
-    "",
-    ...reminders.flatMap((reminder) => [
-      `${reminder.collegeName} — ${reminder.deadlineType}`,
-      `${formatDate(reminder.deadlineDate)} (${reminder.leadDays} days away)`,
-      `Confirm: ${reminder.sourceUrl}`,
-      "",
-    ]),
-    "Deadline information can change. Always confirm on the school’s official admissions page before relying on it.",
-    `Manage reminders: ${APP_URL}`,
-    `Unsubscribe: ${unsubscribeUrl}`,
-  ].join("\n");
-  return { subject, html, text };
 }
 async function idempotencyKey(
   userId: string,
@@ -269,7 +206,7 @@ Deno.serve(async (req) => {
     }
     const enabled = (preferences ?? []) as PreferenceRow[];
     if (enabled.length === 0) {
-      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "deadline_reminders", requestId, status: "success", metrics: { users_considered: 0, sent_count: 0, failure_count: 0, suppressed_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "deadline_reminders", requestId, status: "success", metrics: { users_considered: 0, sent_count: 0, failure_count: 0, suppressed_count: 0, skipped_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json({ enabled: true, users: 0, sent: 0 }, 200, requestId);
     }
 
@@ -282,7 +219,7 @@ Deno.serve(async (req) => {
     const heartRows = (hearts ?? []) as HeartRow[];
     const collegeIds = [...new Set(heartRows.map((row) => row.college_id))];
     if (collegeIds.length === 0) {
-      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "deadline_reminders", requestId, status: "success", metrics: { users_considered: enabled.length, sent_count: 0, failure_count: 0, suppressed_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "deadline_reminders", requestId, status: "success", metrics: { users_considered: enabled.length, sent_count: 0, failure_count: 0, suppressed_count: 0, skipped_count: enabled.length }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json(
         { enabled: true, users: enabled.length, sent: 0 },
         200,
@@ -337,6 +274,8 @@ Deno.serve(async (req) => {
     let failed = 0;
     let claimed = 0;
     let suppressed = 0;
+    let usersSent = 0;
+    let usersFailed = 0;
     const now = new Date();
     for (const preference of enabled) {
       const today = localDate(preference.timezone, now);
@@ -419,7 +358,7 @@ Deno.serve(async (req) => {
         "deadline_reminders",
         unsubscribeSigningKey,
       );
-      const content = emailContent(reserved, unsubscribeUrl);
+      const content = deadlineReminderEmailContent(reserved, unsubscribeUrl);
       const resendResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -445,6 +384,7 @@ Deno.serve(async (req) => {
           error_code: `resend_${resendResponse.status}`,
         }).in("id", reserved.map((item) => item.deliveryId));
         failed += reserved.length;
+        usersFailed += 1;
         continue;
       }
 
@@ -462,7 +402,10 @@ Deno.serve(async (req) => {
         );
       }
       sent += reserved.length;
+      usersSent += 1;
     }
+
+    const skipped = Math.max(0, enabled.length - usersSent - usersFailed - suppressed);
 
     log("info", "run_completed", {
       request_id: requestId,
@@ -474,6 +417,7 @@ Deno.serve(async (req) => {
       deliveries_sent: sent,
       deliveries_failed: failed,
       suppressed_recipients: suppressed,
+      users_skipped: skipped,
       duration_ms: Date.now() - startedAt,
     });
     await recordEmailWorkerRun({
@@ -487,6 +431,8 @@ Deno.serve(async (req) => {
         sent_count: sent,
         failure_count: failed,
         suppressed_count: suppressed,
+        skipped_count: skipped,
+        users_sent_count: usersSent,
         deliveries_claimed: claimed,
         deadline_refreshes_attempted: refreshTargets.length,
         deadline_refreshes_succeeded: refreshSucceeded,
@@ -495,7 +441,7 @@ Deno.serve(async (req) => {
       durationMs: Date.now() - startedAt,
     });
     return json(
-      { enabled: true, users: enabled.length, claimed, sent, failed, suppressed },
+      { enabled: true, users: enabled.length, claimed, sent, failed, suppressed, skipped },
       200,
       requestId,
     );

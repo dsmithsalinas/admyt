@@ -163,6 +163,24 @@ Every optional application email—deadline reminders, getting-started guidance,
 
 `.github/workflows/email-operations.yml` calls the endpoint at minute 37 every hour and fails on any HTTP 503. GitHub Actions failure notifications are the external alert path, so a Supabase Cron-wide outage remains detectable. Keep the same random `EMAIL_OPERATIONS_MONITOR_TOKEN` in Supabase Edge Function secrets and the GitHub Actions repository secret. The endpoint never returns addresses or message content.
 
+## Email operations console
+
+The authenticated `/email-operations` route is the internal control surface for application email. It previews the same shared renderers used by the production workers, can send a selected template to the signed-in administrator's own address, and shows opt-in counts, recent worker runs, delivery status, webhook activity, and suppression totals.
+
+Access is enforced inside the `email-operations` Edge Function. The frontend route is not an authorization boundary. Set a comma-separated allowlist using the exact email addresses of authorized Supabase Auth accounts:
+
+```bash
+npx supabase secrets set EMAIL_OPERATIONS_ADMIN_EMAILS="owner@example.com" --project-ref bwegkzzeiasdbuwatglc
+npx supabase functions deploy email-operations
+```
+
+- The function verifies the caller's Supabase user JWT and compares the verified Auth email against the server-side allowlist. It never uses editable user metadata for authorization.
+- Test sends always go to that verified administrator address. The request cannot supply a recipient, sender, subject, or HTML.
+- Preview content uses bounded sample data and a sandboxed iframe. It does not load a student's account data.
+- Dashboard responses omit recipient addresses, user IDs, provider message IDs, and suppression hashes.
+- The Resend API key and Supabase service-role key remain inside the Edge Function.
+- Keep the route out of normal student navigation. Authorized operators can bookmark `https://youradmyt.com/email-operations`.
+
 ## Deployment order
 
 ```bash
@@ -176,6 +194,7 @@ npx supabase functions deploy welcome-email
 npx supabase functions deploy email-programs
 npx supabase functions deploy email-unsubscribe --no-verify-jwt
 npx supabase functions deploy email-health --no-verify-jwt
+npx supabase functions deploy email-operations
 npm run check
 npm run test:e2e
 ```

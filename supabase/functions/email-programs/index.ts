@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
     if (preferenceError) throw new Error(`preferences_query_failed:${preferenceError.code ?? "unknown"}`);
     const preferences = (preferenceData ?? []) as PreferenceRow[];
     if (preferences.length === 0) {
-      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "email_programs", requestId, status: "success", metrics: { users_considered: 0, sent_count: 0, failure_count: 0, suppressed_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
+      await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "email_programs", requestId, status: "success", metrics: { users_considered: 0, sent_count: 0, failure_count: 0, suppressed_count: 0, skipped_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json({ enabled: true, users: 0, guidance_sent: 0, digests_sent: 0 }, 200, requestId);
     }
 
@@ -221,6 +221,9 @@ Deno.serve(async (req) => {
     let digestsSent = 0;
     let failed = 0;
     let suppressed = 0;
+    const usersSent = new Set<string>();
+    const usersFailed = new Set<string>();
+    const usersSuppressed = new Set<string>();
 
     async function sendProgramEmail(
       preference: PreferenceRow,
@@ -319,8 +322,14 @@ Deno.serve(async (req) => {
           if (result === "sent") {
             guidanceSent += 1;
             sentGuidanceToday = true;
-          } else if (result === "failed") failed += 1;
-          else if (result === "suppressed") suppressed += 1;
+            usersSent.add(preference.user_id);
+          } else if (result === "failed") {
+            failed += 1;
+            usersFailed.add(preference.user_id);
+          } else if (result === "suppressed") {
+            suppressed += 1;
+            usersSuppressed.add(preference.user_id);
+          }
         }
       }
 
@@ -363,10 +372,20 @@ Deno.serve(async (req) => {
         weeklyDigestEmailContent({ schools: digestSchools, totalSchoolCount: userHearts.length, deadlines: digestDeadlines }, unsubscribeUrl),
         unsubscribeUrl,
       );
-      if (result === "sent") digestsSent += 1;
-      else if (result === "failed") failed += 1;
-      else if (result === "suppressed") suppressed += 1;
+      if (result === "sent") {
+        digestsSent += 1;
+        usersSent.add(preference.user_id);
+      } else if (result === "failed") {
+        failed += 1;
+        usersFailed.add(preference.user_id);
+      } else if (result === "suppressed") {
+        suppressed += 1;
+        usersSuppressed.add(preference.user_id);
+      }
     }
+
+    const usersWithOutcome = new Set([...usersSent, ...usersFailed, ...usersSuppressed]);
+    const skipped = Math.max(0, preferences.length - usersWithOutcome.size);
 
     log("info", "run_completed", {
       request_id: requestId,
@@ -376,6 +395,7 @@ Deno.serve(async (req) => {
       digests_sent: digestsSent,
       deliveries_failed: failed,
       suppressed_recipients: suppressed,
+      users_skipped: skipped,
       duration_ms: Date.now() - startedAt,
     });
     await recordEmailWorkerRun({
@@ -391,11 +411,13 @@ Deno.serve(async (req) => {
         digests_sent: digestsSent,
         failure_count: failed,
         suppressed_count: suppressed,
+        skipped_count: skipped,
+        users_sent_count: usersSent.size,
       },
       startedAt: startedAtIso,
       durationMs: Date.now() - startedAt,
     });
-    return json({ enabled: true, users: preferences.length, guidance_sent: guidanceSent, digests_sent: digestsSent, failed, suppressed }, 200, requestId);
+    return json({ enabled: true, users: preferences.length, guidance_sent: guidanceSent, digests_sent: digestsSent, failed, suppressed, skipped }, 200, requestId);
   } catch (error) {
     const errorCode = error instanceof Error ? error.message : "unknown_error";
     await recordEmailWorkerRun({
