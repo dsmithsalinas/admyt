@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@supabase/functions-js": "jsr:@supabase/functions-js@2.5.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.108.1",
+    "svix": "npm:svix@2.1.0"
+  }
+}

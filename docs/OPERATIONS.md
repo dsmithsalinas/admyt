@@ -2,7 +2,7 @@
 
 ## Edge Function monitoring
 
-The `chat`, `account`, and `deadline-reminders` Edge Functions write single-line JSON events to Supabase logs. Chat completion events include a random request ID, request type, HTTP status, duration in milliseconds, and rolling AI-budget counts. Reminder runs report aggregate user and delivery counts. They intentionally omit prompts, IP addresses, emails, user IDs, and API response bodies.
+The `chat`, `account`, `deadline-reminders`, and `resend-webhook` Edge Functions write single-line JSON events to Supabase logs. Chat completion events include a random request ID, request type, HTTP status, duration in milliseconds, and rolling AI-budget counts. Reminder runs and webhooks report aggregate delivery state only. They intentionally omit prompts, IP addresses, emails, user IDs, webhook bodies, and API response bodies.
 
 In Supabase, open **Edge Functions → chat → Logs**. Investigate repeated `request_failed`, `anthropic_upstream_error`, `anthropic_stream_error`, or `ai_budget_exhausted` events. Use `request_id` to group one request's events. The account function uses the same redaction rule.
 
@@ -84,6 +84,19 @@ Production configuration:
 - `EMAIL_REMINDERS_ENABLED=true` permits sends. Set this Edge Function secret to `false` for the immediate delivery kill switch.
 - `EMAIL_REMINDERS_TEST_USER_ID` must remain absent in production. If it is temporarily set during controlled validation, every other user is ignored.
 
+Resend delivery tracking:
+
+- Endpoint: `https://bwegkzzeiasdbuwatglc.supabase.co/functions/v1/resend-webhook`.
+- Subscribe only to `email.delivered`, `email.bounced`, `email.complained`, `email.suppressed`, and `suppression.added`.
+- Store the endpoint signing secret as the Supabase Edge Function secret `RESEND_WEBHOOK_SECRET`. Never reuse the Resend API key as the webhook secret.
+- `resend-webhook` has gateway JWT verification disabled because Resend does not send a Supabase JWT. The function instead verifies the raw body and `svix-id`, `svix-timestamp`, and `svix-signature` headers before any database write.
+- Event IDs are inserted atomically and duplicate deliveries become no-ops. Raw webhook payloads, recipient addresses, and subjects are not stored.
+- The Resend account is shared with other products. Email events are ignored unless the sender is on `youradmyt.com`; `suppression.added` is ignored unless its source message ID already exists in Admyt's notification ledger.
+- Hard bounces, complaints, provider suppressions, and Resend suppression additions create or refresh an `email_suppressions` row keyed by an HMAC-SHA-256 fingerprint of the lowercase address. The reminder worker checks this table before claiming a delivery. `EMAIL_SUPPRESSION_HASH_KEY` is the shared Edge Function secret used for that fingerprint; rotate it only with a migration plan for existing suppression rows.
+- When a suppression can be correlated to a reminder message, the user's deadline opt-in is turned off automatically.
+
+After changing the webhook, send only to Resend's provider-owned test addresses (`delivered@resend.dev`, `bounced@resend.dev`, `complained@resend.dev`, and `suppressed@resend.dev`). Confirm a valid event returns HTTP 200, a replay remains HTTP 200 without a second event row, and an unsigned POST returns HTTP 400. Never manufacture a fake recipient to test bounce or complaint handling.
+
 Monitor `run_completed` and `run_failed` events plus Resend delivery logs. A high `deliveries_failed` count, unexpected volume, or stale-source concern is a reason to set `EMAIL_REMINDERS_ENABLED=false` before investigating. The first version processes at most 500 opted-in users and refreshes at most five saved schools per invocation; add cursor-based batching before either limit becomes constraining.
 
 ## Deployment order
@@ -94,6 +107,7 @@ npx supabase db push
 npx supabase functions deploy chat
 npx supabase functions deploy account
 npx supabase functions deploy deadline-reminders
+npx supabase functions deploy resend-webhook --no-verify-jwt
 npm run check
 npm run test:e2e
 ```

@@ -1,5 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
+import { emailFingerprint } from "../_shared/email-fingerprint.ts";
 
 const MAX_USERS_PER_RUN = 500;
 const MAX_CACHE_AGE_DAYS = 7;
@@ -225,6 +226,7 @@ Deno.serve(async (req) => {
     const url = env("SUPABASE_URL");
     const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
     const resendKey = env("RESEND_API_KEY");
+    const suppressionHashKey = env("EMAIL_SUPPRESSION_HASH_KEY");
     const testUserId = env("EMAIL_REMINDERS_TEST_USER_ID");
     if (!url || !serviceKey) throw new Error("missing_supabase_configuration");
     if (!hasVerifiedServiceRole(req.headers.get("Authorization"), url)) {
@@ -238,6 +240,7 @@ Deno.serve(async (req) => {
       return json({ enabled: false, sent: 0 }, 200, requestId);
     }
     if (!resendKey) throw new Error("missing_resend_configuration");
+    if (!suppressionHashKey) throw new Error("missing_suppression_configuration");
 
     const admin = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -323,6 +326,7 @@ Deno.serve(async (req) => {
     let sent = 0;
     let failed = 0;
     let claimed = 0;
+    let suppressed = 0;
     const now = new Date();
     for (const preference of enabled) {
       const today = localDate(preference.timezone, now);
@@ -356,6 +360,27 @@ Deno.serve(async (req) => {
       }
       if (candidates.length === 0) continue;
 
+      const { data: authData, error: authError } = await admin.auth.admin
+        .getUserById(preference.user_id);
+      const email = authData?.user?.email;
+      if (authError || !email) {
+        continue;
+      }
+      const { data: suppression, error: suppressionError } = await admin
+        .from("email_suppressions")
+        .select("email_hash")
+        .eq("email_hash", await emailFingerprint(email, suppressionHashKey))
+        .maybeSingle();
+      if (suppressionError) {
+        throw new Error(
+          `suppression_query_failed:${suppressionError.code ?? "unknown"}`,
+        );
+      }
+      if (suppression) {
+        suppressed += 1;
+        continue;
+      }
+
       const reserved: Array<Reminder & { deliveryId: string }> = [];
       for (const reminder of candidates) {
         const { data, error } = await admin.rpc("claim_notification_delivery", {
@@ -377,18 +402,6 @@ Deno.serve(async (req) => {
       }
       if (reserved.length === 0) continue;
       claimed += reserved.length;
-
-      const { data: authData, error: authError } = await admin.auth.admin
-        .getUserById(preference.user_id);
-      const email = authData?.user?.email;
-      if (authError || !email) {
-        await admin.from("notification_deliveries").update({
-          status: "failed",
-          error_code: "recipient_unavailable",
-        }).in("id", reserved.map((item) => item.deliveryId));
-        failed += reserved.length;
-        continue;
-      }
 
       const content = emailContent(reserved);
       const resendResponse = await fetch("https://api.resend.com/emails", {
@@ -440,10 +453,11 @@ Deno.serve(async (req) => {
       deliveries_claimed: claimed,
       deliveries_sent: sent,
       deliveries_failed: failed,
+      suppressed_recipients: suppressed,
       duration_ms: Date.now() - startedAt,
     });
     return json(
-      { enabled: true, users: enabled.length, claimed, sent, failed },
+      { enabled: true, users: enabled.length, claimed, sent, failed, suppressed },
       200,
       requestId,
     );

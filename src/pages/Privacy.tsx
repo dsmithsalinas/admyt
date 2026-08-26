@@ -26,7 +26,7 @@ export default function Privacy() {
           <li><strong>Conversation content:</strong> messages you send to Sage and Sage’s responses.</li>
           <li><strong>College-search preferences:</strong> intended majors, locations, budget, school size, institution type, career goals, and other preferences you choose to share.</li>
           <li><strong>Saved activity:</strong> saved schools, Vibe Checks, Fit Scores, and related notes or results.</li>
-          <li><strong>Email preferences:</strong> whether you opt in to deadline reminders, your time zone, and records needed to prevent duplicate delivery.</li>
+          <li><strong>Email preferences and delivery:</strong> whether you opt in to deadline reminders, your time zone, delivery status, records needed to prevent duplicate delivery, and a one-way email-address fingerprint when a message bounces, is reported as spam, or is suppressed.</li>
           <li><strong>Communications:</strong> information included when you contact us.</li>
         </ul>
         <h3>Information collected automatically</h3>
@@ -81,6 +81,7 @@ export default function Privacy() {
           <li><strong>Guest data:</strong> remains in your browser until it is overwritten, reaches a product limit, or you clear browser data.</li>
           <li><strong>Abuse-prevention identifiers:</strong> rate-limit records are removed after the rate-limit window ends and scheduled cleanup runs, generally within 48 hours.</li>
           <li><strong>Anthropic API data:</strong> handled under the retention practice described in the AI section above.</li>
+          <li><strong>Email suppression records:</strong> a one-way address fingerprint may be retained after account deletion when needed to honor a bounce, spam complaint, or do-not-send restriction. Admyt does not retain the address itself in this suppression record.</li>
           <li><strong>Operational and legal records:</strong> retained only as long as reasonably needed for security, support, dispute resolution, legal compliance, or enforcement.</li>
         </ul>
       </LegalSection>
