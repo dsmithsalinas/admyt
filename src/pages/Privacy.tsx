@@ -26,7 +26,7 @@ export default function Privacy() {
           <li><strong>Conversation content:</strong> messages you send to Sage and Sage’s responses.</li>
           <li><strong>College-search preferences:</strong> intended majors, locations, budget, school size, institution type, career goals, and other preferences you choose to share.</li>
           <li><strong>Saved activity:</strong> saved schools, Vibe Checks, Fit Scores, and related notes or results.</li>
-          <li><strong>Email preferences and delivery:</strong> whether you opt in to deadline reminders, your time zone, delivery status, records needed to prevent duplicate delivery, and a one-way email-address fingerprint when a message bounces, is reported as spam, or is suppressed.</li>
+          <li><strong>Email preferences and delivery:</strong> whether you opt in to deadline reminders, getting-started guidance, or a weekly My Schools digest; your time zone; delivery status; records needed to prevent duplicate delivery; and a one-way email-address fingerprint when a message bounces, is reported as spam, or is suppressed.</li>
           <li><strong>Communications:</strong> information included when you contact us.</li>
         </ul>
         <h3>Information collected automatically</h3>
@@ -44,7 +44,7 @@ export default function Privacy() {
           <li>create and secure accounts;</li>
           <li>provide Sage conversations, Fit Scores, Vibe Checks, saved schools, and preferences;</li>
           <li>personalize college suggestions and let you continue across sessions;</li>
-          <li>send deadline reminders you explicitly choose to receive;</li>
+          <li>send a one-time account welcome and optional emails you explicitly choose to receive;</li>
           <li>operate, troubleshoot, secure, and improve Admyt;</li>
           <li>respond to support, privacy, and safety requests;</li>
           <li>prevent fraud, abuse, and security incidents; and</li>
@@ -65,7 +65,7 @@ export default function Privacy() {
           <li><strong>Supabase:</strong> authentication, database, API, backups, and Edge Functions.</li>
           <li><strong>Anthropic:</strong> AI generation described above.</li>
           <li><strong>Vercel:</strong> website hosting, delivery, and operational security.</li>
-          <li><strong>Resend:</strong> delivery of sign-in codes and deadline reminders.</li>
+          <li><strong>Resend:</strong> delivery of sign-in codes, the one-time account welcome, and optional emails.</li>
           <li><strong>Google:</strong> when you choose Google sign-in; Google also sends sign-in information to Admyt.</li>
           <li><strong>Apple:</strong> when you choose Apple sign-in; Apple also sends sign-in information to Admyt and may provide a private relay email address if you choose Hide My Email.</li>
           <li><strong>Authorities or other parties:</strong> when required by law or reasonably necessary to protect rights, safety, users, or the service.</li>
@@ -87,7 +87,7 @@ export default function Privacy() {
       </LegalSection>
 
       <LegalSection title="7. Your choices and rights">
-        <p>From Profile, you can review or change preferences, turn deadline emails on or off, remove saved schools, download a JSON copy of your account data, and permanently delete your account. You can clear guest information through your browser settings.</p>
+        <p>From Profile, you can review or change preferences, control each optional email program independently, remove saved schools, download a JSON copy of your account data, and permanently delete your account. You can clear guest information through your browser settings.</p>
         <p>Depending on where you live, you may also have rights to know, access, correct, delete, or receive a copy of personal information; restrict or object to certain processing; appeal a denied request; or opt out of sale, targeted advertising, or certain profiling. Admyt does not sell personal information or use it for targeted advertising.</p>
         <p>Email <a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> to exercise a right that is not available in Profile. We may verify your identity before acting. An authorized agent may submit a request where permitted by law. We will not discriminate against you for exercising a privacy right.</p>
       </LegalSection>

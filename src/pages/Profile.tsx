@@ -12,7 +12,11 @@ import { REGION_TO_STATES } from '@/lib/regions'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
 import { buildAccountExport, clearAdmytBrowserData, deleteAdmytAccount, downloadJson } from '@/lib/accountData'
-import { getNotificationPreferences, saveDeadlineReminderPreference } from '@/lib/notifications'
+import {
+  getNotificationPreferences,
+  saveNotificationPreference,
+  type NotificationPreferenceKey,
+} from '@/lib/notifications'
 import SageOrb from '@/components/sage/SageOrb'
 import {
   ensureDeadline,
@@ -67,6 +71,35 @@ interface SageFactRow {
 }
 
 const DEADLINE_EMAIL_OPT_IN_AVAILABLE = import.meta.env.VITE_DEADLINE_EMAILS_ENABLED === 'true'
+
+function EmailPreferenceSwitch({
+  checked,
+  label,
+  loading,
+  saving,
+  onClick,
+}: {
+  checked: boolean
+  label: string
+  loading: boolean
+  saving: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-label={label}
+      aria-checked={checked}
+      className={`pill ${checked ? 'teal' : ''}`}
+      onClick={onClick}
+      disabled={loading || saving}
+      style={{ minWidth: 74, justifyContent: 'center' }}
+    >
+      {loading ? 'Loading…' : saving ? 'Saving…' : checked ? 'On' : 'Off'}
+    </button>
+  )
+}
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' }, { abbr: 'AR', name: 'Arkansas' },
@@ -384,15 +417,19 @@ export default function Profile() {
   const [prefs, setPrefs] = useState<UserPreferences>({ preferred_states: [], max_tuition: null, preferred_majors: [] })
   const [deadlines, setDeadlines] = useState<Record<string, CollegeDeadlines>>({})
   const [deadlineEmailsEnabled, setDeadlineEmailsEnabled] = useState(false)
-  const [deadlineEmailsLoading, setDeadlineEmailsLoading] = useState(false)
-  const [deadlineEmailsSaving, setDeadlineEmailsSaving] = useState(false)
-  const [deadlineEmailsMessage, setDeadlineEmailsMessage] = useState('')
+  const [gettingStartedEmailsEnabled, setGettingStartedEmailsEnabled] = useState(false)
+  const [weeklyDigestEnabled, setWeeklyDigestEnabled] = useState(false)
+  const [emailPreferencesLoading, setEmailPreferencesLoading] = useState(false)
+  const [emailPreferenceSaving, setEmailPreferenceSaving] = useState<NotificationPreferenceKey | null>(null)
+  const [emailPreferencesMessage, setEmailPreferencesMessage] = useState('')
   const collegeById = useMemo(() => new Map(colleges.map(c => [c.id, c])), [colleges])
 
   useEffect(() => {
     if (!user) {
       setDeadlineEmailsEnabled(false)
-      setDeadlineEmailsMessage('')
+      setGettingStartedEmailsEnabled(false)
+      setWeeklyDigestEnabled(false)
+      setEmailPreferencesMessage('')
       setLoading(false)
       return
     }
@@ -407,13 +444,15 @@ export default function Profile() {
       setLoading(false)
     })
 
-    if (DEADLINE_EMAIL_OPT_IN_AVAILABLE) {
-      setDeadlineEmailsLoading(true)
-      getNotificationPreferences(user.id)
-        .then(notificationPrefs => setDeadlineEmailsEnabled(notificationPrefs.deadlineRemindersEnabled))
-        .catch(() => setDeadlineEmailsMessage('We couldn’t load your email setting. Please refresh and try again.'))
-        .finally(() => setDeadlineEmailsLoading(false))
-    }
+    setEmailPreferencesLoading(true)
+    getNotificationPreferences(user.id)
+      .then(notificationPrefs => {
+        setDeadlineEmailsEnabled(notificationPrefs.deadlineRemindersEnabled)
+        setGettingStartedEmailsEnabled(notificationPrefs.gettingStartedEnabled)
+        setWeeklyDigestEnabled(notificationPrefs.weeklyDigestEnabled)
+      })
+      .catch(() => setEmailPreferencesMessage('We couldn’t load your email settings. Please refresh and try again.'))
+      .finally(() => setEmailPreferencesLoading(false))
   }, [user])
 
   // Load cached deadlines for the hearted schools, then fetch any that are missing
@@ -496,21 +535,26 @@ export default function Profile() {
     if (saved) setHearts(prev => prev.filter(h => h.college_id !== collegeId))
   }
 
-  async function handleDeadlineEmailToggle() {
-    if (!user || deadlineEmailsSaving || deadlineEmailsLoading) return
-    const next = !deadlineEmailsEnabled
-    setDeadlineEmailsSaving(true)
-    setDeadlineEmailsMessage('')
+  async function handleEmailPreferenceToggle(preference: NotificationPreferenceKey) {
+    if (!user || emailPreferenceSaving || emailPreferencesLoading) return
+    const current = {
+      deadlineRemindersEnabled: deadlineEmailsEnabled,
+      gettingStartedEnabled: gettingStartedEmailsEnabled,
+      weeklyDigestEnabled,
+    }[preference]
+    const next = !current
+    setEmailPreferenceSaving(preference)
+    setEmailPreferencesMessage('')
     try {
-      await saveDeadlineReminderPreference(user.id, next)
-      setDeadlineEmailsEnabled(next)
-      setDeadlineEmailsMessage(next
-        ? 'You’re set. We’ll email 30 days and 7 days before verified deadlines.'
-        : 'Deadline emails are off.')
+      await saveNotificationPreference(user.id, preference, next)
+      if (preference === 'deadlineRemindersEnabled') setDeadlineEmailsEnabled(next)
+      if (preference === 'gettingStartedEnabled') setGettingStartedEmailsEnabled(next)
+      if (preference === 'weeklyDigestEnabled') setWeeklyDigestEnabled(next)
+      setEmailPreferencesMessage('Saved. Your email choices are up to date.')
     } catch {
-      setDeadlineEmailsMessage('We couldn’t change that setting. Nothing was changed—please try again.')
+      setEmailPreferencesMessage('We couldn’t change that setting. Nothing was changed—please try again.')
     } finally {
-      setDeadlineEmailsSaving(false)
+      setEmailPreferenceSaving(null)
     }
   }
 
@@ -722,31 +766,76 @@ export default function Profile() {
                 <p className="match-note" style={{ marginTop: 10, fontSize: 12 }}>
                   Dates are gathered from each school's site — always confirm on their official admissions page before you rely on them.
                 </p>
-                {DEADLINE_EMAIL_OPT_IN_AVAILABLE && (
-                  <>
-                    <div className="mock-soft-card" style={{ marginTop: 16, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                      <div style={{ flex: '1 1 280px' }}>
-                        <strong style={{ color: 'var(--admyt-ink)' }}>Deadline emails</strong>
-                        <p className="match-note" style={{ margin: '5px 0 0' }}>
-                          Get a heads-up 30 days and 7 days before deadlines for My Schools. We only email when the date was recently verified from the school’s site.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={deadlineEmailsEnabled}
-                        className={`pill ${deadlineEmailsEnabled ? 'teal' : ''}`}
-                        onClick={handleDeadlineEmailToggle}
-                        disabled={deadlineEmailsLoading || deadlineEmailsSaving}
-                        style={{ minWidth: 74, justifyContent: 'center' }}
-                      >
-                        {deadlineEmailsLoading ? 'Loading…' : deadlineEmailsSaving ? 'Saving…' : deadlineEmailsEnabled ? 'On' : 'Off'}
-                      </button>
-                    </div>
-                    {deadlineEmailsMessage && <p role="status" className="match-note" style={{ marginTop: 8, fontSize: 12 }}>{deadlineEmailsMessage}</p>}
-                  </>
-                )}
               </div>
+            </section>
+          )}
+
+          {user && (
+            <section className="mock-card section-pad">
+              <div>
+                <span className="mini-title">Email preferences</span>
+                <p className="match-note" style={{ marginTop: 8 }}>
+                  Choose what’s useful. Sign-in codes and the one-time welcome email aren’t controlled here.
+                </p>
+              </div>
+              <div className="learn-list" style={{ marginTop: 14 }}>
+                {DEADLINE_EMAIL_OPT_IN_AVAILABLE && (
+                  <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <strong style={{ color: 'var(--admyt-ink)' }}>Deadline reminders</strong>
+                      <p className="match-note" style={{ margin: '5px 0 0' }}>
+                        A heads-up 30 days and 7 days before recently verified deadlines in My Schools.
+                      </p>
+                    </div>
+                    <EmailPreferenceSwitch
+                      checked={deadlineEmailsEnabled}
+                      label="Deadline reminders"
+                      loading={emailPreferencesLoading}
+                      saving={emailPreferenceSaving === 'deadlineRemindersEnabled'}
+                      onClick={() => handleEmailPreferenceToggle('deadlineRemindersEnabled')}
+                    />
+                  </div>
+                )}
+                <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="filters" style={{ gap: 8 }}>
+                      <strong style={{ color: 'var(--admyt-ink)' }}>Getting-started guidance</strong>
+                      <span className="pill">Coming next</span>
+                    </div>
+                    <p className="match-note" style={{ margin: '5px 0 0' }}>
+                      A few short notes to help you get more from Sage, My Schools, and Vibe Check when they launch.
+                    </p>
+                  </div>
+                  <EmailPreferenceSwitch
+                    checked={gettingStartedEmailsEnabled}
+                    label="Getting-started guidance"
+                    loading={emailPreferencesLoading}
+                    saving={emailPreferenceSaving === 'gettingStartedEnabled'}
+                    onClick={() => handleEmailPreferenceToggle('gettingStartedEnabled')}
+                  />
+                </div>
+                <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="filters" style={{ gap: 8 }}>
+                      <strong style={{ color: 'var(--admyt-ink)' }}>Weekly My Schools digest</strong>
+                      <span className="pill">Coming next</span>
+                    </div>
+                    <p className="match-note" style={{ margin: '5px 0 0' }}>
+                      One weekly snapshot of useful changes and next steps for your saved schools when it launches.
+                    </p>
+                  </div>
+                  <EmailPreferenceSwitch
+                    checked={weeklyDigestEnabled}
+                    label="Weekly My Schools digest"
+                    loading={emailPreferencesLoading}
+                    saving={emailPreferenceSaving === 'weeklyDigestEnabled'}
+                    onClick={() => handleEmailPreferenceToggle('weeklyDigestEnabled')}
+                  />
+                </div>
+              </div>
+              {emailPreferencesMessage && (
+                <p role="status" className="match-note" style={{ marginTop: 10, fontSize: 12 }}>{emailPreferencesMessage}</p>
+              )}
             </section>
           )}
 

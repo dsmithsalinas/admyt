@@ -137,10 +137,10 @@ test('header login opens as a full-page modal above the Sage interface', async (
   expect(await panel.evaluate(element => element.scrollTop)).toBe(0)
 })
 
-test('signed-in students explicitly opt in to deadline emails', async ({ page }) => {
+test('signed-in students control each optional email program independently', async ({ page }) => {
   await mockSupabase(page)
   const userId = '11111111-1111-4111-8111-111111111111'
-  let preferenceWrite: Record<string, unknown> | null = null
+  const preferenceWrites: Record<string, unknown>[] = []
 
   await page.addInitScript(({ id }) => {
     const user = {
@@ -181,22 +181,36 @@ test('signed-in students explicitly opt in to deadline emails', async ({ page })
   }))
   await page.route('https://example.supabase.co/rest/v1/notification_preferences**', async route => {
     if (route.request().method() === 'POST') {
-      preferenceWrite = route.request().postDataJSON() as Record<string, unknown>
+      preferenceWrites.push(route.request().postDataJSON() as Record<string, unknown>)
       await route.fulfill({ status: 201, contentType: 'application/json', body: '[]' })
       return
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
   })
   await page.goto('/profile')
-  const reminderSwitch = page.getByRole('switch')
+  const reminderSwitch = page.getByRole('switch', { name: 'Deadline reminders' })
   await expect(reminderSwitch).toHaveAttribute('aria-checked', 'false')
   await expect(reminderSwitch).toBeEnabled()
   await reminderSwitch.click()
   await expect(reminderSwitch).toHaveAttribute('aria-checked', 'true')
-  await expect(page.getByText(/We’ll email 30 days and 7 days/i)).toBeVisible()
-  expect(preferenceWrite).toMatchObject({
+  await expect(page.getByText(/email choices are up to date/i)).toBeVisible()
+
+  const guidanceSwitch = page.getByRole('switch', { name: 'Getting-started guidance' })
+  const digestSwitch = page.getByRole('switch', { name: 'Weekly My Schools digest' })
+  await guidanceSwitch.click()
+  await digestSwitch.click()
+
+  expect(preferenceWrites[0]).toMatchObject({
     user_id: userId,
     deadline_reminders_enabled: true,
   })
-  expect(preferenceWrite?.timezone).toEqual(expect.any(String))
+  expect(preferenceWrites[1]).toMatchObject({
+    user_id: userId,
+    getting_started_enabled: true,
+  })
+  expect(preferenceWrites[2]).toMatchObject({
+    user_id: userId,
+    weekly_digest_enabled: true,
+  })
+  expect(preferenceWrites.every(write => typeof write.timezone === 'string')).toBe(true)
 })

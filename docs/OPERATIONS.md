@@ -93,11 +93,22 @@ Resend delivery tracking:
 - Event IDs are inserted atomically and duplicate deliveries become no-ops. Raw webhook payloads, recipient addresses, and subjects are not stored.
 - The Resend account is shared with other products. Email events are ignored unless the sender is on `youradmyt.com`; `suppression.added` is ignored unless its source message ID already exists in Admyt's notification ledger.
 - Hard bounces, complaints, provider suppressions, and Resend suppression additions create or refresh an `email_suppressions` row keyed by an HMAC-SHA-256 fingerprint of the lowercase address. The reminder worker checks this table before claiming a delivery. `EMAIL_SUPPRESSION_HASH_KEY` is the shared Edge Function secret used for that fingerprint; rotate it only with a migration plan for existing suppression rows.
-- When a suppression can be correlated to a reminder message, the user's deadline opt-in is turned off automatically.
+- When a suppression can be correlated to an Admyt message, every optional email preference for that user is turned off automatically.
 
 After changing the webhook, send only to Resend's provider-owned test addresses (`delivered@resend.dev`, `bounced@resend.dev`, `complained@resend.dev`, and `suppressed@resend.dev`). Confirm a valid event returns HTTP 200, a replay remains HTTP 200 without a second event row, and an unsigned POST returns HTTP 400. Never manufacture a fake recipient to test bounce or complaint handling.
 
 Monitor `run_completed` and `run_failed` events plus Resend delivery logs. A high `deliveries_failed` count, unexpected volume, or stale-source concern is a reason to set `EMAIL_REMINDERS_ENABLED=false` before investigating. The first version processes at most 500 opted-in users and refreshes at most five saved schools per invocation; add cursor-based batching before either limit becomes constraining.
+
+## Welcome email
+
+The frontend invokes `welcome-email` only when the authenticated user's account was created within the last 24 hours. The Edge Function independently authenticates the user and enforces that same window, checks the suppression list, then atomically claims `welcome|<user_id>` in the shared delivery ledger. Repeated sign-in events and page loads cannot create a second welcome delivery.
+
+- `WELCOME_EMAIL_ENABLED=true` permits welcome sends. Set it to `false` for the immediate kill switch.
+- `WELCOME_EMAIL_TEST_USER_ID` must remain absent in production. During controlled validation, setting it restricts the function to that single user.
+- The sender is `Sage from admyt <hello@youradmyt.com>`.
+- Welcome is a one-time transactional account message. It is not controlled by the optional-email preferences in Profile.
+
+For a controlled test, create a disposable confirmed Auth user at a Resend provider-owned test address, sign in as that user, temporarily set `WELCOME_EMAIL_TEST_USER_ID`, invoke the function with the user's JWT, confirm the ledger and webhook event, then delete the user and related test rows before removing the test-user secret.
 
 ## Deployment order
 
@@ -108,6 +119,7 @@ npx supabase functions deploy chat
 npx supabase functions deploy account
 npx supabase functions deploy deadline-reminders
 npx supabase functions deploy resend-webhook --no-verify-jwt
+npx supabase functions deploy welcome-email
 npm run check
 npm run test:e2e
 ```

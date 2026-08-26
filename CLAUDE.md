@@ -34,7 +34,7 @@ Admyt exists because fit matters more than rank. The right school for you is the
 - **API proxy:** Supabase Edge Function at `supabase/functions/chat/index.ts` — all Claude API calls go through here, never directly from the browser
 - **Deployment:** Vercel — live at `youradmyt.com` (`youradmyt.vercel.app` remains the Vercel fallback), auto-deploys on every push to `main` (Vercel GitHub integration). Per-deploy/preview URLs are gated by Vercel Deployment Protection; the production domain is public. Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars set in the Vercel project.
 - **Auth email:** Passwordless six-digit sign-in codes are delivered through Supabase Auth using Resend custom SMTP. `youradmyt.com` is verified in Resend; production sends from `Sage from admyt <sign-in@youradmyt.com>`. The canonical template is `supabase/templates/sign-in-code.html` and must stay synchronized with the hosted Supabase Magic Link / OTP template.
-- **Deadline email:** The opt-in reminder pipeline lives in `supabase/functions/deadline-reminders`. Supabase Cron invokes it daily at 15:00 UTC. It sends at 30 and 7 days only for recently checked official-source dates, refreshes at most five missing/stale saved-school deadlines per run through the service-authenticated chat function, and records delivery claims for deduplication/retries. Signed Resend events enter through `supabase/functions/resend-webhook`; delivered/bounced/complained states update the ledger, and hard bounces, complaints, and provider suppressions prevent future sends using a privacy-minimized email hash. `VITE_DEADLINE_EMAILS_ENABLED` exposes the Profile opt-in; the Edge Function secret `EMAIL_REMINDERS_ENABLED` is the immediate delivery kill switch. Operational details live in `docs/OPERATIONS.md`.
+- **Application email:** `supabase/functions/welcome-email` sends one deduplicated, transactional welcome after a new account successfully signs in. The opt-in reminder pipeline lives in `supabase/functions/deadline-reminders`; Supabase Cron invokes it daily at 15:00 UTC and sends at 30 and 7 days only for recently checked official-source dates. Profile holds independent preferences for deadline reminders, getting-started guidance, and a weekly My Schools digest; the latter two are stored as advance opt-ins until their senders launch. Signed Resend events enter through `supabase/functions/resend-webhook`; delivery states update the shared ledger, while bounces, complaints, and suppressions prevent future sends using a privacy-minimized email hash. `WELCOME_EMAIL_ENABLED` and `EMAIL_REMINDERS_ENABLED` are immediate server-side kill switches. Operational details live in `docs/OPERATIONS.md`.
 - **Data:** The College Scorecard import currently yields roughly 3,800 schools in Supabase. Browse loads the full paginated catalog; Sage's server-side prompt catalog is intentionally capped at 1,000 schools to control prompt size.
 
 ## Project structure
@@ -102,6 +102,8 @@ supabase/
 
 ├── deadline-reminders/index.ts # Opt-in, deduplicated Resend deadline emails
 
+├── welcome-email/index.ts # One-time, authenticated welcome email
+
 └── resend-webhook/index.ts # Signed Resend delivery events and suppressions
 ## Supabase tables
 | Table | Purpose |
@@ -111,8 +113,8 @@ supabase/
 | `hearted_schools` | Student's saved/hearted schools |
 | `saved_vibes` | Saved Vibe Check results |
 | `user_preferences` | Standing filters (states, tuition, major) |
-| `notification_preferences` | Explicit per-user deadline-email opt-in and time zone |
-| `notification_deliveries` | Deadline-email delivery ledger and duplicate protection |
+| `notification_preferences` | Independent per-user email opt-ins and time zone |
+| `notification_deliveries` | Application-email delivery ledger and duplicate protection |
 | `email_delivery_events` | Privacy-minimized, replay-safe Resend delivery events |
 | `email_suppressions` | Hashed addresses that must not receive application email |
 | `data_source_status` | Public catalog provenance and last successful refresh |

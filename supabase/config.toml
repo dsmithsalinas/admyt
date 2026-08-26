@@ -444,3 +444,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/resend-webhook/deno.json"
 entrypoint = "./functions/resend-webhook/index.ts"
+
+[functions.welcome-email]
+enabled = true
+verify_jwt = true
+import_map = "./functions/welcome-email/deno.json"
+entrypoint = "./functions/welcome-email/index.ts"

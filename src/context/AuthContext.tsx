@@ -17,6 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 const PENDING_LEGAL_ACCEPTANCE_KEY = 'admyt_pending_legal_acceptance'
 let legalAcceptanceWriteInFlight = false
+const welcomeRequests = new Set<string>()
 
 function legalAcceptanceMetadata() {
   return {
@@ -40,6 +41,17 @@ async function recordPendingLegalAcceptance(session: Session | null) {
   }
 }
 
+function requestWelcomeEmail(session: Session | null) {
+  const user = session?.user
+  if (!user || welcomeRequests.has(user.id)) return
+  const createdAt = Date.parse(user.created_at)
+  if (!Number.isFinite(createdAt) || Date.now() - createdAt > 24 * 60 * 60 * 1000) return
+  welcomeRequests.add(user.id)
+  void supabase.functions.invoke('welcome-email').then(({ error }) => {
+    if (error) welcomeRequests.delete(user.id)
+  })
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -51,12 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       setLoading(false)
       void recordPendingLegalAcceptance(session)
+      requestWelcomeEmail(session)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       void recordPendingLegalAcceptance(session)
+      requestWelcomeEmail(session)
     })
 
     return () => subscription.unsubscribe()
