@@ -770,69 +770,6 @@ export default function Profile() {
             </section>
           )}
 
-          {user && (
-            <section className="mock-card section-pad">
-              <div>
-                <span className="mini-title">Email preferences</span>
-                <p className="match-note" style={{ marginTop: 8 }}>
-                  Choose what’s useful. Sign-in codes and the one-time welcome email aren’t controlled here.
-                </p>
-              </div>
-              <div className="learn-list" style={{ marginTop: 14 }}>
-                {DEADLINE_EMAIL_OPT_IN_AVAILABLE && (
-                  <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
-                    <div style={{ flex: 1 }}>
-                      <strong style={{ color: 'var(--admyt-ink)' }}>Deadline reminders</strong>
-                      <p className="match-note" style={{ margin: '5px 0 0' }}>
-                        A heads-up 30 days and 7 days before recently verified deadlines in My Schools.
-                      </p>
-                    </div>
-                    <EmailPreferenceSwitch
-                      checked={deadlineEmailsEnabled}
-                      label="Deadline reminders"
-                      loading={emailPreferencesLoading}
-                      saving={emailPreferenceSaving === 'deadlineRemindersEnabled'}
-                      onClick={() => handleEmailPreferenceToggle('deadlineRemindersEnabled')}
-                    />
-                  </div>
-                )}
-                <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
-                  <div style={{ flex: 1 }}>
-                    <strong style={{ color: 'var(--admyt-ink)' }}>Getting-started guidance</strong>
-                    <p className="match-note" style={{ margin: '5px 0 0' }}>
-                      Up to three short notes during the first week after you turn this on, covering Sage, My Schools, and Vibe Check.
-                    </p>
-                  </div>
-                  <EmailPreferenceSwitch
-                    checked={gettingStartedEmailsEnabled}
-                    label="Getting-started guidance"
-                    loading={emailPreferencesLoading}
-                    saving={emailPreferenceSaving === 'gettingStartedEnabled'}
-                    onClick={() => handleEmailPreferenceToggle('gettingStartedEnabled')}
-                  />
-                </div>
-                <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
-                  <div style={{ flex: 1 }}>
-                    <strong style={{ color: 'var(--admyt-ink)' }}>Weekly My Schools digest</strong>
-                    <p className="match-note" style={{ margin: '5px 0 0' }}>
-                      A Monday snapshot of your saved schools, Vibe Checks, upcoming verified dates, and one useful next step. Sent when you have at least one saved school.
-                    </p>
-                  </div>
-                  <EmailPreferenceSwitch
-                    checked={weeklyDigestEnabled}
-                    label="Weekly My Schools digest"
-                    loading={emailPreferencesLoading}
-                    saving={emailPreferenceSaving === 'weeklyDigestEnabled'}
-                    onClick={() => handleEmailPreferenceToggle('weeklyDigestEnabled')}
-                  />
-                </div>
-              </div>
-              {emailPreferencesMessage && (
-                <p role="status" className="match-note" style={{ marginTop: 10, fontSize: 12 }}>{emailPreferencesMessage}</p>
-              )}
-            </section>
-          )}
-
           <section className="mock-card section-pad">
             <div className="school-head">
               <span className="mini-title">My Schools</span>
@@ -944,6 +881,69 @@ export default function Profile() {
               )}
             </div>
           </section>
+
+          {user && (
+            <section className="mock-card section-pad">
+              <div>
+                <span className="mini-title">Email preferences</span>
+                <p className="match-note" style={{ marginTop: 8 }}>
+                  Choose what’s useful. Sign-in codes and the one-time welcome email aren’t controlled here.
+                </p>
+              </div>
+              <div className="learn-list" style={{ marginTop: 14 }}>
+                {DEADLINE_EMAIL_OPT_IN_AVAILABLE && (
+                  <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <strong style={{ color: 'var(--admyt-ink)' }}>Deadline reminders</strong>
+                      <p className="match-note" style={{ margin: '5px 0 0' }}>
+                        A heads-up 30 days and 7 days before recently verified deadlines in My Schools.
+                      </p>
+                    </div>
+                    <EmailPreferenceSwitch
+                      checked={deadlineEmailsEnabled}
+                      label="Deadline reminders"
+                      loading={emailPreferencesLoading}
+                      saving={emailPreferenceSaving === 'deadlineRemindersEnabled'}
+                      onClick={() => handleEmailPreferenceToggle('deadlineRemindersEnabled')}
+                    />
+                  </div>
+                )}
+                <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ color: 'var(--admyt-ink)' }}>Getting-started guidance</strong>
+                    <p className="match-note" style={{ margin: '5px 0 0' }}>
+                      Up to three short notes during the first week after you turn this on, covering Sage, My Schools, and Vibe Check.
+                    </p>
+                  </div>
+                  <EmailPreferenceSwitch
+                    checked={gettingStartedEmailsEnabled}
+                    label="Getting-started guidance"
+                    loading={emailPreferencesLoading}
+                    saving={emailPreferenceSaving === 'gettingStartedEnabled'}
+                    onClick={() => handleEmailPreferenceToggle('gettingStartedEnabled')}
+                  />
+                </div>
+                <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ color: 'var(--admyt-ink)' }}>Weekly My Schools digest</strong>
+                    <p className="match-note" style={{ margin: '5px 0 0' }}>
+                      A Monday snapshot of your saved schools, Vibe Checks, upcoming verified dates, and one useful next step. Sent when you have at least one saved school.
+                    </p>
+                  </div>
+                  <EmailPreferenceSwitch
+                    checked={weeklyDigestEnabled}
+                    label="Weekly My Schools digest"
+                    loading={emailPreferencesLoading}
+                    saving={emailPreferenceSaving === 'weeklyDigestEnabled'}
+                    onClick={() => handleEmailPreferenceToggle('weeklyDigestEnabled')}
+                  />
+                </div>
+              </div>
+              {emailPreferencesMessage && (
+                <p role="status" className="match-note" style={{ marginTop: 10, fontSize: 12 }}>{emailPreferencesMessage}</p>
+              )}
+            </section>
+          )}
 
           <section className="mock-card section-pad">
             <div className="school-head">
