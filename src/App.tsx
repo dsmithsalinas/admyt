@@ -21,6 +21,9 @@ const Terms = lazy(() => import('@/pages/Terms'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Admin = lazy(() => import('@/pages/Admin'))
 const AdminDataQuality = lazy(() => import('@/pages/AdminDataQuality'))
+const AdminSupport = lazy(() => import('@/pages/AdminSupport'))
+const AdminIncidents = lazy(() => import('@/pages/AdminIncidents'))
+const AdminAudit = lazy(() => import('@/pages/AdminAudit'))
 const EmailOperations = lazy(() => import('@/pages/EmailOperations'))
 
 function LoadingOrb() {
@@ -61,6 +64,12 @@ function RouteAccessibility() {
     ? 'Privacy policy'
     : location.pathname === '/admin/data-quality'
     ? user ? 'Data quality' : 'Not authorized'
+    : location.pathname === '/admin/support'
+    ? user ? 'User support' : 'Not authorized'
+    : location.pathname === '/admin/incidents'
+    ? user ? 'Incident controls' : 'Not authorized'
+    : location.pathname === '/admin/audit'
+    ? user ? 'Admin audit log' : 'Not authorized'
     : location.pathname === '/admin'
     ? user ? 'Admin overview' : 'Not authorized'
     : location.pathname === '/email-operations'
@@ -108,6 +117,9 @@ export default function App() {
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/admin/data-quality" element={<AdminDataQuality />} />
+                      <Route path="/admin/support" element={<AdminSupport />} />
+                      <Route path="/admin/incidents" element={<AdminIncidents />} />
+                      <Route path="/admin/audit" element={<AdminAudit />} />
                       <Route path="/email-operations" element={<EmailOperations />} />
                     </Route>
                   </Routes>

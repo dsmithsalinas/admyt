@@ -1,5 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
+import { runtimeControlEnabled } from "../_shared/runtime-control.ts";
 import { emailFingerprint } from "../_shared/email-fingerprint.ts";
 import { createUnsubscribeUrl } from "../_shared/email-unsubscribe.ts";
 import { recordEmailWorkerRun } from "../_shared/email-worker-run.ts";
@@ -164,7 +165,10 @@ Deno.serve(async (req) => {
     if (!hasVerifiedServiceRole(req.headers.get("Authorization"), url)) {
       return json({ error: "unauthorized" }, 401, requestId);
     }
-    if (env("EMAIL_PROGRAMS_ENABLED") !== "true") {
+    const admin = createClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    if (!await runtimeControlEnabled(admin, "email_programs_enabled", env("EMAIL_PROGRAMS_ENABLED") === "true")) {
       await recordEmailWorkerRun({ supabaseUrl: url, serviceKey, worker: "email_programs", requestId, status: "disabled", metrics: { sent_count: 0, failure_count: 0 }, startedAt: startedAtIso, durationMs: Date.now() - startedAt });
       return json({ enabled: false, guidance_sent: 0, digests_sent: 0 }, 200, requestId);
     }
@@ -173,9 +177,6 @@ Deno.serve(async (req) => {
     if (!unsubscribeSigningKey) throw new Error("missing_unsubscribe_configuration");
     const unsubscribeEndpoint = `${url}/functions/v1/email-unsubscribe`;
 
-    const admin = createClient(url, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
     let preferenceQuery = admin
       .from("notification_preferences")
       .select("user_id,timezone,getting_started_enabled,getting_started_opted_in_at,weekly_digest_enabled,weekly_digest_opted_in_at")

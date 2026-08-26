@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Activity, CalendarSearch, Mail } from 'lucide-react'
+import { Activity, CalendarSearch, Mail, Search, ShieldAlert, ScrollText } from 'lucide-react'
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   return (
@@ -19,6 +19,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </NavLink>
           <NavLink to="/admin/data-quality">
             <CalendarSearch size={16} aria-hidden="true" /> Data quality
+          </NavLink>
+          <NavLink to="/admin/support">
+            <Search size={16} aria-hidden="true" /> User support
+          </NavLink>
+          <NavLink to="/admin/incidents">
+            <ShieldAlert size={16} aria-hidden="true" /> Incident controls
+          </NavLink>
+          <NavLink to="/admin/audit">
+            <ScrollText size={16} aria-hidden="true" /> Audit log
           </NavLink>
         </nav>
       </div>

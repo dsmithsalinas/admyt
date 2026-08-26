@@ -2,6 +2,7 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
 import { emailFingerprint } from "../_shared/email-fingerprint.ts";
 import { welcomeEmailContent } from "../_shared/welcome-email-content.ts";
+import { runtimeControlEnabled } from "../_shared/runtime-control.ts";
 
 const NEW_ACCOUNT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const corsHeaders = {
@@ -67,16 +68,16 @@ Deno.serve(async (req) => {
     if (!isNewAccount || (testUserId && testUserId !== user.id)) {
       return response({ eligible: false, sent: false }, 200, requestId);
     }
-    if (env("WELCOME_EMAIL_ENABLED") !== "true") {
+    const admin = createClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    if (!await runtimeControlEnabled(admin, "welcome_email_enabled", env("WELCOME_EMAIL_ENABLED") === "true")) {
       return response({ eligible: true, enabled: false, sent: false }, 200, requestId);
     }
     if (!resendKey) throw new Error("missing_resend_configuration");
     if (!suppressionHashKey) throw new Error("missing_suppression_configuration");
     if (!user.email) return response({ eligible: false, sent: false }, 200, requestId);
 
-    const admin = createClient(url, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
     const { data: suppression, error: suppressionError } = await admin
       .from("email_suppressions")
       .select("email_hash")

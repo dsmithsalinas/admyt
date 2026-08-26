@@ -219,7 +219,7 @@ function parseDeadlines(text: string): { rounds: unknown[]; rolling?: boolean; c
   return match ? tryParse(match[0]) : null
 }
 
-async function handleDeadline(body: { collegeId?: unknown }, forceRefresh = false): Promise<Response> {
+async function handleDeadline(body: { collegeId?: unknown }, forceRefresh = false, persist = true): Promise<Response> {
   const college = await fetchCollege(String(body.collegeId ?? ''))
   if (!college) return json({ error: 'college_not_found' }, 404)
 
@@ -267,8 +267,8 @@ async function handleDeadline(body: { collegeId?: unknown }, forceRefresh = fals
     )
   }
   // Cache the result (even empty) so we don't re-search this school within the window.
-  await saveDeadline(college.id, deadlines)
-  return json({ deadlines })
+  if (persist) await saveDeadline(college.id, deadlines)
+  return json({ deadlines, cached: false, persisted: persist })
 }
 
 // Persist a generated college description with the service-role key (RLS blocks
@@ -382,7 +382,8 @@ serve(async (req) => {
         req.headers.get('Authorization'),
         env('SUPABASE_URL'),
       )
-      return finish(await handleDeadline(body, forceRefresh), type)
+      const persist = body?.persist !== false || !forceRefresh
+      return finish(await handleDeadline(body, forceRefresh, persist), type)
     }
 
     // Build the prompt server-side by request type. The endpoint never accepts a

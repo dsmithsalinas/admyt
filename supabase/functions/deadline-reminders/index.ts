@@ -1,5 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.1";
+import { runtimeControlEnabled } from "../_shared/runtime-control.ts";
 import { emailFingerprint } from "../_shared/email-fingerprint.ts";
 import { createUnsubscribeUrl } from "../_shared/email-unsubscribe.ts";
 import { recordEmailWorkerRun } from "../_shared/email-worker-run.ts";
@@ -174,7 +175,10 @@ Deno.serve(async (req) => {
     if (!hasVerifiedServiceRole(req.headers.get("Authorization"), url)) {
       return json({ error: "unauthorized" }, 401, requestId);
     }
-    if (env("EMAIL_REMINDERS_ENABLED") !== "true") {
+    const admin = createClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    if (!await runtimeControlEnabled(admin, "deadline_reminders_enabled", env("EMAIL_REMINDERS_ENABLED") === "true")) {
       log("info", "run_disabled", {
         request_id: requestId,
         duration_ms: Date.now() - startedAt,
@@ -187,9 +191,6 @@ Deno.serve(async (req) => {
     if (!unsubscribeSigningKey) throw new Error("missing_unsubscribe_configuration");
     const unsubscribeEndpoint = `${url}/functions/v1/email-unsubscribe`;
 
-    const admin = createClient(url, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
     let preferencesQuery = admin
       .from("notification_preferences").select("user_id,timezone")
       .eq("deadline_reminders_enabled", true);

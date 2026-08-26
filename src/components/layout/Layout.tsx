@@ -7,6 +7,7 @@ import SageOrb from '@/components/sage/SageOrb'
 import AuthModal from '@/components/ui/AuthModal'
 import { useAuth } from '@/context/AuthContext'
 import { useChat } from '@/context/ChatContext'
+import { supabase } from '@/lib/supabase'
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -16,6 +17,19 @@ function useIsMobile() {
     return () => window.removeEventListener('resize', handler)
   }, [])
   return isMobile
+}
+
+function MaintenanceNotice() {
+  const [message, setMessage] = useState<string | null>(null)
+  useEffect(() => {
+    let active = true
+    void supabase.from('app_public_status').select('maintenance_enabled,message').eq('singleton', true).maybeSingle()
+      .then(({ data }) => {
+        if (active && data?.maintenance_enabled && typeof data.message === 'string') setMessage(data.message)
+      })
+    return () => { active = false }
+  }, [])
+  return message ? <div className="maintenance-notice" role="status">{message}</div> : null
 }
 
 export default function Layout() {
@@ -55,6 +69,8 @@ export default function Layout() {
     <div className={isHome ? 'app-layout app-layout-sage' : 'app-layout'} style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--admyt-paper)' }}>
 
       <a className="skip-link" href="#main-content">Skip to main content</a>
+
+      <MaintenanceNotice />
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
       <nav className={isHome ? 'app-top-nav app-top-nav-sage' : 'app-top-nav'} aria-label="Primary navigation" style={{

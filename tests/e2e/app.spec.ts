@@ -75,6 +75,12 @@ test('email operations stays undisclosed to signed-out visitors', async ({ page 
   await expect(page.getByRole('heading', { name: 'Not authorized' })).toBeVisible()
   await expect(page.getByText('College data')).toHaveCount(0)
   await expect(page).toHaveTitle('Not authorized — admyt')
+
+  for (const route of ['/admin/support', '/admin/incidents', '/admin/audit']) {
+    await page.goto(route)
+    await expect(page.getByRole('heading', { name: 'Not authorized' })).toBeVisible()
+    await expect(page).toHaveTitle('Not authorized — admyt')
+  }
 })
 
 test('Terms and Privacy Policy are public and passwordless signup requires acceptance', async ({ page }) => {
@@ -330,7 +336,19 @@ test('authorized operators can review saved-school deadline quality', async ({ p
     body: '[]',
   }))
   await page.route('https://example.supabase.co/functions/v1/email-operations', async route => {
-    expect(route.request().postDataJSON()).toEqual({ action: 'data_quality' })
+    const request = route.request().postDataJSON() as Record<string, unknown>
+    if (request.action === 'deadline_preview') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ preview: {
+        id: 'preview-1', college_id: '2', college_name: 'Liberal Arts University', expires_at: '2026-08-25T22:30:00Z',
+        deadlines: { cycle: '2026–27', rounds: [{ type: 'Regular Decision', date: '2027-01-15' }], source_url: 'https://example.edu/admissions' },
+      } }) })
+      return
+    }
+    if (request.action === 'deadline_accept') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ updated: true }) })
+      return
+    }
+    expect(request).toEqual({ action: 'data_quality' })
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -354,10 +372,74 @@ test('authorized operators can review saved-school deadline quality', async ({ p
   await expect(page.getByRole('heading', { name: 'Deadline quality, without the digging.' })).toBeVisible()
   await expect(page.getByText('2 schools need attention')).toBeVisible()
   await expect(page.getByText('Engineering College')).toBeVisible()
-  await page.getByRole('button', { name: 'Recheck' }).click()
+  await page.getByRole('button', { name: 'Recheck', exact: true }).click()
   await expect(page.getByText('Liberal Arts University')).toBeVisible()
   await expect(page.getByText('Engineering College')).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Official source' })).toHaveAttribute('href', 'https://example.edu/admissions')
+  await page.getByRole('button', { name: 'Recheck Liberal Arts University' }).click()
+  await expect(page.getByRole('heading', { name: 'Liberal Arts University' })).toBeVisible()
+  await expect(page.getByText('2027-01-15')).toBeVisible()
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: 'Accept checked data' }).click()
+  await expect(page.getByText('Review before publishing')).toHaveCount(0)
+})
+
+test('authorized operators can use support, incident, and audit tools', async ({ page }) => {
+  await mockSupabase(page)
+  const userId = '55555555-5555-4555-8555-555555555555'
+  await page.addInitScript(({ id }) => {
+    const user = { id, aud: 'authenticated', role: 'authenticated', email: 'owner@example.com', app_metadata: {}, user_metadata: {}, identities: [], created_at: '2026-08-01T00:00:00.000Z' }
+    localStorage.setItem('sb-example-auth-token', JSON.stringify({ access_token: 'test-access-token', refresh_token: 'test-refresh-token', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user }))
+  }, { id: userId })
+  await page.route('https://example.supabase.co/rest/v1/**', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }))
+  await page.route('https://example.supabase.co/functions/v1/email-operations', async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    if (body.action === 'admin_access') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ admin: { email: 'owner@example.com' } }) })
+      return
+    }
+    if (body.action === 'support_lookup') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        found: true,
+        user: { id: 'student-1', email: 'student@example.com', created_at: '2026-08-01T00:00:00Z', last_sign_in_at: '2026-08-25T20:00:00Z', email_confirmed_at: '2026-08-01T00:00:00Z' },
+        counts: { messages: 12, saved_schools: 3, vibe_checks: 2 }, profile: { exists: true, updated_at: '2026-08-20T00:00:00Z' },
+        email_preferences: { deadline_reminders_enabled: true, getting_started_enabled: false, weekly_digest_enabled: true, timezone: 'America/Los_Angeles', updated_at: '2026-08-20T00:00:00Z' },
+        suppression: null, deliveries: [],
+      }) })
+      return
+    }
+    if (body.action === 'incident_controls') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        controls: [
+          { key: 'welcome_email_enabled', enabled: true, updated_at: '2026-08-25T00:00:00Z' },
+          { key: 'deadline_reminders_enabled', enabled: true, updated_at: '2026-08-25T00:00:00Z' },
+          { key: 'email_programs_enabled', enabled: true, updated_at: '2026-08-25T00:00:00Z' },
+        ],
+        environment: { welcome_email_enabled: true, deadline_reminders_enabled: true, email_programs_enabled: true },
+        maintenance: { maintenance_enabled: false, message: null, updated_at: '2026-08-25T00:00:00Z' },
+      }) })
+      return
+    }
+    if (body.action === 'audit_log') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ events: [{ id: 'event-1', admin_email: 'owner@example.com', action: 'support.lookup', target_type: 'user', target_id: 'student-1', outcome: 'success', created_at: '2026-08-25T22:00:00Z' }] }) })
+      return
+    }
+    await route.fulfill({ status: 400, contentType: 'application/json', body: '{}' })
+  })
+
+  await page.goto('/admin/support')
+  await page.getByRole('textbox', { name: 'Account email' }).fill('student@example.com')
+  await page.getByRole('button', { name: 'Look up' }).click()
+  await expect(page.getByText('3', { exact: true })).toBeVisible()
+  await expect(page.getByText('Message content stays private')).toHaveCount(0)
+
+  await page.goto('/admin/incidents')
+  await expect(page.getByRole('heading', { name: 'Pause safely. Communicate clearly.' })).toBeVisible()
+  await expect(page.getByText('Server switch: enabled · Admin control: enabled').first()).toBeVisible()
+
+  await page.goto('/admin/audit')
+  await expect(page.getByText('support.lookup')).toBeVisible()
+  await expect(page.getByText('student-1')).toBeVisible()
 })
 
 test('authorized operators can preview templates and send a test only to themselves', async ({ page }) => {

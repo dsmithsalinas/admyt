@@ -169,7 +169,13 @@ The authenticated `/admin` route is the internal system-health overview. It repo
 
 `/email-operations` is the first linked admin module. It previews the same shared renderers used by the production workers, can send a selected template to the signed-in administrator's own address, and shows opt-in counts, recent worker runs, delivery status, webhook activity, and suppression totals.
 
-`/admin/data-quality` is the read-only deadline review queue. It aggregates saved-school rows by college, compares them with the shared deadline cache, and reports records that are missing deadlines, missing an HTTPS official source, or older than the seven-day verification window required for application email. Responses include school names and aggregate save counts but never user IDs or recipient addresses. The first version intentionally does not mutate or force-refresh deadline data.
+`/admin/data-quality` is the deadline review queue. It aggregates saved-school rows by college and reports records that are missing deadlines, missing an HTTPS official source, or older than the seven-day verification window required for application email. An administrator can request a fresh AI/web-search result, but that result is stored as an expiring private preview and does not replace the shared cache until the administrator reviews its dates and HTTPS source and explicitly accepts it.
+
+`/admin/support` performs a read-only, exact-email account lookup. It returns Auth timestamps, feature counts, notification preferences, suppression state, and the last 10 privacy-minimized delivery outcomes. It never returns chat text, Sage profile answers, saved-school names, Vibe Check content, provider message IDs, or a browsable user directory.
+
+`/admin/incidents` provides database-backed controls for welcome emails, deadline reminders, and guidance/digest messages. A program sends only when both its existing environment switch and its database control are enabled. The same page can publish a 240-character maintenance notice above the application navigation. Confirm each change in the UI; controls take effect on the next worker invocation.
+
+`/admin/audit` shows the most recent privacy-minimized admin actions. Support lookups, email test sends, deadline previews and acceptance, incident changes, maintenance changes, and audit-log views are recorded. Audit rows expire after 365 days; unused deadline previews are pruned after they expire.
 
 Access is enforced inside the `email-operations` Edge Function. The frontend route is not an authorization boundary. Set a comma-separated allowlist using the exact email addresses of authorized Supabase Auth accounts:
 
@@ -181,7 +187,7 @@ npx supabase functions deploy email-operations
 - The function verifies the caller's Supabase user JWT and compares the verified Auth email against the server-side allowlist. It never uses editable user metadata for authorization.
 - Test sends always go to that verified administrator address. The request cannot supply a recipient, sender, subject, or HTML.
 - Preview content uses bounded sample data and a sandboxed iframe. It does not load a student's account data.
-- Dashboard responses omit recipient addresses, user IDs, provider message IDs, and suppression hashes.
+- Aggregate dashboard responses omit recipient addresses, user IDs, provider message IDs, and suppression hashes. The exact-email support tool returns only the single requested account and records the lookup by user ID in the audit log.
 - The Resend API key and Supabase service-role key remain inside the Edge Function.
 - Keep both routes out of normal student navigation. Authorized operators can bookmark `https://youradmyt.com/admin`; signed-out and unauthorized visitors receive a generic denial page that does not identify the internal tools.
 
@@ -202,5 +208,7 @@ npx supabase functions deploy email-operations
 npm run check
 npm run test:e2e
 ```
+
+The database migration must be applied before deploying the updated welcome, reminder, guidance/digest, or email-operations functions. Until the migration exists, the new database runtime controls intentionally fail closed.
 
 After deployment, test account export with a non-production user. Test deletion only with a disposable account, then confirm its application rows and Auth user are gone.

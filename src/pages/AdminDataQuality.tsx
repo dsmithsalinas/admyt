@@ -36,6 +36,14 @@ interface DataQualityReport {
   schools: QualitySchool[]
 }
 
+interface DeadlinePreview {
+  id: string
+  college_id: string
+  college_name: string
+  expires_at: string
+  deadlines: { rounds?: Array<{ type?: string; date?: string }>; rolling?: boolean; cycle?: string; source_url?: string }
+}
+
 function formatTime(value: string | null) {
   if (!value) return 'Never checked'
   return new Intl.DateTimeFormat('en-US', {
@@ -55,6 +63,30 @@ export default function AdminDataQuality() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | QualityState>('all')
+  const [workingCollege, setWorkingCollege] = useState<string | null>(null)
+  const [preview, setPreview] = useState<DeadlinePreview | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  async function recheck(school: QualitySchool) {
+    setWorkingCollege(school.college_id); setActionError(null); setPreview(null)
+    const { data, error: requestError } = await supabase.functions.invoke('email-operations', {
+      body: { action: 'deadline_preview', college_id: school.college_id },
+    })
+    if (requestError) setActionError('The recheck did not return verified deadline data. Nothing was changed.')
+    else setPreview((data as { preview: DeadlinePreview }).preview)
+    setWorkingCollege(null)
+  }
+
+  async function acceptPreview() {
+    if (!preview || !window.confirm(`Replace the cached deadline data for ${preview.college_name} with this reviewed result?`)) return
+    setWorkingCollege(preview.college_id); setActionError(null)
+    const { error: requestError } = await supabase.functions.invoke('email-operations', {
+      body: { action: 'deadline_accept', preview_id: preview.id },
+    })
+    if (requestError) setActionError('The reviewed deadline data could not be saved.')
+    else { setPreview(null); await loadReport() }
+    setWorkingCollege(null)
+  }
 
   const loadReport = useCallback(async () => {
     if (!user) return
@@ -135,7 +167,7 @@ export default function AdminDataQuality() {
           {visibleSchools.length > 0 ? (
             <div className="email-ops-table-wrap">
               <table className="email-ops-table admin-quality-table">
-                <thead><tr><th>School</th><th>Status</th><th>Last checked</th><th>Source</th></tr></thead>
+                <thead><tr><th>School</th><th>Status</th><th>Last checked</th><th>Source</th><th>Action</th></tr></thead>
                 <tbody>
                   {visibleSchools.map((school) => (
                     <tr key={school.college_id}>
@@ -143,6 +175,7 @@ export default function AdminDataQuality() {
                       <td><span className={`admin-quality-state ${school.state}`}>{stateLabel(school.state)}</span></td>
                       <td>{formatTime(school.updated_at)}</td>
                       <td>{school.source_url ? <a href={school.source_url} target="_blank" rel="noreferrer">Official source <ExternalLink size={13} aria-hidden="true" /></a> : '—'}</td>
+                      <td><button className="btn secondary" aria-label={`Recheck ${school.college_name}`} disabled={workingCollege === school.college_id} onClick={() => void recheck(school)}>{workingCollege === school.college_id ? 'Checking…' : 'Recheck'}</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -152,6 +185,19 @@ export default function AdminDataQuality() {
             <p className="match-note">No schools match this filter.</p>
           )}
         </section>
+
+        {actionError && <p className="admin-error" role="alert">{actionError}</p>}
+        {preview && <section className="mock-card section-pad admin-deadline-preview" aria-labelledby="deadline-preview-heading">
+          <span className="mini-title">Review before publishing</span><h2 id="deadline-preview-heading">{preview.college_name}</h2>
+          <p className="match-note">This result is not live yet. Confirm the dates and official source, then accept it within 30 minutes.</p>
+          <dl className="admin-detail-list">
+            <div><dt>Cycle</dt><dd>{preview.deadlines.cycle || 'Not specified'}</dd></div>
+            <div><dt>Application style</dt><dd>{preview.deadlines.rolling ? 'Rolling admission' : 'Fixed deadlines'}</dd></div>
+            {(preview.deadlines.rounds ?? []).map((round, index) => <div key={`${round.type}-${round.date}-${index}`}><dt>{round.type || 'Deadline'}</dt><dd>{round.date || 'No date'}</dd></div>)}
+          </dl>
+          {preview.deadlines.source_url && <p><a href={preview.deadlines.source_url} target="_blank" rel="noreferrer">Open official source <ExternalLink size={14} aria-hidden="true" /></a></p>}
+          <div className="admin-preview-actions"><button className="btn primary" disabled={Boolean(workingCollege)} onClick={() => void acceptPreview()}>Accept checked data</button><button className="btn secondary" onClick={() => setPreview(null)}>Discard</button></div>
+        </section>}
 
         <p className="admin-generated">Last checked {formatTime(report.generated_at)} · Signed in as {report.admin.email}</p>
       </div>
