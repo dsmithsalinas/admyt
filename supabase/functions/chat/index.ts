@@ -27,6 +27,23 @@ function env(key: string): string {
   return Deno.env.get(key) ?? ''
 }
 
+function hasVerifiedServiceRole(authHeader: string | null, supabaseUrl: string): boolean {
+  if (!authHeader?.startsWith('Bearer ')) return false
+  try {
+    // The Edge gateway verifies the JWT signature before this function runs.
+    // Check the signed claims so valid service-role tokens survive key rotation.
+    const encodedPayload = authHeader.slice('Bearer '.length).split('.')[1]
+    if (!encodedPayload) return false
+    const normalized = encodedPayload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const payload = JSON.parse(atob(padded)) as { role?: string; ref?: string }
+    const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
+    return payload.role === 'service_role' && payload.ref === projectRef
+  } catch {
+    return false
+  }
+}
+
 function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -202,14 +219,14 @@ function parseDeadlines(text: string): { rounds: unknown[]; rolling?: boolean; c
   return match ? tryParse(match[0]) : null
 }
 
-async function handleDeadline(body: { collegeId?: unknown }): Promise<Response> {
+async function handleDeadline(body: { collegeId?: unknown }, forceRefresh = false): Promise<Response> {
   const college = await fetchCollege(String(body.collegeId ?? ''))
   if (!college) return json({ error: 'college_not_found' }, 404)
 
   // Serve from the shared cache when fresh — no web search, no cost. A real
   // result is trusted for ~10 months; an empty one is retried within a week.
   const cached = await getDeadlineRow(college.id)
-  if (cached) {
+  if (cached && !forceRefresh) {
     const age = Date.now() - new Date(cached.updated_at).getTime()
     const dl = cached.deadlines as { rounds?: unknown[]; rolling?: boolean } | null
     const hasContent = !!dl && (dl.rolling === true || (Array.isArray(dl.rounds) && dl.rounds.length > 0))
@@ -361,7 +378,11 @@ serve(async (req) => {
     // Deadlines are fully self-contained (cache + web search + store) — they don't
     // share the single-shot Anthropic call the other types fall through to.
     if (type === 'deadline') {
-      return finish(await handleDeadline(body), type)
+      const forceRefresh = body?.forceRefresh === true && hasVerifiedServiceRole(
+        req.headers.get('Authorization'),
+        env('SUPABASE_URL'),
+      )
+      return finish(await handleDeadline(body, forceRefresh), type)
     }
 
     // Build the prompt server-side by request type. The endpoint never accepts a

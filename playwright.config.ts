@@ -23,6 +23,7 @@ export default defineConfig({
       VITE_SUPABASE_URL: 'https://example.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'test-anon-key',
       VITE_APPLE_AUTH_ENABLED: 'true',
+      VITE_DEADLINE_EMAILS_ENABLED: 'true',
     },
   },
 })

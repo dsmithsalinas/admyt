@@ -136,3 +136,67 @@ test('header login opens as a full-page modal above the Sage interface', async (
   await expect(page.getByRole('heading', { name: 'Find where you fit' })).toBeInViewport()
   expect(await panel.evaluate(element => element.scrollTop)).toBe(0)
 })
+
+test('signed-in students explicitly opt in to deadline emails', async ({ page }) => {
+  await mockSupabase(page)
+  const userId = '11111111-1111-4111-8111-111111111111'
+  let preferenceWrite: Record<string, unknown> | null = null
+
+  await page.addInitScript(({ id }) => {
+    const user = {
+      id,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'student@example.com',
+      app_metadata: {},
+      user_metadata: {},
+      identities: [],
+      created_at: '2026-08-01T00:00:00.000Z',
+    }
+    localStorage.setItem('sb-example-auth-token', JSON.stringify({
+      access_token: 'test-access-token',
+      refresh_token: 'test-refresh-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user,
+    }))
+  }, { id: userId })
+
+  await page.route('https://example.supabase.co/rest/v1/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.route('https://example.supabase.co/rest/v1/user_preferences**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: userId,
+      preferred_states: [],
+      max_tuition: null,
+      preferred_majors: [],
+      sage_profile: null,
+    }),
+  }))
+  await page.route('https://example.supabase.co/rest/v1/notification_preferences**', async route => {
+    if (route.request().method() === 'POST') {
+      preferenceWrite = route.request().postDataJSON() as Record<string, unknown>
+      await route.fulfill({ status: 201, contentType: 'application/json', body: '[]' })
+      return
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+  })
+  await page.goto('/profile')
+  const reminderSwitch = page.getByRole('switch')
+  await expect(reminderSwitch).toHaveAttribute('aria-checked', 'false')
+  await expect(reminderSwitch).toBeEnabled()
+  await reminderSwitch.click()
+  await expect(reminderSwitch).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByText(/We’ll email 30 days and 7 days/i)).toBeVisible()
+  expect(preferenceWrite).toMatchObject({
+    user_id: userId,
+    deadline_reminders_enabled: true,
+  })
+  expect(preferenceWrite?.timezone).toEqual(expect.any(String))
+})

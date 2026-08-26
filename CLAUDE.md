@@ -32,7 +32,9 @@ Admyt exists because fit matters more than rank. The right school for you is the
 - **Backend:** Supabase (auth, database, edge functions)
 - **AI:** Anthropic Claude API (model: claude-sonnet-4-6)
 - **API proxy:** Supabase Edge Function at `supabase/functions/chat/index.ts` — all Claude API calls go through here, never directly from the browser
-- **Deployment:** Vercel — live at `youradmyt.vercel.app`, auto-deploys on every push to `main` (Vercel GitHub integration). Per-deploy/preview URLs are gated by Vercel Deployment Protection; the `youradmyt.vercel.app` production domain is public. Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars set in the Vercel project.
+- **Deployment:** Vercel — live at `youradmyt.com` (`youradmyt.vercel.app` remains the Vercel fallback), auto-deploys on every push to `main` (Vercel GitHub integration). Per-deploy/preview URLs are gated by Vercel Deployment Protection; the production domain is public. Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars set in the Vercel project.
+- **Auth email:** Passwordless six-digit sign-in codes are delivered through Supabase Auth using Resend custom SMTP. `youradmyt.com` is verified in Resend; production sends from `Sage from admyt <sign-in@youradmyt.com>`. The canonical template is `supabase/templates/sign-in-code.html` and must stay synchronized with the hosted Supabase Magic Link / OTP template.
+- **Deadline email:** The opt-in reminder pipeline lives in `supabase/functions/deadline-reminders`. Supabase Cron invokes it daily at 15:00 UTC. It sends at 30 and 7 days only for recently checked official-source dates, refreshes at most five missing/stale saved-school deadlines per run through the service-authenticated chat function, and records delivery claims for deduplication/retries. `VITE_DEADLINE_EMAILS_ENABLED` exposes the Profile opt-in; the Edge Function secret `EMAIL_REMINDERS_ENABLED` is the immediate delivery kill switch. Operational details live in `docs/OPERATIONS.md`.
 - **Data:** The College Scorecard import currently yields roughly 3,800 schools in Supabase. Browse loads the full paginated catalog; Sage's server-side prompt catalog is intentionally capped at 1,000 schools to control prompt size.
 
 ## Project structure
@@ -96,7 +98,9 @@ supabase/
 
 ├── chat/index.ts    # Anthropic proxy, redacted telemetry, and AI circuit breaker
 
-└── account/index.ts # Authenticated permanent account deletion
+├── account/index.ts # Authenticated permanent account deletion
+
+└── deadline-reminders/index.ts # Opt-in, deduplicated Resend deadline emails
 ## Supabase tables
 | Table | Purpose |
 |---|---|
@@ -105,6 +109,8 @@ supabase/
 | `hearted_schools` | Student's saved/hearted schools |
 | `saved_vibes` | Saved Vibe Check results |
 | `user_preferences` | Standing filters (states, tuition, major) |
+| `notification_preferences` | Explicit per-user deadline-email opt-in and time zone |
+| `notification_deliveries` | Deadline-email delivery ledger and duplicate protection |
 | `data_source_status` | Public catalog provenance and last successful refresh |
 
 All tables have Row Level Security enabled. Users can only access their own data. The `colleges` table is publicly readable (no auth required).

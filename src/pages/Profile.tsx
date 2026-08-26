@@ -12,6 +12,7 @@ import { REGION_TO_STATES } from '@/lib/regions'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
 import { buildAccountExport, clearAdmytBrowserData, deleteAdmytAccount, downloadJson } from '@/lib/accountData'
+import { getNotificationPreferences, saveDeadlineReminderPreference } from '@/lib/notifications'
 import SageOrb from '@/components/sage/SageOrb'
 import {
   ensureDeadline,
@@ -64,6 +65,8 @@ interface SageFactRow {
   removeLabel: string
   clearUpdate: Partial<StudentProfile>
 }
+
+const DEADLINE_EMAIL_OPT_IN_AVAILABLE = import.meta.env.VITE_DEADLINE_EMAILS_ENABLED === 'true'
 
 const US_STATES = [
   { abbr: 'AK', name: 'Alaska' }, { abbr: 'AL', name: 'Alabama' }, { abbr: 'AR', name: 'Arkansas' },
@@ -380,10 +383,19 @@ export default function Profile() {
   const [vibes, setVibes] = useState<SavedVibe[]>([])
   const [prefs, setPrefs] = useState<UserPreferences>({ preferred_states: [], max_tuition: null, preferred_majors: [] })
   const [deadlines, setDeadlines] = useState<Record<string, CollegeDeadlines>>({})
+  const [deadlineEmailsEnabled, setDeadlineEmailsEnabled] = useState(false)
+  const [deadlineEmailsLoading, setDeadlineEmailsLoading] = useState(false)
+  const [deadlineEmailsSaving, setDeadlineEmailsSaving] = useState(false)
+  const [deadlineEmailsMessage, setDeadlineEmailsMessage] = useState('')
   const collegeById = useMemo(() => new Map(colleges.map(c => [c.id, c])), [colleges])
 
   useEffect(() => {
-    if (!user) { setLoading(false); return }
+    if (!user) {
+      setDeadlineEmailsEnabled(false)
+      setDeadlineEmailsMessage('')
+      setLoading(false)
+      return
+    }
     Promise.all([
       supabase.from('hearted_schools').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('saved_vibes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -394,6 +406,14 @@ export default function Profile() {
       if (prefsRes.data) setPrefs(prefsRes.data)
       setLoading(false)
     })
+
+    if (DEADLINE_EMAIL_OPT_IN_AVAILABLE) {
+      setDeadlineEmailsLoading(true)
+      getNotificationPreferences(user.id)
+        .then(notificationPrefs => setDeadlineEmailsEnabled(notificationPrefs.deadlineRemindersEnabled))
+        .catch(() => setDeadlineEmailsMessage('We couldn’t load your email setting. Please refresh and try again.'))
+        .finally(() => setDeadlineEmailsLoading(false))
+    }
   }, [user])
 
   // Load cached deadlines for the hearted schools, then fetch any that are missing
@@ -474,6 +494,24 @@ export default function Profile() {
     if (!college) return
     const saved = await toggleHeart(college, false)
     if (saved) setHearts(prev => prev.filter(h => h.college_id !== collegeId))
+  }
+
+  async function handleDeadlineEmailToggle() {
+    if (!user || deadlineEmailsSaving || deadlineEmailsLoading) return
+    const next = !deadlineEmailsEnabled
+    setDeadlineEmailsSaving(true)
+    setDeadlineEmailsMessage('')
+    try {
+      await saveDeadlineReminderPreference(user.id, next)
+      setDeadlineEmailsEnabled(next)
+      setDeadlineEmailsMessage(next
+        ? 'You’re set. We’ll email 30 days and 7 days before verified deadlines.'
+        : 'Deadline emails are off.')
+    } catch {
+      setDeadlineEmailsMessage('We couldn’t change that setting. Nothing was changed—please try again.')
+    } finally {
+      setDeadlineEmailsSaving(false)
+    }
   }
 
   async function persistProfile(update: Partial<StudentProfile>) {
@@ -684,6 +722,30 @@ export default function Profile() {
                 <p className="match-note" style={{ marginTop: 10, fontSize: 12 }}>
                   Dates are gathered from each school's site — always confirm on their official admissions page before you rely on them.
                 </p>
+                {DEADLINE_EMAIL_OPT_IN_AVAILABLE && (
+                  <>
+                    <div className="mock-soft-card" style={{ marginTop: 16, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                      <div style={{ flex: '1 1 280px' }}>
+                        <strong style={{ color: 'var(--admyt-ink)' }}>Deadline emails</strong>
+                        <p className="match-note" style={{ margin: '5px 0 0' }}>
+                          Get a heads-up 30 days and 7 days before deadlines for My Schools. We only email when the date was recently verified from the school’s site.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={deadlineEmailsEnabled}
+                        className={`pill ${deadlineEmailsEnabled ? 'teal' : ''}`}
+                        onClick={handleDeadlineEmailToggle}
+                        disabled={deadlineEmailsLoading || deadlineEmailsSaving}
+                        style={{ minWidth: 74, justifyContent: 'center' }}
+                      >
+                        {deadlineEmailsLoading ? 'Loading…' : deadlineEmailsSaving ? 'Saving…' : deadlineEmailsEnabled ? 'On' : 'Off'}
+                      </button>
+                    </div>
+                    {deadlineEmailsMessage && <p role="status" className="match-note" style={{ marginTop: 8, fontSize: 12 }}>{deadlineEmailsMessage}</p>}
+                  </>
+                )}
               </div>
             </section>
           )}

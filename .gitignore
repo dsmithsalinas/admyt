@@ -32,3 +32,4 @@ test-results/
 
 # Redesign source assets — raw full-size PNGs (~54MB); optimized WebP live in src/assets
 docs/redesign/assets/
+.vercel/

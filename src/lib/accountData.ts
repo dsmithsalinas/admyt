@@ -7,6 +7,8 @@ const USER_TABLES = [
   'hearted_schools',
   'saved_vibes',
   'user_preferences',
+  'notification_preferences',
+  'notification_deliveries',
 ] as const
 
 const ADMYT_BROWSER_KEYS = [
@@ -36,7 +38,7 @@ async function fetchEveryUserRow(table: typeof USER_TABLES[number], userId: stri
 }
 
 export async function buildAccountExport(user: User) {
-  const [chatMessages, heartedSchools, savedVibes, userPreferences] = await Promise.all(
+  const [chatMessages, heartedSchools, savedVibes, userPreferences, notificationPreferences, notificationDeliveries] = await Promise.all(
     USER_TABLES.map(table => fetchEveryUserRow(table, user.id)),
   )
 
@@ -59,6 +61,8 @@ export async function buildAccountExport(user: User) {
       hearted_schools: heartedSchools,
       saved_vibes: savedVibes,
       user_preferences: userPreferences,
+      notification_preferences: notificationPreferences,
+      notification_deliveries: notificationDeliveries,
     },
     retention: {
       active_account: 'Stored until you delete it or ask Admyt to delete it.',

@@ -427,3 +427,14 @@ entrypoint = "./functions/account/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/account/*.html" ]
+
+[functions.deadline-reminders]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deadline-reminders/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/deadline-reminders/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/deadline-reminders/*.html" ]
