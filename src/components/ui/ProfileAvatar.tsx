@@ -10,6 +10,7 @@ export default function ProfileAvatar() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -22,13 +23,28 @@ export default function ProfileAvatar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  useEffect(() => {
+    if (!showDropdown) return
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setShowDropdown(false)
+      buttonRef.current?.focus()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [showDropdown])
+
   const initials = user?.email?.charAt(0).toUpperCase() ?? '?'
 
   return (
     <div style={{ position: 'relative' }} ref={dropdownRef}>
       {/* Avatar button */}
       <button
+        ref={buttonRef}
         onClick={() => user ? setShowDropdown(!showDropdown) : setShowAuthModal(true)}
+        aria-label="Profile"
+        aria-expanded={user ? showDropdown : undefined}
+        aria-controls={user ? 'profile-menu' : undefined}
         style={{
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', gap: '3px',
@@ -67,7 +83,7 @@ export default function ProfileAvatar() {
 
       {/* Signed-in dropdown */}
       {showDropdown && user && (
-        <div style={{
+        <div id="profile-menu" style={{
           position: 'absolute', top: 'calc(100% + 8px)', right: 0,
           background: 'var(--admyt-paper)',
           border: '1px solid var(--admyt-line)',

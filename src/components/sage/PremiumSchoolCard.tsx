@@ -81,8 +81,8 @@ export default function PremiumSchoolCard({ college, compact = false }: PremiumS
       <p className="premium-school-fit-read">{fitRead}</p>
 
       <div className="premium-school-facts" aria-label={`${college.name} facts`}>
-        {chips.map(chip => <span key={chip}>{chip}</span>)}
-        {majorChips.map(major => <span className="is-major" key={major}>{major}</span>)}
+        {chips.map(chip => <span key={`fact-${chip}`}>{chip}</span>)}
+        {majorChips.map(major => <span className="is-major" key={`major-${major}`}>{major}</span>)}
       </div>
 
       <footer className="premium-school-actions">

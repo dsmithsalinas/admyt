@@ -179,6 +179,7 @@ Public legal pages live at `/terms` and `/privacy`. Account creation requires af
 - [x] Reproducible Supabase baseline migration + local configuration
 - [x] ESLint, Vitest, Playwright, and GitHub Actions quality gates
 - [x] Route-level code splitting and bounded Browse rendering
+- [x] WCAG-focused accessibility baseline: skip navigation, route announcements and focus management, labelled controls, modal isolation/focus trapping, reduced-motion handling, AA secondary-text contrast, and automated axe coverage for public routes and sign-in
 
 ### Soon
 - [ ] Scheduled production smoke tests — recommended: GitHub Actions cron (`.github/workflows/smoke.yml`) running *shallow* checks against `youradmyt.vercel.app`: HTTP 200 + correct `<title>`, the `/assets/index-*.js` bundle serves, and the Supabase REST endpoint is reachable; fail the run (email alert) on any miss. Optional: compare the live bundle hash to the latest `main` build to catch a silently-failed deploy. Start daily, tighten to hourly if wanted. (Alternative: a `/schedule` Claude cloud routine that only pings on failure. A *deep* synthetic Playwright check — load app, assert Sage chat / school page / Vibe Check render — can be layered on later.)
@@ -235,6 +236,7 @@ plain feature name can't.
 ## Working style notes
 - Use Node 20.19 or newer. Install the lockfile with `npm ci`.
 - Run `npm run check` before handoff; run `npm run test:e2e` for navigation, Browse, or other user-flow changes.
+- Accessibility coverage lives in `tests/e2e/accessibility.spec.ts` and fails on serious or critical axe violations across the main public routes and sign-in dialog.
 - Database changes must be migrations. Verify the complete chain with `npm run db:reset` on a machine with Docker or Podman, then preview remote changes with `npx supabase db push --dry-run`.
 - Always use the Supabase Edge Function proxy for Claude API calls — never call Anthropic directly from the browser
 - When creating new Supabase tables via SQL Editor, remember to expose them to the API in Table Editor (past gotcha)

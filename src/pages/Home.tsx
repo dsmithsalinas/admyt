@@ -28,7 +28,7 @@ const ACTION_TILES = [
 
 function TypingDots() {
   return (
-    <div style={{ display: 'flex', gap: '5px', alignItems: 'center', padding: '4px 0' }}>
+    <div aria-hidden="true" style={{ display: 'flex', gap: '5px', alignItems: 'center', padding: '4px 0' }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{
           width: '8px', height: '8px', borderRadius: '50%', background: 'var(--admyt-indigo)',
@@ -63,7 +63,11 @@ export default function Home() {
     [messages],
   )
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
+  useEffect(() => {
+    if (visibleMessages.length === 0 && !loading) return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    bottomRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' })
+  }, [visibleMessages.length, loading])
 
   useEffect(() => {
     const incoming = (location.state as ChatLocationState | null)?.vibeContext
@@ -103,6 +107,7 @@ export default function Home() {
 
   return (
     <div className={`sage-space${isTransitioning ? ' is-arriving' : ''}`}>
+      <h1 className="sr-only">Talk with Sage</h1>
       <div className="sage-space-stars" aria-hidden="true" />
       <div className="sage-space-orbit" aria-hidden="true" />
 
@@ -112,14 +117,14 @@ export default function Home() {
         </div>
         <div className="sage-presence-copy">
           <span className="sage-presence-status"><i /> Sage is here</span>
-          <h1>Let’s find your place.</h1>
+          <div className="sage-presence-heading">Let’s find your place.</div>
           <p>No perfect answers needed. Just tell me what’s on your mind.</p>
         </div>
       </aside>
 
       <section className="sage-conversation-shell">
         <div className="sage-conversation-scroll">
-          <div className="sage-conversation-inner">
+          <div className="sage-conversation-inner" role="log" aria-live="polite" aria-label="Conversation with Sage">
             {isEmpty && (
               <div className="sage-empty-state">
                 <span className="sage-empty-kicker">A conversation, not a questionnaire</span>
@@ -136,10 +141,10 @@ export default function Home() {
                       className="sage-action-chip"
                     >
                       <span className="sage-action-icon" style={{ background: tile.bg }}>
-                        <tile.Icon size={17} />
+                        <tile.Icon size={17} aria-hidden="true" />
                       </span>
                       <span>{tile.label}</span>
-                      <ArrowRight size={14} />
+                      <ArrowRight size={14} aria-hidden="true" />
                     </button>
                   ))}
                 </div>
@@ -179,7 +184,7 @@ export default function Home() {
             })}
 
             {loading && (
-              <div className="sage-assistant-wrap sage-message-row">
+              <div className="sage-assistant-wrap sage-message-row" role="status" aria-label="Sage is responding">
                 <SageOrb size={30} />
                 <div>
                   <div className="sage-message-label">Sage</div>
@@ -209,6 +214,7 @@ export default function Home() {
           <div className="sage-composer">
             <textarea
               ref={textareaRef}
+              aria-label="Message Sage"
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKey}

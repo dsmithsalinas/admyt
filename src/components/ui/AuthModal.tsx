@@ -102,7 +102,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
           display: 'flex', alignItems: 'center', gap: 6,
           background: 'var(--admyt-lavender)', border: '1px solid var(--admyt-line)',
           borderRadius: 20, padding: '3px 10px',
-          fontSize: 12, fontWeight: 800, color: 'var(--admyt-indigo)',
+          fontSize: 12, fontWeight: 800, color: '#4f46e5',
           margin: '0 auto 10px', width: 'fit-content',
         }}>
           Free account
@@ -200,6 +200,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
         <input
           className="field"
           type="email"
+          aria-label="Email address"
           placeholder="Email"
           value={email}
           onChange={e => setEmail(e.target.value)}
@@ -245,7 +246,7 @@ export default function AuthModal({ onClose, onSuccess, trigger = 'general' }: A
 
 function AuthError({ message }: { message: string }) {
   return (
-    <div style={{
+    <div role="alert" style={{
       fontSize: 12, color: '#DC2626', textAlign: 'left',
       background: '#FEF2F2', border: '1px solid #FECACA',
       borderRadius: 10, padding: '8px 12px', marginTop: 12, marginBottom: 12,

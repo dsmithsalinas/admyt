@@ -175,7 +175,7 @@ export default function CollegeDetail() {
       <p className="trust-note">School facts come from the U.S. Department of Education College Scorecard and may lag the school’s website. Confirm costs and admissions details with the school.</p>
 
       <div className="detail-body premium-detail-body">
-        <main style={{ display: 'grid', gap: 14 }}>
+        <div style={{ display: 'grid', gap: 14 }}>
           <section className="mock-card section-pad detail-surface-card detail-summary-card">
             <span className="mini-title">Real-talk summary</span>
             {descriptionLoading ? (
@@ -212,7 +212,7 @@ export default function CollegeDetail() {
               </div>
             </section>
           )}
-        </main>
+        </div>
 
         <aside className="sage-panel premium-detail-sage-panel">
           <section className="mock-soft-card section-pad detail-surface-card">

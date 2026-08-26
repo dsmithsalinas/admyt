@@ -13,6 +13,41 @@
       var(--admyt-paper);
   }
 
+  .skip-link {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    transform: translateY(-160%);
+    border-radius: 8px;
+    background: #171722;
+    color: white;
+    padding: 10px 14px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  :where(a, button, input, textarea, select, summary, [role="button"], [role="link"], [tabindex]):focus-visible {
+    outline: 3px solid #4f46e5;
+    outline-offset: 3px;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
   }
@@ -364,6 +399,7 @@
     font-weight: 850;
     letter-spacing: .08em;
     text-transform: uppercase;
+    margin-top: 0;
     margin-bottom: 10px;
   }
 
@@ -372,6 +408,16 @@
     line-height: 1.45;
     font-size: 13px;
     margin: 0;
+  }
+
+  .saved-school-link {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
   }
 
   .filters {
@@ -2604,7 +2650,7 @@
   padding: 20px clamp(24px, 6.5vw, 104px);
   border-top: 1px solid rgba(55,51,75,.12);
   background: #fff;
-  color: #74778a;
+  color: #6b6a7d;
   font-size: 13px;
 }
 
@@ -3065,7 +3111,7 @@
   box-shadow: 0 0 0 5px rgba(37,183,174,.12);
 }
 
-.sage-presence h1 {
+.sage-presence-heading {
   margin: 0 0 12px;
   color: #131426;
   font-size: clamp(30px, 3vw, 44px);
@@ -3467,7 +3513,7 @@
     height: 62px !important;
   }
 
-  .sage-presence-copy h1,
+  .sage-presence-copy .sage-presence-heading,
   .sage-presence-copy p {
     display: none;
   }

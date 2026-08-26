@@ -100,7 +100,8 @@ export default function Landing() {
 
   return (
     <div ref={pageRef} className="premium-landing">
-      <nav className="landing-nav premium-landing-nav">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
+      <nav className="landing-nav premium-landing-nav" aria-label="Primary navigation">
         <a className="premium-wordmark" href="#" aria-label="Admyt home">
           adm<GradText>y</GradText>t
         </a>
@@ -111,7 +112,7 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className={`premium-scroll-story${activeScene === 5 ? ' is-vibe' : ''}`}>
           <div className="premium-scroll-grid">
             <div className="premium-scroll-copy-column">
@@ -170,7 +171,7 @@ export default function Landing() {
               </article>
             </div>
 
-            <div className="premium-scroll-visual-column" aria-live="polite">
+            <div className="premium-scroll-visual-column" aria-hidden="true">
               <div className="premium-scroll-visual-sticky">
                 <CampusWorld className={`premium-scroll-world${activeScene === 1 ? ' is-muted' : ''}`}>
                   <div className={`premium-scene-layer${activeScene === 0 ? ' is-active' : ''}`}>
@@ -268,9 +269,9 @@ export default function Landing() {
             <strong>Whoever you are, Sage starts with you.</strong>
           </div>
           <div className="premium-portrait-constellation premium-reveal" aria-label="Students Sage is built to support">
-            <div className="premium-portrait premium-portrait-one"><img src={sageCutout01} alt="Student portrait" /></div>
-            <div className="premium-portrait premium-portrait-two"><img src={sageCutout02} alt="Student portrait" /></div>
-            <div className="premium-portrait premium-portrait-three"><img src={sageCutout03} alt="Student portrait" /></div>
+            <div className="premium-portrait premium-portrait-one"><img src={sageCutout01} alt="" aria-hidden="true" /></div>
+            <div className="premium-portrait premium-portrait-two"><img src={sageCutout02} alt="" aria-hidden="true" /></div>
+            <div className="premium-portrait premium-portrait-three"><img src={sageCutout03} alt="" aria-hidden="true" /></div>
             <span className="premium-portrait-label premium-portrait-label-one">First-gen?</span>
             <span className="premium-portrait-label premium-portrait-label-two">Feeling overwhelmed?</span>
             <span className="premium-portrait-label premium-portrait-label-three">Not sure where to start?</span>

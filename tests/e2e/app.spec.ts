@@ -38,7 +38,7 @@ test('landing page reaches the Sage conversation', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Find where you fit.' })).toBeVisible()
   await page.getByRole('button', { name: /Start chatting with Sage/i }).first().click()
   await expect(page).toHaveURL(/\/chat$/)
-  await expect(page.getByRole('heading', { name: /Let.s find your place/i })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Talk with Sage' })).toBeVisible()
 })
 
 test('Browse deep links work and text search includes majors', async ({ page }) => {

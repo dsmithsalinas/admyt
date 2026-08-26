@@ -513,7 +513,7 @@ export default function VibeCheck() {
 
       {!result && !loading && !streaming && (
         <div className="vibe-setup">
-          <main>
+          <div>
             <section className="vibe-banner premium-vibe-banner">
               <div className="premium-vibe-banner-copy">
                 <span className="pill dark">Campus culture, minus the brochure voice</span>
@@ -549,6 +549,7 @@ export default function VibeCheck() {
                     className={`dimension ${isSelected ? 'selected' : ''}`}
                     onClick={() => toggleDimension(dim.key)}
                     type="button"
+                    aria-pressed={isSelected}
                   >
                     <strong>
                       <span>{canonical.emoji} {canonical.label}</span>
@@ -560,8 +561,8 @@ export default function VibeCheck() {
               })}
             </div>
 
-            {error && <div className="callout" style={{ marginTop: 14, color: '#B42318' }}>{error}</div>}
-          </main>
+            {error && <div className="callout" role="alert" style={{ marginTop: 14, color: '#B42318' }}>{error}</div>}
+          </div>
 
           <aside className="sage-panel premium-vibe-sidebar">
             <section className="mock-soft-card section-pad premium-vibe-setup-card">
@@ -609,7 +610,7 @@ export default function VibeCheck() {
 
       {(result || streaming) && (
         <div className="vibe-setup">
-          <main style={{ display: 'grid', gap: 14 }}>
+          <div style={{ display: 'grid', gap: 14 }}>
             <ProfileLensChips profile={profile} />
 
             <section className="result-card mock-card premium-vibe-result">
@@ -654,7 +655,7 @@ export default function VibeCheck() {
                 onCompareChange={setCompareRunId}
               />
             )}
-          </main>
+          </div>
 
           <aside className="sage-panel premium-vibe-sidebar">
             {result ? (

@@ -159,7 +159,7 @@ export default function Search() {
     <div className="app-frame browse-page">
       <div className="search-hero premium-search-hero">
         <div className="premium-search-copy">
-          <span className="pill dark">{loading ? 'Loading schools' : `${filtered.length} ${filtered.length === 1 ? 'school' : 'schools'} that could fit you`}</span>
+          <span className="pill dark" aria-live="polite">{loading ? 'Loading schools' : `${filtered.length} ${filtered.length === 1 ? 'school' : 'schools'} that could fit you`}</span>
           <h1>Browse with Sage beside you.</h1>
           <p>Search fast. Keep the honest fit read.</p>
         </div>
@@ -172,15 +172,16 @@ export default function Search() {
       <div className="search-layout premium-search-layout">
         <input
           className="search-box"
+          aria-label="Search schools"
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search by school name, city, state, or major"
           style={{ width: '100%', outline: 'none' }}
         />
 
-      <div className="filters premium-filter-dock" aria-label="Quick filters">
-        <button className="pill teal">Best fit first</button>
-        <button onClick={() => setSelectedRegion('')} className="pill">
+      <div className="filters premium-filter-dock" role="group" aria-label="Quick filters">
+        <span className="pill teal">Best fit first</span>
+        <button onClick={() => setSelectedRegion('')} className="pill" aria-pressed={selectedRegion === ''}>
           Any region
         </button>
         {REGION_OPTIONS.map(region => (
@@ -188,22 +189,23 @@ export default function Search() {
             key={region}
             onClick={() => setSelectedRegion(selectedRegion === region ? '' : region)}
             className={`pill ${selectedRegion === region ? 'teal' : ''}`}
+            aria-pressed={selectedRegion === region}
           >
             {regionLabel(region)}
           </button>
         ))}
         {(['', 'small', 'medium', 'large'] as const).map(size => (
-          <button key={size || 'any-size'} onClick={() => setSelectedSize(size)} className={`pill ${selectedSize === size && size !== '' ? 'teal' : ''}`}>
+          <button key={size || 'any-size'} onClick={() => setSelectedSize(size)} className={`pill ${selectedSize === size && size !== '' ? 'teal' : ''}`} aria-pressed={selectedSize === size}>
             {size === '' ? 'Any size' : size.charAt(0).toUpperCase() + size.slice(1)}
           </button>
         ))}
         {(['', 'public', 'private'] as const).map(type => (
-          <button key={type || 'any-type'} onClick={() => setSelectedType(type)} className={`pill ${selectedType === type && type !== '' ? 'teal' : ''}`}>
+          <button key={type || 'any-type'} onClick={() => setSelectedType(type)} className={`pill ${selectedType === type && type !== '' ? 'teal' : ''}`} aria-pressed={selectedType === type}>
             {type === '' ? 'Any type' : type.charAt(0).toUpperCase() + type.slice(1)}
           </button>
         ))}
         {maxTuition < TUITION_MAX && <button className="pill teal" onClick={() => setMaxTuition(TUITION_MAX)}>Under ${(maxTuition / 1000).toFixed(0)}k</button>}
-        <button onClick={() => setShowMoreFilters(v => !v)} className={`pill ${showMoreFilters || !!(selectedState || selectedMajor || selectedSetting || selectedAdmitRate || selectedAffiliation || maxTuition < TUITION_MAX) ? 'teal' : ''}`}>
+        <button onClick={() => setShowMoreFilters(v => !v)} className={`pill ${showMoreFilters || !!(selectedState || selectedMajor || selectedSetting || selectedAdmitRate || selectedAffiliation || maxTuition < TUITION_MAX) ? 'teal' : ''}`} aria-expanded={showMoreFilters} aria-controls="more-filters">
           {showMoreFilters ? 'Hide filters' : 'More filters'}
         </button>
         {activeFilters > 0 && (
@@ -214,29 +216,30 @@ export default function Search() {
       </div>
 
       {showMoreFilters && (
-        <div className="mock-card section-pad premium-more-filters" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
+        <div id="more-filters" className="mock-card section-pad premium-more-filters" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
           <div>
-            <label className="mini-title" style={{ display: 'block' }}>State</label>
-            <select value={selectedState} onChange={e => setSelectedState(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
+            <label htmlFor="browse-state" className="mini-title" style={{ display: 'block' }}>State</label>
+            <select id="browse-state" value={selectedState} onChange={e => setSelectedState(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
               <option value="">Any state</option>
               {US_STATES.map(s => <option key={s.abbr} value={s.abbr}>{s.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="mini-title" style={{ display: 'block' }}>Major</label>
-            <select value={selectedMajor} onChange={e => setSelectedMajor(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
+            <label htmlFor="browse-major" className="mini-title" style={{ display: 'block' }}>Major</label>
+            <select id="browse-major" value={selectedMajor} onChange={e => setSelectedMajor(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
               <option value="">Any major</option>
               {allMajors.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="mini-title" style={{ display: 'block' }}>Setting</label>
-            <div className="filters" style={{ marginTop: 8 }}>
+            <span id="setting-filter-label" className="mini-title" style={{ display: 'block' }}>Setting</span>
+            <div className="filters" role="group" aria-labelledby="setting-filter-label" style={{ marginTop: 8 }}>
               {SETTING_OPTIONS.map(option => (
                 <button
                   key={option.value || 'any-setting'}
                   onClick={() => setSelectedSetting(option.value)}
                   className={`pill ${selectedSetting === option.value && option.value !== '' ? 'teal' : ''}`}
+                  aria-pressed={selectedSetting === option.value}
                 >
                   {option.label}
                 </button>
@@ -244,13 +247,14 @@ export default function Search() {
             </div>
           </div>
           <div>
-            <label className="mini-title" style={{ display: 'block' }}>Admit rate</label>
-            <div className="filters" style={{ marginTop: 8 }}>
+            <span id="admit-filter-label" className="mini-title" style={{ display: 'block' }}>Admit rate</span>
+            <div className="filters" role="group" aria-labelledby="admit-filter-label" style={{ marginTop: 8 }}>
               {ADMIT_RATE_OPTIONS.map(option => (
                 <button
                   key={option.value || 'any-admit-rate'}
                   onClick={() => setSelectedAdmitRate(option.value)}
                   className={`pill ${selectedAdmitRate === option.value && option.value !== '' ? 'teal' : ''}`}
+                  aria-pressed={selectedAdmitRate === option.value}
                 >
                   {option.label}
                 </button>
@@ -258,13 +262,14 @@ export default function Search() {
             </div>
           </div>
           <div>
-            <label className="mini-title" style={{ display: 'block' }}>Affiliation</label>
-            <div className="filters" style={{ marginTop: 8 }}>
+            <span id="affiliation-filter-label" className="mini-title" style={{ display: 'block' }}>Affiliation</span>
+            <div className="filters" role="group" aria-labelledby="affiliation-filter-label" style={{ marginTop: 8 }}>
               {AFFILIATION_OPTIONS.map(option => (
                 <button
                   key={option.value || 'any-affiliation'}
                   onClick={() => setSelectedAffiliation(option.value)}
                   className={`pill ${selectedAffiliation === option.value && option.value !== '' ? 'teal' : ''}`}
+                  aria-pressed={selectedAffiliation === option.value}
                 >
                   {option.label}
                 </button>
@@ -272,12 +277,14 @@ export default function Search() {
             </div>
           </div>
           <div>
-            <label className="mini-title" style={{ display: 'block' }}>
+            <label htmlFor="browse-tuition" className="mini-title" style={{ display: 'block' }}>
               Max tuition - {maxTuition < TUITION_MAX ? `$${maxTuition.toLocaleString()}/yr` : 'No limit'}
             </label>
             <input
+              id="browse-tuition"
               type="range" min={5000} max={TUITION_MAX} step={1000}
               value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))}
+              aria-valuetext={maxTuition < TUITION_MAX ? `$${maxTuition.toLocaleString()} per year` : 'No limit'}
               style={{ width: '100%', accentColor: '#6366F1' }}
             />
           </div>

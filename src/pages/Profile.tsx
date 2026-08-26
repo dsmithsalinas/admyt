@@ -260,32 +260,33 @@ function PreferencesModal({
 
       <div className="section-pad" style={{ display: 'grid', gap: 14 }}>
         <section className="mock-card section-pad">
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 8 }}>
+          <label htmlFor="preferred-major" style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 8 }}>
             Preferred major
             {majorFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
           </label>
-          <input className="field" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" style={{ height: 44 }} />
+          <input id="preferred-major" className="field" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" style={{ height: 44 }} />
         </section>
 
         <section className="mock-card section-pad">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-            <label style={{ fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)' }}>Max tuition</label>
+            <label htmlFor="preferred-tuition" style={{ fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)' }}>Max tuition</label>
             <span className="pill teal" style={{ fontWeight: 850 }}>${maxTuition.toLocaleString()}/yr</span>
           </div>
-          <input type="range" min={5000} max={75000} step={1000} value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))} style={{ width: '100%', accentColor: '#6366F1' }} />
+          <input id="preferred-tuition" type="range" min={5000} max={75000} step={1000} value={maxTuition} onChange={e => setMaxTuition(Number(e.target.value))} aria-valuetext={`$${maxTuition.toLocaleString()} per year`} style={{ width: '100%', accentColor: '#6366F1' }} />
         </section>
 
         <section className="mock-card section-pad">
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
+          <span id="campus-size-label" style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
             Campus size
             {sizeFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
-          </label>
-          <div className="filters">
+          </span>
+          <div className="filters" role="group" aria-labelledby="campus-size-label">
             {(['small', 'medium', 'large'] as const).map(size => (
               <button
                 key={size}
                 className={`pill ${preferredSize === size ? 'teal' : ''}`}
                 onClick={() => setPreferredSize(prev => prev === size ? null : size)}
+                aria-pressed={preferredSize === size}
               >
                 {SIZE_LABELS[size]}
               </button>
@@ -294,16 +295,17 @@ function PreferencesModal({
         </section>
 
         <section className="mock-card section-pad">
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
+          <span id="institution-type-label" style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
             Institution type
             {institutionTypeFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
-          </label>
-          <div className="filters">
+          </span>
+          <div className="filters" role="group" aria-labelledby="institution-type-label">
             {(['two_year', 'four_year', 'either'] as const).map(type => (
               <button
                 key={type}
                 className={`pill ${preferredInstitutionType === type ? 'teal' : ''}`}
                 onClick={() => setPreferredInstitutionType(prev => prev === type ? null : type)}
+                aria-pressed={preferredInstitutionType === type}
               >
                 {INSTITUTION_TYPE_LABELS[type]}
               </button>
@@ -312,11 +314,11 @@ function PreferencesModal({
         </section>
 
         <section className="mock-card section-pad">
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
+          <span id="preferred-states-label" style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--admyt-ink)', marginBottom: 10 }}>
             Preferred states {states.length ? `— ${states.length} selected` : ''}
             {statesFromSage && <span className="match-note" style={{ marginLeft: 8, fontSize: 12, fontWeight: 650 }}>from your chats with Sage</span>}
-          </label>
-          <div className="filters" style={{ marginBottom: 12 }}>
+          </span>
+          <div className="filters" role="group" aria-labelledby="preferred-states-label" style={{ marginBottom: 12 }}>
             {REGION_PICKERS.map(region => {
               const regionStates = REGION_TO_STATES[region] ?? []
               const selected = regionStates.length > 0 && regionStates.every(state => states.includes(state))
@@ -325,6 +327,7 @@ function PreferencesModal({
                   className={`pill ${selected ? 'teal' : ''}`}
                   key={region}
                   onClick={() => toggleRegion(region)}
+                  aria-pressed={selected}
                 >
                   {humanizeRegion(region)}
                 </button>
@@ -333,16 +336,17 @@ function PreferencesModal({
           </div>
           {states.length > 0 && (
             <div className="filters" style={{ marginBottom: 12 }}>
-              {states.map(abbr => <button className="pill teal" key={abbr} onClick={() => toggleState(abbr)}>{abbr} ×</button>)}
+              {states.map(abbr => <button className="pill teal" aria-label={`Remove ${abbr}`} key={abbr} onClick={() => toggleState(abbr)}>{abbr} ×</button>)}
             </div>
           )}
-          <input className="field" value={stateSearch} onChange={e => setStateSearch(e.target.value)} placeholder="Search states..." style={{ height: 40, marginBottom: 10 }} />
+          <input className="field" aria-label="Search states" value={stateSearch} onChange={e => setStateSearch(e.target.value)} placeholder="Search states..." style={{ height: 40, marginBottom: 10 }} />
           <div className="mock-soft-card" style={{ maxHeight: 190, overflow: 'auto' }}>
             {filteredStates.map(s => (
               <button
                 key={s.abbr}
                 onClick={() => toggleState(s.abbr)}
                 className="saved-row"
+                aria-pressed={states.includes(s.abbr)}
                 style={{ width: '100%', border: 0, borderBottom: '1px solid var(--admyt-line)', background: states.includes(s.abbr) ? '#f1fffc' : 'white', cursor: 'pointer', textAlign: 'left' }}
               >
                 <span>{s.name}</span>
@@ -352,7 +356,7 @@ function PreferencesModal({
           </div>
         </section>
 
-        {saveMessage && <p className="match-note" style={{ margin: 0, fontWeight: 750, color: 'var(--admyt-teal)' }}>{saveMessage}</p>}
+        {saveMessage && <p role="status" className="match-note" style={{ margin: 0, fontWeight: 750, color: '#0f8275' }}>{saveMessage}</p>}
         <button className="btn" disabled={saving} onClick={savePreferences}>
           {saving ? 'Saving...' : 'Save preferences'}
         </button>
@@ -379,7 +383,7 @@ function DeleteAccountModal({ onClose, onDelete }: { onClose: () => void; onDele
 
   return (
     <Modal onClose={onClose} labelledBy="delete-account-title" panelStyle={{ maxWidth: 500 }}>
-      <span className="mini-title">Permanent action</span>
+      <h3 className="mini-title">Permanent action</h3>
       <h2 id="delete-account-title" style={{ margin: '10px 0 8px' }}>Delete your Admyt account?</h2>
       <p className="match-note">
         This permanently removes your chats, saved schools, Vibe Checks, preferences, and sign-in. Recovery backups age out within 7 days.
@@ -698,11 +702,11 @@ export default function Profile() {
       </section>
 
       <div className="profile-layout">
-        <main className="timeline">
+        <div className="timeline">
           <section className="mock-card section-pad">
             <div className="school-head">
               <div>
-                <span className="mini-title">What Sage knows</span>
+                <h2 className="mini-title">What Sage knows</h2>
                 <p className="match-note" style={{ marginTop: 8 }}>Your conversation signals, organized so recommendations feel less random.</p>
               </div>
               <div className="filters" style={{ justifyContent: 'flex-end' }}>
@@ -732,7 +736,7 @@ export default function Profile() {
           {user && (
             <section className="mock-card section-pad">
               <div className="school-head">
-                <span className="mini-title">Upcoming deadlines</span>
+                <h2 className="mini-title">Upcoming deadlines</h2>
                 <span className="pill">Next 60 days</span>
               </div>
               <div style={{ marginTop: 12 }}>
@@ -772,7 +776,7 @@ export default function Profile() {
 
           <section className="mock-card section-pad">
             <div className="school-head">
-              <span className="mini-title">My Schools</span>
+              <h2 className="mini-title">My Schools</h2>
               <span className="pill">{savedSchoolCount} saved</span>
             </div>
             <div className="timeline" style={{ marginTop: 12 }}>
@@ -786,16 +790,13 @@ export default function Profile() {
                       <div
                         className="saved-row mock-soft-card"
                         key={h.id}
-                        onClick={() => navigate(`/college/${h.college_id}`)}
-                        role="link"
-                        tabIndex={0}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' || e.key === ' ') navigate(`/college/${h.college_id}`)
-                        }}
-                        style={{ cursor: 'pointer' }}
                       >
                         <div>
-                          <h3>{h.college_name}</h3>
+                          <h3>
+                            <button className="saved-school-link" onClick={() => navigate(`/college/${h.college_id}`)}>
+                              {h.college_name}
+                            </button>
+                          </h3>
                           {h.created_at ? (
                             <p>Saved {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                           ) : h.location ? (
@@ -828,7 +829,7 @@ export default function Profile() {
                               {vibeScore !== undefined && <span className="pill vibe-refined">Refined by your Vibe Check</span>}
                             </div>
                           )}
-                          <button className="pill" onClick={e => { e.stopPropagation(); handleUnheart(h.college_id) }}>Remove</button>
+                          <button className="pill" aria-label={`Remove ${h.college_name} from My Schools`} onClick={() => handleUnheart(h.college_id)}>Remove</button>
                         </div>
                       </div>
                     )
@@ -848,7 +849,7 @@ export default function Profile() {
 
           <section className="mock-card section-pad">
             <div className="school-head">
-              <span className="mini-title">Vibe Checks</span>
+              <h2 className="mini-title">Vibe Checks</h2>
               <span className="pill">{vibes.length} saved</span>
             </div>
             <div className="timeline" style={{ marginTop: 12 }}>
@@ -870,7 +871,7 @@ export default function Profile() {
 
           <section className="mock-card section-pad">
             <div className="school-head">
-              <span className="mini-title">My preferences</span>
+              <h2 className="mini-title">My preferences</h2>
               {user && <button className="pill teal" onClick={() => setShowPrefsModal(true)}>Edit</button>}
             </div>
             <div style={{ marginTop: 12 }}>
@@ -885,7 +886,7 @@ export default function Profile() {
           {user && (
             <section className="mock-card section-pad">
               <div>
-                <span className="mini-title">Email preferences</span>
+                <h2 className="mini-title">Email preferences</h2>
                 <p className="match-note" style={{ marginTop: 8 }}>
                   Choose what’s useful. Sign-in codes and the one-time welcome email aren’t controlled here.
                 </p>
@@ -948,7 +949,7 @@ export default function Profile() {
           <section className="mock-card section-pad">
             <div className="school-head">
               <div>
-                <span className="mini-title">Data & privacy</span>
+                <h2 className="mini-title">Data & privacy</h2>
                 <p className="match-note" style={{ marginTop: 8 }}>
                   See what Admyt stores, where school facts come from, and what Sage sends to its AI provider.
                 </p>
@@ -969,12 +970,12 @@ export default function Profile() {
               </div>
             )}
           </section>
-        </main>
+        </div>
 
         <aside className="sage-panel">
           <section className="mock-soft-card section-pad">
-            <span className="mini-title">Profile strength</span>
-            <h2 style={{ margin: '8px 0', fontSize: 34, color: 'var(--admyt-ink)' }}>{completeness}%</h2>
+            <h2 className="mini-title">Profile strength</h2>
+            <div style={{ margin: '8px 0', fontSize: 34, color: 'var(--admyt-ink)', fontWeight: 800 }}>{completeness}%</div>
             <div className="bar"><span style={{ width: `${completeness}%` }} /></div>
             <p className="match-note" style={{ marginTop: 12 }}>{topNudge}</p>
           </section>

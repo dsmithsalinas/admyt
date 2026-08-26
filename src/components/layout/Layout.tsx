@@ -34,6 +34,7 @@ export default function Layout() {
   // The floating "Back to Sage" pill belongs on Browse + school pages, not on
   // Home (that IS Sage) or Profile (which has its own tab and gets overlapped).
   const showBackPill = !isMobile && !isHome && !isProfile
+
   const navLink = (active: boolean): CSSProperties => ({
     display: 'inline-flex',
     alignItems: 'center',
@@ -53,8 +54,10 @@ export default function Layout() {
   return (
     <div className={isHome ? 'app-layout app-layout-sage' : 'app-layout'} style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--admyt-paper)' }}>
 
+      <a className="skip-link" href="#main-content">Skip to main content</a>
+
       {/* ── Top nav ─────────────────────────────────────────────── */}
-      <nav className={isHome ? 'app-top-nav app-top-nav-sage' : 'app-top-nav'} style={{
+      <nav className={isHome ? 'app-top-nav app-top-nav-sage' : 'app-top-nav'} aria-label="Primary navigation" style={{
         background: 'rgba(255, 253, 250, 0.88)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--admyt-line)',
@@ -81,12 +84,12 @@ export default function Layout() {
 
         {!isMobile && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Link to="/chat" style={navLink(isHome)}>
-              <MessageCircle size={16} />
+            <Link to="/chat" style={navLink(isHome)} aria-current={isHome ? 'page' : undefined}>
+              <MessageCircle size={16} aria-hidden="true" />
               Sage
             </Link>
-            <Link to="/search" style={navLink(isBrowse)}>
-              <Search size={16} />
+            <Link to="/search" style={navLink(isBrowse)} aria-current={isBrowse ? 'page' : undefined}>
+              <Search size={16} aria-hidden="true" />
               Browse
             </Link>
             <div style={{ position: 'relative' }}>
@@ -114,7 +117,7 @@ export default function Layout() {
       </nav>
 
       {/* ── Main content ────────────────────────────────────────── */}
-      <main className={isHome ? 'app-main app-main-sage' : 'app-main'} style={isHome ? {
+      <main id="main-content" tabIndex={-1} className={isHome ? 'app-main app-main-sage' : 'app-main'} style={isHome ? {
         flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column',
         paddingBottom: isMobile ? '70px' : 0,
       } : {
@@ -167,7 +170,7 @@ export default function Layout() {
 
       {/* ── Mobile bottom tab bar ───────────────────────────────── */}
       {isMobile && (
-        <div className="mobile-tab-bar" style={{
+        <nav className="mobile-tab-bar" aria-label="Mobile navigation" style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
           height: '68px',
           background: 'rgba(255, 253, 250, 0.94)',
@@ -181,6 +184,7 @@ export default function Layout() {
           <Link
             to="/chat"
             className="mobile-tab-link"
+            aria-current={isHome ? 'page' : undefined}
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
@@ -188,7 +192,7 @@ export default function Layout() {
               color: isHome ? activeTabColor : inactiveTabColor,
             }}
           >
-            <MessageCircle size={22} />
+            <MessageCircle size={22} aria-hidden="true" />
             <span style={{ fontSize: '10px', fontWeight: isHome ? 800 : 600 }}>Sage</span>
           </Link>
 
@@ -196,6 +200,7 @@ export default function Layout() {
           <Link
             to="/search"
             className="mobile-tab-link"
+            aria-current={isBrowse ? 'page' : undefined}
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
@@ -203,7 +208,7 @@ export default function Layout() {
               color: isBrowse ? activeTabColor : inactiveTabColor,
             }}
           >
-            <Search size={22} />
+            <Search size={22} aria-hidden="true" />
             <span style={{ fontSize: '10px', fontWeight: isBrowse ? 800 : 600 }}>Browse</span>
           </Link>
 
@@ -211,6 +216,8 @@ export default function Layout() {
           <button
             onClick={() => navigate('/profile')}
             className="mobile-tab-link"
+            aria-current={isProfile ? 'page' : undefined}
+            aria-label="Profile"
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: '3px',
@@ -232,7 +239,7 @@ export default function Layout() {
                     {user.email?.charAt(0).toUpperCase()}
                   </span>
                 ) : (
-                  <UserRound size={14} />
+                  <UserRound size={14} aria-hidden="true" />
                 )}
               </div>
               {savedCount > 0 && (
@@ -255,7 +262,7 @@ export default function Layout() {
             </div>
             <span style={{ fontSize: '10px', fontWeight: isProfile ? 800 : 600 }}>Profile</span>
           </button>
-        </div>
+        </nav>
       )}
 
       {/* ── Guest heart → sign-up nudge (one per session) ───────── */}

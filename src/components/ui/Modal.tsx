@@ -25,10 +25,21 @@ export default function Modal({ onClose, children, overlayClassName, panelStyle,
     }
     document.addEventListener('keydown', onKey)
     const prevOverflow = document.body.style.overflow
+    const appRoot = document.getElementById('root')
+    const prevAriaHidden = appRoot?.getAttribute('aria-hidden')
     document.body.style.overflow = 'hidden'
+    if (appRoot) {
+      appRoot.inert = true
+      appRoot.setAttribute('aria-hidden', 'true')
+    }
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
+      if (appRoot) {
+        appRoot.inert = false
+        if (prevAriaHidden == null) appRoot.removeAttribute('aria-hidden')
+        else appRoot.setAttribute('aria-hidden', prevAriaHidden)
+      }
     }
   }, [onClose])
 

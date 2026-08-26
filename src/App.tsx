@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ProfileProvider } from '@/context/ProfileContext'
 import { AuthProvider } from '@/context/AuthContext'
 import { SavedVibesProvider } from '@/context/SavedVibesContext'
@@ -39,6 +39,45 @@ function RootRoute() {
   return <Landing />
 }
 
+function RouteAccessibility() {
+  const location = useLocation()
+  const previousPath = useRef(location.pathname)
+  const pageName = location.pathname === '/'
+    ? 'Admyt home'
+    : location.pathname === '/chat'
+    ? 'Sage'
+    : location.pathname === '/search'
+    ? 'Browse colleges'
+    : location.pathname === '/profile'
+    ? 'Your profile'
+    : location.pathname === '/data-and-privacy'
+    ? 'Data and privacy'
+    : location.pathname === '/terms'
+    ? 'Terms'
+    : location.pathname === '/privacy'
+    ? 'Privacy policy'
+    : location.pathname === '/email-operations'
+    ? 'Email operations'
+    : location.pathname.includes('/vibe')
+    ? 'Vibe Check'
+    : 'College details'
+
+  useEffect(() => {
+    document.title = `${pageName} — admyt`
+    const routeChanged = previousPath.current !== location.pathname
+    previousPath.current = location.pathname
+    if (!routeChanged) return
+    window.requestAnimationFrame(() => {
+      const main = document.getElementById('main-content')
+      if (!main) return
+      main.scrollTop = 0
+      main.focus({ preventScroll: true })
+    })
+  }, [location.pathname, pageName])
+
+  return <div className="sr-only" aria-live="polite" aria-atomic="true">{pageName}</div>
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -47,6 +86,7 @@ export default function App() {
           <CollegeProvider>
             <ChatProvider>
               <SageTransitionProvider>
+                <RouteAccessibility />
                 <Suspense fallback={<LoadingOrb />}>
                   <Routes>
                     <Route path="/" element={<RootRoute />} />
