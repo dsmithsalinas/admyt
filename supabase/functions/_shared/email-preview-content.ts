@@ -1,10 +1,12 @@
 import { deadlineReminderEmailContent } from "./deadline-email-content.ts";
 import { guidanceEmailContent, weeklyDigestEmailContent } from "./email-program-content.ts";
 import { welcomeEmailContent } from "./welcome-email-content.ts";
+import { planReminderEmailContent } from "./plan-reminder-email-content.ts";
 
 export const EMAIL_TEMPLATE_IDS = [
   "welcome",
   "deadline_reminder",
+  "plan_reminder",
   "guidance_1",
   "guidance_2",
   "guidance_3",
@@ -33,6 +35,7 @@ export function emailTemplateCatalog(): Array<Pick<EmailPreview, "id" | "name" |
   return [
     { id: "welcome", name: "Welcome", description: "The one-time note sent after a new account signs in." },
     { id: "deadline_reminder", name: "Deadline reminder", description: "A verified application date that is 30 or 7 days away." },
+    { id: "plan_reminder", name: "Sage Plan reminder", description: "A daily batch of open Plan tasks due today or in 7 days." },
     { id: "guidance_1", name: "Guidance · Sage", description: "Day 1 of the getting-started sequence." },
     { id: "guidance_2", name: "Guidance · My Schools", description: "Day 3 of the getting-started sequence." },
     { id: "guidance_3", name: "Guidance · Vibe Check", description: "Day 7 of the getting-started sequence." },
@@ -63,6 +66,17 @@ export function buildEmailPreview(id: EmailTemplateId): EmailPreview {
         leadDays: 30,
         sourceUrl: "https://admissions.uoregon.edu/apply/deadlines",
       }], UNSUBSCRIBE_PREVIEW_URL),
+    };
+  }
+
+  if (id === "plan_reminder") {
+    return {
+      ...metadata,
+      from: "Sage from admyt <reminders@youradmyt.com>",
+      ...planReminderEmailContent([
+        { title: "Draft the Common App personal statement", dueDate: "2026-09-04", leadDays: 7, ownerRole: "student", collegeName: null },
+        { title: "Gather financial aid documents", dueDate: "2026-08-28", leadDays: 0, ownerRole: "parent", collegeName: "University of Oregon" },
+      ], UNSUBSCRIBE_PREVIEW_URL),
     };
   }
 

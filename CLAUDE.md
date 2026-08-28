@@ -20,6 +20,7 @@ The product is built around a conversational AI advisor named **Sage**. Students
 - **Vibe Check** — social/culture fit analysis across 9 dimensions (social scene, athletics, arts, political culture, Greek life, diversity, outdoor access, academic intensity, local community). Student selects which dimensions matter to them, Sage generates scores + summary.
 - **Browse/Search** — filter 1,000 real colleges by state, size, type, tuition, major
 - **Profile** — four sections: What Sage knows, My schools (hearted), Vibe Checks (saved), My preferences
+- **Sage Plan** — signed-in weekly application plan with manual tasks, imported My Schools deadlines, reusable application and financial-aid checklists, scheduled visits and interviews with generated preparation/follow-up work, questions and notes, student/parent/category/urgency focus modes with a school filter, a five-priority weekly reset, task blockers, student/parent ownership, college application stages, progress, and next-attention logic. The current release uses a parent responsibility lane rather than separate parent authentication.
 
 ## The Admyt story (brand narrative)
 The college search process is broken. Built around rankings, stats, and prestige — metrics that tell you nothing about whether you'll actually be happy there. Students spend months researching schools they'll never visit, filling out applications for places they don't understand, making one of the biggest decisions of their lives based on a US News ranking and a campus tour brochure.
@@ -34,7 +35,7 @@ Admyt exists because fit matters more than rank. The right school for you is the
 - **API proxy:** Supabase Edge Function at `supabase/functions/chat/index.ts` — all Claude API calls go through here, never directly from the browser
 - **Deployment:** Vercel — live at `youradmyt.com` (`youradmyt.vercel.app` remains the Vercel fallback), auto-deploys on every push to `main` (Vercel GitHub integration). Per-deploy/preview URLs are gated by Vercel Deployment Protection; the production domain is public. Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` env vars set in the Vercel project.
 - **Auth email:** Passwordless six-digit sign-in codes are delivered through Supabase Auth using Resend custom SMTP. `youradmyt.com` is verified in Resend; production sends from `Sage from admyt <sign-in@youradmyt.com>`. The canonical template is `supabase/templates/sign-in-code.html` and must stay synchronized with the hosted Supabase Magic Link / OTP template.
-- **Admin + application email:** The authenticated `/admin` overview reports the rolling Sage AI budget, College Scorecard freshness, and scheduled email-worker health. Linked modules provide email operations, deadline-quality preview/review/accept remediation, exact-email user support, incident controls plus a public maintenance notice, and a 365-day privacy-minimized audit trail. Every admin route uses the server-side `EMAIL_OPERATIONS_ADMIN_EMAILS` allowlist enforced by the `email-operations` Edge Function; frontend routing is not an authorization boundary. `supabase/functions/welcome-email` sends one deduplicated, transactional welcome after a new account successfully signs in. The opt-in reminder pipeline lives in `supabase/functions/deadline-reminders`; Supabase Cron invokes it daily at 15:00 UTC and sends at 30 and 7 days only for recently checked official-source dates. `supabase/functions/email-programs` runs hourly and sends eligible messages around 9:00 in each student's saved time zone: a three-step getting-started sequence at roughly 1, 3, and 7 days after opt-in, plus a Monday My Schools digest for students with saved schools. Profile holds independent opt-ins for all three optional programs. Every optional message includes a signed, program-specific unsubscribe link and RFC 8058 one-click headers handled by `email-unsubscribe`. Worker runs store privacy-minimized health counters for 90 days; the token-protected `email-health` endpoint is checked hourly from GitHub Actions so missed schedules, failures, and abnormal volume fail externally. Signed Resend events enter through `supabase/functions/resend-webhook`; delivery states update the shared ledger, while bounces, complaints, and suppressions prevent future sends using a privacy-minimized email hash. Each email worker requires both its environment kill switch and its database runtime control to be enabled. Operational details live in `docs/OPERATIONS.md`.
+- **Admin + application email:** The authenticated `/admin` overview reports the rolling Sage AI budget, College Scorecard freshness, and scheduled email-worker health. Linked modules provide email operations, deadline-quality preview/review/accept remediation, exact-email user support, incident controls plus a public maintenance notice, and a 365-day privacy-minimized audit trail. Every admin route uses the server-side `EMAIL_OPERATIONS_ADMIN_EMAILS` allowlist enforced by the `email-operations` Edge Function; frontend routing is not an authorization boundary. `supabase/functions/welcome-email` sends one deduplicated, transactional welcome after a new account successfully signs in. The opt-in reminder pipeline lives in `supabase/functions/deadline-reminders`; Supabase Cron invokes it daily at 15:00 UTC and sends at 30 and 7 days only for recently checked official-source dates. `supabase/functions/email-programs` runs hourly and sends eligible messages around 9:00 in each student's saved time zone: a batched Sage Plan reminder for open tasks due today or in 7 days, a three-step getting-started sequence at roughly 1, 3, and 7 days after opt-in, and a Monday My Schools digest for students with saved schools. Profile holds independent opt-ins for all four optional programs. Every optional message includes a signed, program-specific unsubscribe link and RFC 8058 one-click headers handled by `email-unsubscribe`. Worker runs store privacy-minimized health counters for 90 days; the token-protected `email-health` endpoint is checked hourly from GitHub Actions so missed schedules, failures, and abnormal volume fail externally. Signed Resend events enter through `supabase/functions/resend-webhook`; delivery states update the shared ledger, while bounces, complaints, and suppressions prevent future sends using a privacy-minimized email hash. Each email worker requires both its environment kill switch and its database runtime control to be enabled. Operational details live in `docs/OPERATIONS.md`.
 - **Data:** The College Scorecard import currently yields roughly 3,800 schools in Supabase. Browse loads the full paginated catalog; Sage's server-side prompt catalog is intentionally capped at 1,000 schools to control prompt size.
 
 ## Project structure
@@ -68,6 +69,8 @@ src/
 
 │   ├── sagePrompt.ts     # Shared Sage profile type; prompt construction lives server-side
 
+│   ├── sagePlan.ts       # Sage Plan types, weekly grouping, checklist/stage logic, and Supabase persistence
+
 │   ├── savedVibes.ts     # Save/get/delete vibe checks from Supabase
 
 │   └── supabase.ts       # Supabase client
@@ -81,6 +84,8 @@ src/
 │   ├── CollegeDetail.tsx # Full college page with stats, match score, Vibe Check CTA
 
 │   ├── VibeCheck.tsx     # Vibe Check flow — dimension selector + AI results
+
+│   ├── SagePlan.tsx      # Weekly plan, deadlines, task details, progress, and ownership handoffs
 
 │   └── Profile.tsx       # Student profile — 4 sections + guest preview
 
@@ -104,7 +109,7 @@ supabase/
 
 ├── welcome-email/index.ts # One-time, authenticated welcome email
 
-├── email-programs/index.ts # Opt-in guidance sequence and weekly digest worker
+├── email-programs/index.ts # Plan reminders, guidance sequence, and weekly digest worker
 
 ├── email-unsubscribe/index.ts # Signed confirmation and one-click opt-out endpoint
 
@@ -127,6 +132,11 @@ supabase/
 | `email_suppressions` | Hashed addresses that must not receive application email |
 | `email_worker_runs` | Privacy-minimized scheduled-email health counters (90 days) |
 | `data_source_status` | Public catalog provenance and last successful refresh |
+| `sage_plans` | Student-owned application plan, weekly reset state, and reserved free/premium tier |
+| `sage_plan_tasks` | Weekly tasks, due dates, ownership, blockers, progress, and college associations |
+| `sage_plan_task_dependencies` | Dependency edges that visibly block unfinished downstream work |
+| `sage_plan_colleges` | Per-plan application stage, target round, and deadline for each saved school |
+| `sage_plan_events` | Scheduled visits and interviews with format, questions, notes, and status |
 
 All tables have Row Level Security enabled. Users can only access their own data. The `colleges` table is publicly readable (no auth required).
 
@@ -152,15 +162,15 @@ Public legal pages live at `/terms` and `/privacy`. Account creation requires af
 - **Premium product continuity:** use “same house, different room.” Landing is cinematic, Sage chat is immersive, Vibe Check is the signature guided-analysis moment, and Browse/School Detail are calmer premium work surfaces. All school recommendations use `src/components/sage/PremiumSchoolCard.tsx`; do not fork Browse and chat card designs again. Preserve search/filter density, scoring behavior, Vibe streaming/persistence/receipts, and the canonical Sage orb while evolving presentation.
 
 ## Navigation
-- **Desktop:** Top nav — logo, Browse link, ProfileAvatar
-- **Mobile:** Bottom tab bar — Chat (`/`), Browse (`/search`), Profile (`/profile`)
+- **Desktop:** Top nav — logo, Sage, Browse, Plan, ProfileAvatar
+- **Mobile:** Bottom tab bar — Sage (`/chat`), Browse (`/search`), Plan (`/plan`), Profile (`/profile`)
 - **Floating pill:** "Back to Sage" button appears on `/search`, `/college/:id`, `/college/:id/vibe`
 
 ## Auth model
 - Guest-first — full app usable without signing in
 - Sign-up prompt appears after running a Vibe Check (highest-value moment)
 - Supports Google OAuth, Apple OAuth, and passwordless email codes via Supabase Auth
-- Signed-in users get: persistent Sage conversation, saved schools, saved vibes, preferences
+- Signed-in users get: persistent Sage conversation, saved schools, saved vibes, preferences, and Sage Plan
 
 ## Known UX issues (fix in polish pass)
 - My schools not always populating from Sage chat hearts — needs end-to-end retest
@@ -180,6 +190,7 @@ Public legal pages live at `/terms` and `/privacy`. Account creation requires af
 - [x] ESLint, Vitest, Playwright, and GitHub Actions quality gates
 - [x] Route-level code splitting and bounded Browse rendering
 - [x] WCAG-focused accessibility baseline: skip navigation, route announcements and focus management, labelled controls, modal isolation/focus trapping, reduced-motion handling, AA secondary-text contrast, and automated axe coverage for public routes and sign-in
+- [x] Sage Plan execution loop: deadline import, application, financial-aid, and visit/interview checklist packs, event questions and notes, focus modes and school filtering, weekly reset, blockers, college stages, student/parent responsibility, progress, and task detail editing
 
 ### Soon
 - [ ] Scheduled production smoke tests — recommended: GitHub Actions cron (`.github/workflows/smoke.yml`) running *shallow* checks against `youradmyt.vercel.app`: HTTP 200 + correct `<title>`, the `/assets/index-*.js` bundle serves, and the Supabase REST endpoint is reachable; fail the run (email alert) on any miss. Optional: compare the live bundle hash to the latest `main` build to catch a silently-failed deploy. Start daily, tighten to hourly if wanted. (Alternative: a `/schedule` Claude cloud routine that only pings on failure. A *deep* synthetic Playwright check — load app, assert Sage chat / school page / Vibe Check render — can be layered on later.)
@@ -187,9 +198,8 @@ Public legal pages live at `/terms` and `/privacy`. Account creation requires af
 
 ### Later
 - [ ] Mobile PWA / App Store submission
-- [ ] Application tracker (future paywall/premium feature)
+- [ ] Sage Plan collaboration tier: parent accounts, invitations, multi-student households, and calendar/reminder integrations
 - [ ] Post-admit Vibe Check (help students decide between acceptances)
-- [ ] Parent-facing experience
 - [ ] School/district licensing model
 - [ ] Equity narrative — free tier positioning for first-gen and underserved students
 

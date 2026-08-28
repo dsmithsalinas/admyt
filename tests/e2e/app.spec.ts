@@ -222,10 +222,12 @@ test('signed-in students control each optional email program independently', asy
 
   const guidanceSwitch = page.getByRole('switch', { name: 'Getting-started guidance' })
   const digestSwitch = page.getByRole('switch', { name: 'Weekly My Schools digest' })
+  const planSwitch = page.getByRole('switch', { name: 'Sage Plan reminders' })
+  await planSwitch.click()
   await guidanceSwitch.click()
   await digestSwitch.click()
 
-  await expect.poll(() => preferenceWrites.length).toBe(3)
+  await expect.poll(() => preferenceWrites.length).toBe(4)
 
   expect(preferenceWrites[0]).toMatchObject({
     user_id: userId,
@@ -233,10 +235,15 @@ test('signed-in students control each optional email program independently', asy
   })
   expect(preferenceWrites[1]).toMatchObject({
     user_id: userId,
+    plan_reminders_enabled: true,
+    plan_reminders_opted_in_at: expect.any(String),
+  })
+  expect(preferenceWrites[2]).toMatchObject({
+    user_id: userId,
     getting_started_enabled: true,
     getting_started_opted_in_at: expect.any(String),
   })
-  expect(preferenceWrites[2]).toMatchObject({
+  expect(preferenceWrites[3]).toMatchObject({
     user_id: userId,
     weekly_digest_enabled: true,
     weekly_digest_opted_in_at: expect.any(String),
@@ -506,7 +513,7 @@ test('authorized operators can preview templates and send a test only to themsel
           { id: 'weekly_digest', name: 'Weekly digest', description: 'Monday snapshot.' },
         ],
         summary: {
-          opted_in: { deadline_reminders: 2, getting_started: 3, weekly_digest: 4 },
+          opted_in: { deadline_reminders: 2, plan_reminders: 1, getting_started: 3, weekly_digest: 4 },
           suppressions: { total: 1, by_reason: { bounce: 1, complaint: 0, provider_suppression: 0, manual: 0 } },
           last_24_hours: {
             delivery_status: { pending: 0, sent: 5, failed: 0 },

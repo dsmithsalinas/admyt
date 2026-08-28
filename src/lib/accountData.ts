@@ -9,7 +9,10 @@ const USER_TABLES = [
   'user_preferences',
   'notification_preferences',
   'notification_deliveries',
+  'sage_plans',
 ] as const
+
+type RelatedUserTable = 'sage_plan_tasks' | 'sage_plan_task_dependencies' | 'sage_plan_colleges' | 'sage_plan_events'
 
 const ADMYT_BROWSER_KEYS = [
   'admyt_guest_hearts',
@@ -37,13 +40,38 @@ async function fetchEveryUserRow(table: typeof USER_TABLES[number], userId: stri
   return rows
 }
 
+async function fetchEveryRelatedRow(table: RelatedUserTable, column: string, ids: string[]) {
+  if (!ids.length) return []
+  const rows: Record<string, unknown>[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .in(column, ids)
+      .range(from, from + PAGE_SIZE - 1)
+    if (error) throw new Error(`Could not export ${table}: ${error.message}`)
+    const page = (data ?? []) as Record<string, unknown>[]
+    rows.push(...page)
+    if (page.length < PAGE_SIZE) break
+  }
+  return rows
+}
+
 export async function buildAccountExport(user: User) {
-  const [chatMessages, heartedSchools, savedVibes, userPreferences, notificationPreferences, notificationDeliveries] = await Promise.all(
+  const [chatMessages, heartedSchools, savedVibes, userPreferences, notificationPreferences, notificationDeliveries, sagePlans] = await Promise.all(
     USER_TABLES.map(table => fetchEveryUserRow(table, user.id)),
   )
+  const planIds = sagePlans.map(plan => String(plan.id))
+  const [sagePlanTasks, sagePlanColleges, sagePlanEvents] = await Promise.all([
+    fetchEveryRelatedRow('sage_plan_tasks', 'plan_id', planIds),
+    fetchEveryRelatedRow('sage_plan_colleges', 'plan_id', planIds),
+    fetchEveryRelatedRow('sage_plan_events', 'plan_id', planIds),
+  ])
+  const taskIds = sagePlanTasks.map(task => String(task.id))
+  const sagePlanTaskDependencies = await fetchEveryRelatedRow('sage_plan_task_dependencies', 'task_id', taskIds)
 
   return {
-    export_version: 1,
+    export_version: 3,
     exported_at: new Date().toISOString(),
     account: {
       id: user.id,
@@ -63,6 +91,11 @@ export async function buildAccountExport(user: User) {
       user_preferences: userPreferences,
       notification_preferences: notificationPreferences,
       notification_deliveries: notificationDeliveries,
+      sage_plans: sagePlans,
+      sage_plan_tasks: sagePlanTasks,
+      sage_plan_task_dependencies: sagePlanTaskDependencies,
+      sage_plan_colleges: sagePlanColleges,
+      sage_plan_events: sagePlanEvents,
     },
     retention: {
       active_account: 'Stored until you delete it or ask Admyt to delete it.',

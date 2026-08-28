@@ -64,7 +64,7 @@ export default function DataAndPrivacy() {
           <span className="mini-title">What Admyt keeps</span>
           <h2>Only what helps you pick up where you left off.</h2>
           <p>
-            Guests keep hearts, preferences, and up to three Vibe Checks in this browser. Signed-in accounts store conversation history, saved schools, Vibe Checks, and preferences in Supabase.
+            Guests keep hearts, preferences, and up to three Vibe Checks in this browser. Signed-in accounts store conversation history, saved schools, Vibe Checks, preferences, and Sage Plan tasks, visits and interviews, preparation questions, follow-up notes, weekly choices, blockers, ownership, and application stages in Supabase.
           </p>
           <p>
             Account data stays in the live product until you delete your account. Deletion removes it from the live application immediately. Copies can remain in encrypted disaster-recovery backups for up to 7 days before aging out.

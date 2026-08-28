@@ -26,4 +26,13 @@ describe('email preview catalog', () => {
     expect(reminder.text).toContain('30 days away')
     expect(reminder.html).toContain('Confirm on the school’s site')
   })
+
+  it('shows Plan ownership and due timing in the Plan reminder', () => {
+    const reminder = buildEmailPreview('plan_reminder')
+
+    expect(reminder.text).toContain('Student owns')
+    expect(reminder.text).toContain('Parent owns')
+    expect(reminder.html).toContain('Open Sage Plan')
+    expect(reminder.html).toContain('sent only to the student’s Admyt account')
+  })
 })

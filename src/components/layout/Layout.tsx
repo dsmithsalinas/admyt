@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
-import { MessageCircle, Search, UserRound } from 'lucide-react'
+import { CalendarCheck2, MessageCircle, Search, UserRound } from 'lucide-react'
 import ProfileAvatar from '@/components/ui/ProfileAvatar'
 import SageOrb from '@/components/sage/SageOrb'
 import AuthModal from '@/components/ui/AuthModal'
@@ -44,10 +44,11 @@ export default function Layout() {
   const activeTabColor = 'var(--admyt-indigo)'
   const inactiveTabColor = 'var(--admyt-muted)'
   const isBrowse = location.pathname === '/search'
+  const isPlan = location.pathname === '/plan'
   const isProfile = location.pathname === '/profile'
   // The floating "Back to Sage" pill belongs on Browse + school pages, not on
   // Home (that IS Sage) or Profile (which has its own tab and gets overlapped).
-  const showBackPill = !isMobile && !isHome && !isProfile
+  const showBackPill = !isMobile && !isHome && !isProfile && !isPlan
 
   const navLink = (active: boolean): CSSProperties => ({
     display: 'inline-flex',
@@ -107,6 +108,10 @@ export default function Layout() {
             <Link to="/search" style={navLink(isBrowse)} aria-current={isBrowse ? 'page' : undefined}>
               <Search size={16} aria-hidden="true" />
               Browse
+            </Link>
+            <Link to="/plan" style={navLink(isPlan)} aria-current={isPlan ? 'page' : undefined}>
+              <CalendarCheck2 size={16} aria-hidden="true" />
+              Plan
             </Link>
             <div style={{ position: 'relative' }}>
               <ProfileAvatar />
@@ -226,6 +231,22 @@ export default function Layout() {
           >
             <Search size={22} aria-hidden="true" />
             <span style={{ fontSize: '10px', fontWeight: isBrowse ? 800 : 600 }}>Browse</span>
+          </Link>
+
+          {/* Plan tab */}
+          <Link
+            to="/plan"
+            className="mobile-tab-link"
+            aria-current={isPlan ? 'page' : undefined}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: '3px',
+              textDecoration: 'none',
+              color: isPlan ? activeTabColor : inactiveTabColor,
+            }}
+          >
+            <CalendarCheck2 size={22} aria-hidden="true" />
+            <span style={{ fontSize: '10px', fontWeight: isPlan ? 800 : 600 }}>Plan</span>
           </Link>
 
           {/* Profile tab */}

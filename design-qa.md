@@ -1,170 +1,97 @@
-# Design QA — Premium landing story
+# Sage Plan financial aid lane — design QA
 
-final result: passed
+## Visits & interviews MVP addendum
 
-## Source visual truth
+- Desktop builder: `docs/sage-plan-audit/29-visits-interviews-builder-desktop.png`
+- Mobile builder: `docs/sage-plan-audit/30-visits-interviews-builder-mobile.png`
+- The lane reuses the existing side-card, modal, field, checklist-preview, and
+  responsibility patterns. The in-person logistics step visibly assigns the
+  parent while all generated work still enters the same weekly task system.
+- The 390px layout stacks every field, preserves the modal hierarchy, and keeps
+  the primary action reachable through the scrollable dialog.
+- Chromium and WebKit browser coverage verifies the dynamic date-to-checklist
+  preview and the saved-event detail state.
 
-- Keyframes A–I:
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_sh1Hm1fLVABoQRH4sK8zLo7r.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_sCgehV6QZx89QWh6kVMTOyLq.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_HY5QUJFC70wUnxlXXBUuiyaY.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_Yjqy0CgYYWYwslm1t9eNXs7E.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_hWxChjDcL0m0tPA7GjNzFQdh.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_A3K4EhCn03hFfKxcE9mOLHCm.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_yK94e1HUcCXEs8XMjWsN2QZ2.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_F3J8mqZA0p4nWYhfnTEJuq5i.png`
-  - `/Users/dustinsmith-salinas/.codex/generated_images/019fb588-0add-71f1-9b9a-7361cc955aa6/call_9UjZfTUyO4QEbUPAIqziRyzS.png`
-- Source size: 1487 × 1058 px per keyframe.
-- Canonical Sage asset: `src/assets/sage/sage-orb.webp`.
+## Plan focus modes addendum
 
-## Implementation evidence
+- Desktop focus bar: `docs/sage-plan-audit/31-plan-focus-bar-desktop.png`
+- Mobile focus bar: `docs/sage-plan-audit/32-plan-focus-bar-mobile.png`
+- The focus controls sit between global progress and the workbench, preserving
+  the distinction between overall plan health and the work currently in view.
+- Focus modes are mutually exclusive; the school selector is additive. Counts,
+  next attention, weekly groups, empty state, and upcoming deadlines all respond
+  immediately without modifying task data.
+- On mobile, focus pills become a single horizontal rail while the school
+  selector remains full-width and readable.
 
-- Desktop viewport: 1440 × 1024 CSS px, device scale 1.
-- Mobile viewport: 390 × 844 CSS px, device scale 1.
-- Desktop screenshots:
-  - `/tmp/admyt-sticky-hero.png`
-  - `/tmp/admyt-sticky-pressure-fixed.png`
-  - `/tmp/admyt-sticky-vibe.png`
-  - `/tmp/admyt-premium-trust-desktop.png`
-  - `/tmp/admyt-premium-audience-desktop.png`
-  - `/tmp/admyt-premium-final-desktop.png`
-- Mobile screenshots:
-  - `/tmp/admyt-sticky-mobile-hero-fixed.png`
-  - `/tmp/admyt-sticky-mobile-pressure.png`
-  - `/tmp/admyt-spatial-chat-mobile.png`
+## Evidence
 
-- The hero-through-Vibe sequence contains exactly one campus image DOM node and one mounted canonical Sage orb.
-- Across desktop scenes 0–5, the campus image retained the same browser bounding rectangle: `x 622.80, y 181.05, width 759.60, height 709.91`.
-- Across the mobile hero and rankings scene, the same image retained the same browser bounding rectangle: `x 92.27, y 110.50, width 322.45, height 301.35`.
+- Source visual truth: `docs/sage-plan-audit/25-application-builder-source-same-viewport.png`
+- Implementation: `docs/sage-plan-audit/26-financial-aid-builder-same-viewport.png`
+- Combined comparison: `docs/sage-plan-audit/27-financial-aid-builder-visual-comparison.png`
+- Supporting desktop lane: `docs/sage-plan-audit/16-financial-aid-lane-desktop.png`
+- Supporting mobile builder: `docs/sage-plan-audit/19-financial-aid-builder-mobile.png`
+- Review-flow issue source: `/Users/dustinsmith-salinas/Desktop/Screenshot 2026-08-28 at 11.20.10 AM.png`
+- Corrected review state: `docs/sage-plan-audit/28-financial-aid-review.png`
+- Viewport: 390 × 844 CSS pixels for both matched builder captures; the combined comparison board is 1280 × 720.
+- Source and implementation pixels: 390 × 844 at browser density for both matched captures. No density normalization was required.
+- State: both checklist builders open over the signed-in Sage Plan. The financial-aid deadline is filled and both saved schools are selected.
 
-## Fidelity review
+## Full-view comparison
 
-- Typography: Inter, display weight, tight tracking, sentence-case hierarchy, and line wrapping match the approved direction. No clipped display copy remains.
-- Spacing and layout: the first six story beats share one pinned split cream/midnight world and circular campus composition while the copy scrolls beside it. Trust, audience, and final invitation release into their own full-width chapters afterward. Desktop and mobile layouts keep readable copy and safe tap targets.
-- Colors and tokens: warm paper, midnight, violet, cyan, coral, glass surfaces, and CTA gradient stay inside the existing Admyt palette.
-- Image quality: the real campus asset, production Sage orb, and supplied student cutouts are used. No placeholder imagery or substitute Sage icon appears.
-- Copy: the approved Admyt/Sage story is preserved from the numbers-game problem through preferences, matches, Vibe Check, trust, personal promise, and final invitation.
-- Icons and controls: the primary CTA uses the project’s existing Lucide arrow and has hover and focus-visible states.
-- Accessibility: landmarks and headings are semantic, decorative images are hidden from assistive technology, student portraits have alt text, focus indication is visible, and the existing reduced-motion Sage transition remains intact.
-- Behavior: section navigation, both conversion CTAs, the cross-screen Sage transition, and arrival in spatial chat were tested. Browser console errors: none.
+The financial-aid builder preserves the established modal frame, header rhythm,
+close action, field treatment, checklist preview, count pill, typography, radii,
+and dimmed-page context of the existing application checklist builder. The added
+mint intro and selected-school states reuse Sage Plan's existing teal semantic
+token rather than introducing a new visual language.
+
+The lane card fits the existing side-column density and ordering. It remains
+readable in the single-column mobile layout without horizontal overflow or a
+covered primary action.
+
+## Focused-region comparison
+
+The combined comparison focuses on the modal headers, first input, preview-card
+header, count treatment, borders, and spacing. These details are large enough to
+judge directly. The mobile capture separately verifies field stacking, selected
+school affordances, checklist-row wrapping, and bottom-navigation clearance.
+
+## Required fidelity surfaces
+
+- Fonts and typography: Inter, weights, hierarchy, line heights, and sentence-case copy match Sage Plan.
+- Spacing and layout rhythm: modal padding, 14–16px gaps, card radii, and mobile stacking match the source pattern.
+- Colors and visual tokens: existing ink, muted, indigo, line, mist, and teal tokens are reused with accessible text labels.
+- Image quality and asset fidelity: no raster imagery is needed; all visible icons come from the project's existing Lucide library.
+- Copy and content: language is short, direct, and explicit about school-specific requirements needing verification.
+
+## Findings
+
+No actionable P0, P1, or P2 differences remain.
 
 ## Comparison history
 
-### Pass 1 — blocked
+This pass found no P0/P1/P2 mismatch, so no fix-and-recapture loop was required.
+The date field was changed from `onChange` to `onInput` after the first browser
+exercise so the live preview responds reliably to date entry; the final matched
+capture reflects that fix.
 
-- [P1] The campus world was remounted in each chapter, making the design read as a repeated image instead of one continuous spatial scene.
-
-### Fixes
-
-- Rebuilt hero through Vibe Check as one sticky visual column with a single campus image and Sage orb.
-- Made the scroll position change only the copy, signal overlays, Sage position, lighting, and active scene styling.
-- Allowed desktop overlays to extend beyond the sticky visual column without clipping.
-- Removed excess mobile top padding so the first hero copy shares the opening viewport with the pinned visual.
-
-### Pass 2 — passed
-
-- Desktop hero, rankings, and Vibe Check states were recaptured at 1440 × 1024.
-- Mobile hero and rankings states were recaptured at 390 × 844.
-- DOM count and bounding-rectangle checks confirm that the image and orb persist rather than repeat.
-- The hero CTA was retested through arrival in spatial chat. Browser console errors: none.
-- No actionable P0, P1, or P2 differences remain.
-
-## Focused checks
-
-- Hero: exact wordmark treatment, headline, CTA, campus mask, prompt, and canonical orb.
-- Numbers game: pressure hierarchy, readable copy, and restored CTA.
-- Vibe Check: score placement, dark-mode contrast, orb/readout separation.
-- Mobile: pinned image continuity, hero fit, hidden desktop nav, overlay clipping, CTA tap size, and chat arrival.
+The first shipped card reused the setup builder for both “Build” and “Review.”
+The reported screenshot showed the resulting empty deadline field and disabled
+add action. The card now routes existing checklists to a dedicated review modal,
+grouped by household and school. The setup builder is reachable only through
+the explicitly labeled “Add or refresh steps” action. The review-to-task and
+review-to-setup paths were both exercised against the saved 14-task checklist.
 
 ## Follow-up polish
 
-- P3: a future motion pass can add the original storyboard’s light-path drawing between preference signals. The current build preserves the visual story without making reading surfaces continuously move.
+- P3: When trusted school-specific financial-aid requirement data exists, the generic school-form task could become a verified named form.
 
-## Match-card and section-spacing correction
+## Implementation checklist
 
-- Desktop match reference before correction: `/tmp/admyt-before-match-overlap.png`.
-- Desktop match result: `/tmp/admyt-match-desktop-final.png`.
-- Mobile match result: `/tmp/admyt-after-match-mobile-final.png`.
-- Trust-to-audience result: `/tmp/admyt-section-spacing-closed-final.png`.
-- Mobile Vibe Check contrast check: `/tmp/admyt-vibe-mobile-contrast.png`.
+- [x] Financial-aid lane card matches existing Sage Plan side cards.
+- [x] Deadline-driven builder works without persisting test data.
+- [x] School selection updates the preview from 14 to 11 tasks.
+- [x] Desktop and mobile states render cleanly.
+- [x] Requirements remain editable and explicitly ask for source verification.
 
-### Findings and fixes
-
-- [P2] The moving Sage orb overlapped the Lewis & Clark match card. Sage now occupies the open left-middle of the campus scene. Browser rectangle checks confirm no orb/card overlap at 1280 × 720 or 390 × 844.
-- [P2] The mobile match card extended beyond the viewport and into the “Your matches” label. Its position now stays inside the viewport and clears both Sage and the copy.
-- [P2] The visual gap between the trust principles and “Built for you” was 332 px at the desktop verification size. Bringing the audience content forward and reducing the trust section’s trailing padding closes that handoff further while retaining intentional breathing room.
-- [P2] Mobile match copy became dark on the long dark story background. Non-Vibe scenes now use the warm paper background on mobile, while Vibe Check keeps its midnight background with light copy.
-
-### Final check
-
-- Build: passed.
-- `git diff --check`: passed.
-- Desktop match overlap: false.
-- Mobile match overlap: false.
-- Mobile match card contained within viewport: true.
-- Mobile Vibe Check heading and body contrast: passed.
-- Final result remains: passed.
-
-## Premium product continuity build
-
-### Visual sources
-
-- Sage chat reference: `/tmp/admyt-continuity-04-chat.png`.
-- Browse before: `/tmp/admyt-continuity-01-browse.png`.
-- School Detail before: `/tmp/admyt-continuity-02-school-detail.png`.
-- Vibe Check before: `/tmp/admyt-continuity-03-vibe-check.png`.
-- Canonical Sage asset: `src/assets/sage/sage-orb.webp`.
-
-### Final captures
-
-- Browse desktop: `/tmp/admyt-premium-browse-final-desktop.png`.
-- Shared school cards desktop: `/tmp/admyt-premium-school-cards-desktop.png`.
-- Browse mobile: `/tmp/admyt-premium-browse-mobile.png`.
-- Shared school card mobile: `/tmp/admyt-premium-school-card-mobile.png`.
-- Vibe Check setup desktop: `/tmp/admyt-premium-vibe-final-desktop.png`.
-- Vibe Check setup mobile: `/tmp/admyt-premium-vibe-mobile-final.png`.
-- Vibe Check completed result: `/tmp/admyt-premium-vibe-result-final.png`.
-- School Detail desktop: `/tmp/admyt-premium-detail-final-desktop.png`.
-- School Detail lower modules: `/tmp/admyt-premium-school-detail-body.png`.
-- School Detail mobile: `/tmp/admyt-premium-school-detail-mobile.png`.
-
-### Same-state comparison boards
-
-- Browse: `/tmp/admyt-qa-browse-before-after.png`.
-- Vibe Check: `/tmp/admyt-qa-vibe-before-after.png`.
-- School Detail: `/tmp/admyt-qa-detail-before-after.png`.
-
-Each comparison places the captured pre-continuity screen on the left and the final implementation at the same 1280 × 720 viewport on the right.
-
-### Findings and resolution
-
-- [P1] Browse and Sage chat used separate school-card implementations. Both now render `PremiumSchoolCard`, preserving scoring, Vibe refinement, save state, school facts, and navigation in one shared component.
-- [P1] Vibe Check under-expressed Admyt’s signature product moment. The setup and results now use the canonical Sage orb, midnight spatial stage, premium selection surfaces, an animated score reveal, and responsive early action access without changing streaming, receipts, persistence, comparison, or handoff data.
-- [P2] Browse’s flat filter-and-card surface did not connect to the landing or chat. It now uses a calmer spatial hero, floating search/filter work surface, two-column editorial result grid, and the canonical Sage identity while keeping the full filter set.
-- [P2] School Detail’s lower modules reverted to the older flat card language. The hero, fit read, summary, tradeoffs, program list, Sage prompts, Vibe CTA, and quick stats now share the premium material and spacing system.
-- [P2] The floating Back to Sage control covered mobile cards. It is now desktop-only because mobile already has a persistent Sage tab.
-- [P2] The School Detail fit explanation inherited light hero copy on a light card. The final card uses readable slate copy.
-
-### Functional checks
-
-- Browse loaded all 3,881 catalog schools.
-- Selecting Pacific Northwest updated the active state and narrowed the rendered result set to 136 cards.
-- The shared card title opened the expected School Detail route.
-- School Detail’s primary Vibe Check action opened the correct school-specific Vibe route.
-- Mobile Vibe selection changed from 5 to 4 and immediately updated the visible action label.
-- A live Vibe Check completed with five dimension results, a final score, no visible error, and the redesigned result surface.
-- “Ask Sage about this result” reached `/chat` and displayed the one-time Vibe context acknowledgment.
-- Desktop and mobile source captures show no clipped primary controls.
-- `npm run build`: passed.
-- `git diff --check`: passed.
-
-### Accessibility and motion
-
-- School titles and actions are real buttons with visible focus treatment.
-- Vibe selection retains text, borders, and checkmarks rather than relying on color alone.
-- Mobile users get an early Vibe action without crossing all ten dimensions first.
-- The score reveal and card hover motion are disabled under reduced-motion preferences.
-
-### Result
-
-Final result: passed.
+final result: passed

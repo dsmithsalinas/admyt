@@ -10,12 +10,18 @@ import {
   type DigestDeadline,
   type DigestSchool,
 } from "../_shared/email-program-content.ts";
+import {
+  planReminderEmailContent,
+  type PlanReminderEmailItem,
+} from "../_shared/plan-reminder-email-content.ts";
 
 const MAX_USERS_PER_RUN = 500;
 const MAX_DIGEST_SCHOOLS = 5;
 const FRESH_DEADLINE_DAYS = 7;
 const DIGEST_DEADLINE_WINDOW_DAYS = 60;
 const GUIDANCE_DELAYS = [1, 3, 7] as const;
+const PLAN_LEAD_DAYS = new Set([0, 7]);
+const MAX_PLAN_TASKS_PER_EMAIL = 20;
 
 interface PreferenceRow {
   user_id: string;
@@ -24,6 +30,8 @@ interface PreferenceRow {
   getting_started_opted_in_at: string | null;
   weekly_digest_enabled: boolean;
   weekly_digest_opted_in_at: string | null;
+  plan_reminders_enabled: boolean;
+  plan_reminders_opted_in_at: string | null;
 }
 interface HeartRow {
   user_id: string;
@@ -55,6 +63,15 @@ interface EmailContent {
   subject: string;
   html: string;
   text: string;
+}
+interface PlanRow { id: string; user_id: string }
+interface PlanTaskRow {
+  id: string;
+  plan_id: string;
+  title: string;
+  owner_role: "student" | "parent";
+  college_name: string | null;
+  due_date: string;
 }
 
 function env(key: string): string {
@@ -179,8 +196,8 @@ Deno.serve(async (req) => {
 
     let preferenceQuery = admin
       .from("notification_preferences")
-      .select("user_id,timezone,getting_started_enabled,getting_started_opted_in_at,weekly_digest_enabled,weekly_digest_opted_in_at")
-      .or("getting_started_enabled.eq.true,weekly_digest_enabled.eq.true");
+      .select("user_id,timezone,getting_started_enabled,getting_started_opted_in_at,weekly_digest_enabled,weekly_digest_opted_in_at,plan_reminders_enabled,plan_reminders_opted_in_at")
+      .or("getting_started_enabled.eq.true,weekly_digest_enabled.eq.true,plan_reminders_enabled.eq.true");
     if (testUserId) preferenceQuery = preferenceQuery.eq("user_id", testUserId);
     const { data: preferenceData, error: preferenceError } = await preferenceQuery.limit(MAX_USERS_PER_RUN);
     if (preferenceError) throw new Error(`preferences_query_failed:${preferenceError.code ?? "unknown"}`);
@@ -191,14 +208,16 @@ Deno.serve(async (req) => {
     }
 
     const userIds = preferences.map((preference) => preference.user_id);
-    const [{ data: heartData, error: heartError }, { data: vibeData, error: vibeError }, { data: deliveryData, error: deliveryError }] = await Promise.all([
+    const [{ data: heartData, error: heartError }, { data: vibeData, error: vibeError }, { data: deliveryData, error: deliveryError }, { data: planData, error: planError }] = await Promise.all([
       admin.from("hearted_schools").select("user_id,college_id,college_name,created_at").in("user_id", userIds).order("created_at", { ascending: false }),
       admin.from("saved_vibes").select("user_id,college_id,fit_score").in("user_id", userIds),
-      admin.from("notification_deliveries").select("user_id,kind,dedupe_key,status").in("user_id", userIds).in("kind", ["getting_started", "weekly_digest"]),
+      admin.from("notification_deliveries").select("user_id,kind,dedupe_key,status").in("user_id", userIds).in("kind", ["getting_started", "weekly_digest", "plan_reminder"]),
+      admin.from("sage_plans").select("id,user_id").in("user_id", userIds).eq("status", "active"),
     ]);
     if (heartError) throw new Error(`hearts_query_failed:${heartError.code ?? "unknown"}`);
     if (vibeError) throw new Error(`vibes_query_failed:${vibeError.code ?? "unknown"}`);
     if (deliveryError) throw new Error(`deliveries_query_failed:${deliveryError.code ?? "unknown"}`);
+    if (planError) throw new Error(`plans_query_failed:${planError.code ?? "unknown"}`);
 
     const hearts = (heartData ?? []) as HeartRow[];
     const vibes = (vibeData ?? []) as VibeRow[];
@@ -208,6 +227,23 @@ Deno.serve(async (req) => {
     for (const heart of hearts) heartsByUser.set(heart.user_id, [...(heartsByUser.get(heart.user_id) ?? []), heart]);
     for (const vibe of vibes) vibesByUser.set(vibe.user_id, [...(vibesByUser.get(vibe.user_id) ?? []), vibe]);
     const sentKeys = new Set(deliveries.filter((delivery) => delivery.status === "sent").map((delivery) => delivery.dedupe_key));
+    const plans = (planData ?? []) as PlanRow[];
+    let planTasks: PlanTaskRow[] = [];
+    if (plans.length > 0) {
+      const { data, error } = await admin.from("sage_plan_tasks")
+        .select("id,plan_id,title,owner_role,college_name,due_date")
+        .in("plan_id", plans.map((plan) => plan.id))
+        .in("status", ["todo", "in_progress"])
+        .not("due_date", "is", null);
+      if (error) throw new Error(`plan_tasks_query_failed:${error.code ?? "unknown"}`);
+      planTasks = (data ?? []) as PlanTaskRow[];
+    }
+    const planById = new Map(plans.map((plan) => [plan.id, plan]));
+    const planTasksByUser = new Map<string, PlanTaskRow[]>();
+    for (const task of planTasks) {
+      const userId = planById.get(task.plan_id)?.user_id;
+      if (userId) planTasksByUser.set(userId, [...(planTasksByUser.get(userId) ?? []), task]);
+    }
 
     const collegeIds = [...new Set(hearts.map((heart) => heart.college_id))];
     let deadlineRows: DeadlineRow[] = [];
@@ -220,6 +256,7 @@ Deno.serve(async (req) => {
     const now = new Date();
     let guidanceSent = 0;
     let digestsSent = 0;
+    let planRemindersSent = 0;
     let failed = 0;
     let suppressed = 0;
     const usersSent = new Set<string>();
@@ -228,7 +265,7 @@ Deno.serve(async (req) => {
 
     async function sendProgramEmail(
       preference: PreferenceRow,
-      kind: "getting_started" | "weekly_digest",
+      kind: "getting_started" | "weekly_digest" | "plan_reminder",
       dedupeKey: string,
       from: string,
       content: EmailContent,
@@ -298,6 +335,51 @@ Deno.serve(async (req) => {
       const userVibes = vibesByUser.get(preference.user_id) ?? [];
       let sentGuidanceToday = false;
 
+      const today = localDate(preference.timezone, now);
+      if (preference.plan_reminders_enabled && today) {
+        const dueTasks = (planTasksByUser.get(preference.user_id) ?? [])
+          .map((task) => ({ task, leadDays: daysBetween(today, task.due_date) }))
+          .filter((item): item is { task: PlanTaskRow; leadDays: 0 | 7 } =>
+            item.leadDays != null && PLAN_LEAD_DAYS.has(item.leadDays)
+          )
+          .sort((left, right) => left.task.due_date.localeCompare(right.task.due_date) || left.task.title.localeCompare(right.task.title))
+          .slice(0, MAX_PLAN_TASKS_PER_EMAIL);
+        const reminderKey = `plan-reminder|${preference.user_id}|${today}`;
+        if (dueTasks.length > 0 && !sentKeys.has(reminderKey)) {
+          const unsubscribeUrl = await createUnsubscribeUrl(
+            unsubscribeEndpoint,
+            preference.user_id,
+            "plan_reminders",
+            unsubscribeSigningKey,
+          );
+          const items: PlanReminderEmailItem[] = dueTasks.map(({ task, leadDays }) => ({
+            title: task.title,
+            dueDate: task.due_date,
+            leadDays,
+            ownerRole: task.owner_role,
+            collegeName: task.college_name,
+          }));
+          const result = await sendProgramEmail(
+            preference,
+            "plan_reminder",
+            reminderKey,
+            "Sage from admyt <reminders@youradmyt.com>",
+            planReminderEmailContent(items, unsubscribeUrl),
+            unsubscribeUrl,
+          );
+          if (result === "sent") {
+            planRemindersSent += 1;
+            usersSent.add(preference.user_id);
+          } else if (result === "failed") {
+            failed += 1;
+            usersFailed.add(preference.user_id);
+          } else if (result === "suppressed") {
+            suppressed += 1;
+            usersSuppressed.add(preference.user_id);
+          }
+        }
+      }
+
       if (preference.getting_started_enabled) {
         const daysSinceOptIn = testUserId ? Number.MAX_SAFE_INTEGER : elapsedDays(preference.getting_started_opted_in_at, now);
         const stageIndex = GUIDANCE_DELAYS.findIndex((delay, index) => {
@@ -334,7 +416,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      const today = localDate(preference.timezone, now);
       const monday = localWeekday(preference.timezone, now) === "Mon";
       if (!preference.weekly_digest_enabled || sentGuidanceToday || userHearts.length === 0 || !today || (!monday && !testUserId)) continue;
       const digestKey = `weekly-digest|${preference.user_id}|${today}`;
@@ -394,6 +475,7 @@ Deno.serve(async (req) => {
       users_considered: preferences.length,
       guidance_sent: guidanceSent,
       digests_sent: digestsSent,
+      plan_reminders_sent: planRemindersSent,
       deliveries_failed: failed,
       suppressed_recipients: suppressed,
       users_skipped: skipped,
@@ -407,9 +489,10 @@ Deno.serve(async (req) => {
       status: "success",
       metrics: {
         users_considered: preferences.length,
-        sent_count: guidanceSent + digestsSent,
+        sent_count: guidanceSent + digestsSent + planRemindersSent,
         guidance_sent: guidanceSent,
         digests_sent: digestsSent,
+        plan_reminders_sent: planRemindersSent,
         failure_count: failed,
         suppressed_count: suppressed,
         skipped_count: skipped,

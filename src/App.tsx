@@ -16,6 +16,7 @@ const Search = lazy(() => import('@/pages/Search'))
 const CollegeDetail = lazy(() => import('@/pages/CollegeDetail'))
 const VibeCheck = lazy(() => import('@/pages/VibeCheck'))
 const Profile = lazy(() => import('@/pages/Profile'))
+const SagePlan = lazy(() => import('@/pages/SagePlan'))
 const DataAndPrivacy = lazy(() => import('@/pages/DataAndPrivacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
@@ -56,6 +57,8 @@ function RouteAccessibility() {
     ? 'Browse colleges'
     : location.pathname === '/profile'
     ? 'Your profile'
+    : location.pathname === '/plan'
+    ? 'Sage Plan'
     : location.pathname === '/data-and-privacy'
     ? 'Data and privacy'
     : location.pathname === '/terms'
@@ -112,6 +115,7 @@ export default function App() {
                       <Route path="/college/:id" element={<CollegeDetail />} />
                       <Route path="/college/:id/vibe" element={<VibeCheck />} />
                       <Route path="/profile" element={<Profile />} />
+                      <Route path="/plan" element={<SagePlan />} />
                       <Route path="/data-and-privacy" element={<DataAndPrivacy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />

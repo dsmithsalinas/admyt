@@ -110,9 +110,16 @@ The frontend invokes `welcome-email` only when the authenticated user's account 
 
 For a controlled test, create a disposable confirmed Auth user at a Resend provider-owned test address, sign in as that user, temporarily set `WELCOME_EMAIL_TEST_USER_ID`, invoke the function with the user's JWT, confirm the ledger and webhook event, then delete the user and related test rows before removing the test-user secret.
 
-## Getting-started guidance and weekly digest
+## Sage Plan reminders, getting-started guidance, and weekly digest
 
 `email-programs` is a service-role-only worker invoked hourly by the `admyt-email-programs-hourly` Supabase Cron job. Each run checks the saved IANA time zone and considers a student only around 9:00 local time.
+
+Sage Plan reminders:
+
+- Require the independent `plan_reminders_enabled` opt-in.
+- Send one batched email when open tasks are due today or in 7 days; overdue tasks do not generate repeated daily email.
+- Include both student- and parent-owned tasks with explicit ownership labels. Until parent accounts exist, delivery goes only to the student's Admyt email.
+- Use a delivery key based on the user's local date, preventing more than one Plan reminder per day. The email is capped at 20 tasks.
 
 Getting-started guidance:
 
@@ -132,16 +139,16 @@ Weekly My Schools digest:
 
 Shared safety behavior:
 
-- `EMAIL_PROGRAMS_ENABLED=true` permits both programs. Set it to `false` for the immediate kill switch.
+- `EMAIL_PROGRAMS_ENABLED=true` permits all three programs. Set it to `false` for the immediate kill switch.
 - `EMAIL_PROGRAMS_TEST_USER_ID` must remain absent in production. During controlled validation, setting it restricts the worker to one user and bypasses the local-time, weekday, and sequence-delay gates; preference and suppression checks still apply.
 - The database claim rechecks the corresponding opt-in atomically immediately before delivery, closing the opt-out race after the worker's initial query.
 - The worker sends at most one guidance email per user per invocation and skips that user's digest when guidance was sent in the same run.
 - Guidance sends from `Sage from admyt <guidance@youradmyt.com>` and the digest sends from `Sage from admyt <digest@youradmyt.com>`.
-- Both use the shared delivery ledger, three-attempt retry cap, stable Resend idempotency key, webhook status tracking, and privacy-minimized suppression list.
+- All three use the shared delivery ledger, three-attempt retry cap, stable Resend idempotency key, webhook status tracking, and privacy-minimized suppression list.
 
 ## One-click unsubscribe
 
-Every optional application email—deadline reminders, getting-started guidance, and the weekly digest—contains a signed program-specific unsubscribe URL served by `email-unsubscribe`.
+Every optional application email—deadline reminders, Sage Plan reminders, getting-started guidance, and the weekly digest—contains a signed program-specific unsubscribe URL served by `email-unsubscribe`.
 
 - The browser-facing `GET` request only shows a confirmation page. This prevents link previews and security scanners from changing a preference.
 - A confirmed browser form `POST` turns off only that program and shows a success page.

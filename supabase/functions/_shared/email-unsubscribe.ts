@@ -1,5 +1,6 @@
 export type OptionalEmailProgram =
   | "deadline_reminders"
+  | "plan_reminders"
   | "getting_started"
   | "weekly_digest";
 
@@ -11,6 +12,7 @@ interface UnsubscribePayload {
 
 const PROGRAMS = new Set<OptionalEmailProgram>([
   "deadline_reminders",
+  "plan_reminders",
   "getting_started",
   "weekly_digest",
 ]);

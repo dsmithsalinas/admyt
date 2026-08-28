@@ -386,7 +386,7 @@ function DeleteAccountModal({ onClose, onDelete }: { onClose: () => void; onDele
       <h3 className="mini-title">Permanent action</h3>
       <h2 id="delete-account-title" style={{ margin: '10px 0 8px' }}>Delete your Admyt account?</h2>
       <p className="match-note">
-        This permanently removes your chats, saved schools, Vibe Checks, preferences, and sign-in. Recovery backups age out within 7 days.
+        This permanently removes your chats, saved schools, Vibe Checks, Sage Plan tasks, preferences, and sign-in. Recovery backups age out within 7 days.
       </p>
       <label style={{ display: 'grid', gap: 8, marginTop: 18, fontWeight: 750 }}>
         Type DELETE to confirm
@@ -421,6 +421,7 @@ export default function Profile() {
   const [prefs, setPrefs] = useState<UserPreferences>({ preferred_states: [], max_tuition: null, preferred_majors: [] })
   const [deadlines, setDeadlines] = useState<Record<string, CollegeDeadlines>>({})
   const [deadlineEmailsEnabled, setDeadlineEmailsEnabled] = useState(false)
+  const [planEmailsEnabled, setPlanEmailsEnabled] = useState(false)
   const [gettingStartedEmailsEnabled, setGettingStartedEmailsEnabled] = useState(false)
   const [weeklyDigestEnabled, setWeeklyDigestEnabled] = useState(false)
   const [emailPreferencesLoading, setEmailPreferencesLoading] = useState(false)
@@ -431,6 +432,7 @@ export default function Profile() {
   useEffect(() => {
     if (!user) {
       setDeadlineEmailsEnabled(false)
+      setPlanEmailsEnabled(false)
       setGettingStartedEmailsEnabled(false)
       setWeeklyDigestEnabled(false)
       setEmailPreferencesMessage('')
@@ -452,6 +454,7 @@ export default function Profile() {
     getNotificationPreferences(user.id)
       .then(notificationPrefs => {
         setDeadlineEmailsEnabled(notificationPrefs.deadlineRemindersEnabled)
+        setPlanEmailsEnabled(notificationPrefs.planRemindersEnabled)
         setGettingStartedEmailsEnabled(notificationPrefs.gettingStartedEnabled)
         setWeeklyDigestEnabled(notificationPrefs.weeklyDigestEnabled)
       })
@@ -543,6 +546,7 @@ export default function Profile() {
     if (!user || emailPreferenceSaving || emailPreferencesLoading) return
     const current = {
       deadlineRemindersEnabled: deadlineEmailsEnabled,
+      planRemindersEnabled: planEmailsEnabled,
       gettingStartedEnabled: gettingStartedEmailsEnabled,
       weeklyDigestEnabled,
     }[preference]
@@ -552,6 +556,7 @@ export default function Profile() {
     try {
       await saveNotificationPreference(user.id, preference, next)
       if (preference === 'deadlineRemindersEnabled') setDeadlineEmailsEnabled(next)
+      if (preference === 'planRemindersEnabled') setPlanEmailsEnabled(next)
       if (preference === 'gettingStartedEnabled') setGettingStartedEmailsEnabled(next)
       if (preference === 'weeklyDigestEnabled') setWeeklyDigestEnabled(next)
       setEmailPreferencesMessage('Saved. Your email choices are up to date.')
@@ -892,6 +897,21 @@ export default function Profile() {
                 </p>
               </div>
               <div className="learn-list" style={{ marginTop: 14 }}>
+                <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ color: 'var(--admyt-ink)' }}>Sage Plan reminders</strong>
+                    <p className="match-note" style={{ margin: '5px 0 0' }}>
+                      One morning email when open Plan tasks are due today or in 7 days. Student and parent responsibilities are labeled clearly.
+                    </p>
+                  </div>
+                  <EmailPreferenceSwitch
+                    checked={planEmailsEnabled}
+                    label="Sage Plan reminders"
+                    loading={emailPreferencesLoading}
+                    saving={emailPreferenceSaving === 'planRemindersEnabled'}
+                    onClick={() => handleEmailPreferenceToggle('planRemindersEnabled')}
+                  />
+                </div>
                 {DEADLINE_EMAIL_OPT_IN_AVAILABLE && (
                   <div className="learn-item" style={{ alignItems: 'center', gap: 16 }}>
                     <div style={{ flex: 1 }}>

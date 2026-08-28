@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
           admin.from("hearted_schools").select("id", { count: "exact", head: true }).eq("user_id", target.id),
           admin.from("saved_vibes").select("id", { count: "exact", head: true }).eq("user_id", target.id),
           admin.from("user_preferences").select("updated_at").eq("user_id", target.id).maybeSingle(),
-          admin.from("notification_preferences").select("deadline_reminders_enabled,getting_started_enabled,weekly_digest_enabled,timezone,updated_at").eq("user_id", target.id).maybeSingle(),
+          admin.from("notification_preferences").select("deadline_reminders_enabled,plan_reminders_enabled,getting_started_enabled,weekly_digest_enabled,timezone,updated_at").eq("user_id", target.id).maybeSingle(),
           admin.from("notification_deliveries").select("kind,status,provider_status,error_code,sent_at,created_at").eq("user_id", target.id).order("created_at", { ascending: false }).limit(10),
           admin.from("email_suppressions").select("reason,created_at").eq("email_hash", await emailFingerprint(lookupEmail, hashKey)).maybeSingle(),
         ]);
@@ -494,7 +494,7 @@ Deno.serve(async (req) => {
   }
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const [runs, deliveries, events, suppressions, bounceSuppressions, complaintSuppressions, providerSuppressions, manualSuppressions, deadlineOptIns, guidanceOptIns, digestOptIns, recentDeliveries] = await Promise.all([
+  const [runs, deliveries, events, suppressions, bounceSuppressions, complaintSuppressions, providerSuppressions, manualSuppressions, deadlineOptIns, planOptIns, guidanceOptIns, digestOptIns, recentDeliveries] = await Promise.all([
     admin.from("email_worker_runs").select("worker,status,metrics,error_code,started_at,finished_at,duration_ms").order("finished_at", { ascending: false }).limit(20),
     admin.from("notification_deliveries").select("kind,status,provider_status,error_code,sent_at,created_at").order("created_at", { ascending: false }).limit(30),
     admin.from("email_delivery_events").select("event_type,occurred_at,received_at").order("received_at", { ascending: false }).limit(30),
@@ -504,11 +504,12 @@ Deno.serve(async (req) => {
     admin.from("email_suppressions").select("email_hash", { count: "exact", head: true }).eq("reason", "provider_suppression"),
     admin.from("email_suppressions").select("email_hash", { count: "exact", head: true }).eq("reason", "manual"),
     admin.from("notification_preferences").select("user_id", { count: "exact", head: true }).eq("deadline_reminders_enabled", true),
+    admin.from("notification_preferences").select("user_id", { count: "exact", head: true }).eq("plan_reminders_enabled", true),
     admin.from("notification_preferences").select("user_id", { count: "exact", head: true }).eq("getting_started_enabled", true),
     admin.from("notification_preferences").select("user_id", { count: "exact", head: true }).eq("weekly_digest_enabled", true),
     admin.from("notification_deliveries").select("status,provider_status").gte("created_at", oneDayAgo),
   ]);
-  const queryError = [runs, deliveries, events, suppressions, bounceSuppressions, complaintSuppressions, providerSuppressions, manualSuppressions, deadlineOptIns, guidanceOptIns, digestOptIns, recentDeliveries]
+  const queryError = [runs, deliveries, events, suppressions, bounceSuppressions, complaintSuppressions, providerSuppressions, manualSuppressions, deadlineOptIns, planOptIns, guidanceOptIns, digestOptIns, recentDeliveries]
     .find((result) => result.error)?.error;
   if (queryError) return json({ error: "operations_query_failed" }, 500);
 
@@ -519,6 +520,7 @@ Deno.serve(async (req) => {
     summary: {
       opted_in: {
         deadline_reminders: deadlineOptIns.count ?? 0,
+        plan_reminders: planOptIns.count ?? 0,
         getting_started: guidanceOptIns.count ?? 0,
         weekly_digest: digestOptIns.count ?? 0,
       },

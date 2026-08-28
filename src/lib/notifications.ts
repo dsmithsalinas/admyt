@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 
 export interface NotificationPreferences {
   deadlineRemindersEnabled: boolean;
+  planRemindersEnabled: boolean;
   gettingStartedEnabled: boolean;
   weeklyDigestEnabled: boolean;
   timezone: string;
@@ -9,6 +10,7 @@ export interface NotificationPreferences {
 
 export type NotificationPreferenceKey =
   | "deadlineRemindersEnabled"
+  | "planRemindersEnabled"
   | "gettingStartedEnabled"
   | "weeklyDigestEnabled";
 
@@ -25,7 +27,7 @@ export async function getNotificationPreferences(
 ): Promise<NotificationPreferences> {
   const { data, error } = await supabase
     .from("notification_preferences")
-    .select("deadline_reminders_enabled,getting_started_enabled,weekly_digest_enabled,timezone")
+    .select("deadline_reminders_enabled,plan_reminders_enabled,getting_started_enabled,weekly_digest_enabled,timezone")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -35,6 +37,7 @@ export async function getNotificationPreferences(
     );
   return {
     deadlineRemindersEnabled: data?.deadline_reminders_enabled ?? false,
+    planRemindersEnabled: data?.plan_reminders_enabled ?? false,
     gettingStartedEnabled: data?.getting_started_enabled ?? false,
     weeklyDigestEnabled: data?.weekly_digest_enabled ?? false,
     timezone: data?.timezone ?? browserTimezone(),
@@ -43,11 +46,13 @@ export async function getNotificationPreferences(
 
 const preferenceColumns: Record<NotificationPreferenceKey, string> = {
   deadlineRemindersEnabled: "deadline_reminders_enabled",
+  planRemindersEnabled: "plan_reminders_enabled",
   gettingStartedEnabled: "getting_started_enabled",
   weeklyDigestEnabled: "weekly_digest_enabled",
 };
 
 const optedInAtColumns: Partial<Record<NotificationPreferenceKey, string>> = {
+  planRemindersEnabled: "plan_reminders_opted_in_at",
   gettingStartedEnabled: "getting_started_opted_in_at",
   weeklyDigestEnabled: "weekly_digest_opted_in_at",
 };

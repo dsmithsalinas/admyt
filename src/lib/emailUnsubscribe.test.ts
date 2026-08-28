@@ -38,4 +38,13 @@ describe('email unsubscribe tokens', () => {
     expect(url).toMatch(/^https:\/\/example\.supabase\.co\/functions\/v1\/email-unsubscribe\?token=/)
     expect(url).not.toContain(secret)
   })
+
+  it('supports a program-specific Sage Plan opt-out', async () => {
+    const token = await createUnsubscribeToken(userId, 'plan_reminders', secret)
+
+    await expect(verifyUnsubscribeToken(token, secret)).resolves.toMatchObject({
+      userId,
+      program: 'plan_reminders',
+    })
+  })
 })

@@ -4,6 +4,7 @@ import { verifyUnsubscribeToken, type OptionalEmailProgram } from "../_shared/em
 
 const programColumns: Record<OptionalEmailProgram, { enabled: string; optedInAt?: string; label: string }> = {
   deadline_reminders: { enabled: "deadline_reminders_enabled", label: "deadline reminders" },
+  plan_reminders: { enabled: "plan_reminders_enabled", optedInAt: "plan_reminders_opted_in_at", label: "Sage Plan reminders" },
   getting_started: { enabled: "getting_started_enabled", optedInAt: "getting_started_opted_in_at", label: "getting-started guidance" },
   weekly_digest: { enabled: "weekly_digest_enabled", optedInAt: "weekly_digest_opted_in_at", label: "weekly My Schools digest" },
 };

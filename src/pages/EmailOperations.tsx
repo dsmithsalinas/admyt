@@ -4,7 +4,7 @@ import AdminShell from '@/components/admin/AdminShell'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 
-type TemplateId = 'welcome' | 'deadline_reminder' | 'guidance_1' | 'guidance_2' | 'guidance_3' | 'weekly_digest'
+type TemplateId = 'welcome' | 'deadline_reminder' | 'plan_reminder' | 'guidance_1' | 'guidance_2' | 'guidance_3' | 'weekly_digest'
 
 interface TemplateSummary {
   id: TemplateId
@@ -47,7 +47,7 @@ interface Dashboard {
   admin: { email: string }
   templates: TemplateSummary[]
   summary: {
-    opted_in: { deadline_reminders: number; getting_started: number; weekly_digest: number }
+    opted_in: { deadline_reminders: number; plan_reminders: number; getting_started: number; weekly_digest: number }
     suppressions: {
       total: number
       by_reason: { bounce: number; complaint: number; provider_suppression: number; manual: number }
@@ -247,6 +247,7 @@ export default function EmailOperations() {
           <h2>Optional email opt-ins</h2>
           <div className="email-ops-audience">
             <div><span>Deadline reminders</span><strong>{dashboard.summary.opted_in.deadline_reminders}</strong></div>
+            <div><span>Sage Plan reminders</span><strong>{dashboard.summary.opted_in.plan_reminders}</strong></div>
             <div><span>Getting-started guidance</span><strong>{dashboard.summary.opted_in.getting_started}</strong></div>
             <div><span>Weekly digest</span><strong>{dashboard.summary.opted_in.weekly_digest}</strong></div>
           </div>
