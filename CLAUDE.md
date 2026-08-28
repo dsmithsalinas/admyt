@@ -28,6 +28,7 @@ The college search process is broken. Built around rankings, stats, and prestige
 Admyt exists because fit matters more than rank. The right school for you is the one where you'll actually show up, plug in, and become who you're supposed to become. That's where Sage comes in. And that's why Vibe Check isn't a feature — it's the thesis.
 
 ## Tech stack
+- **Runtime:** Node.js 22.12 or newer locally and in GitHub Actions
 - **Frontend:** React + Vite + TypeScript
 - **Styling:** Bespoke hand-written CSS design system — `src/styles/global.css` (native CSS `@layer` blocks + component classes like `.app-frame`, `.pill`, `.btn`, `.school-card`, `.mock-card`) and `src/styles/tokens.css` (design tokens / CSS custom properties), plus inline React `style` props. **Not Tailwind** — Tailwind and shadcn/ui were removed during the redesign (see Design system below). Icons via `lucide-react`.
 - **Backend:** Supabase (auth, database, edge functions)
