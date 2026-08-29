@@ -71,6 +71,19 @@ test('landing page reaches the Sage conversation', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Talk with Sage' })).toBeVisible()
 })
 
+test('bug reporting stays off the marketing page but remains available on desktop product routes', async ({ page }) => {
+  await mockSupabase(page)
+  await mockBugReportWidget(page)
+  await page.setViewportSize({ width: 1024, height: 768 })
+  await page.goto('/')
+
+  const trigger = page.locator('#hidustin-bug-widget .trigger')
+  await expect(trigger).toBeHidden()
+
+  await page.goto('/chat')
+  await expect(trigger).toBeVisible()
+})
+
 test('Browse deep links work and text search includes majors', async ({ page }) => {
   await mockSupabase(page)
   await page.goto('/search')
