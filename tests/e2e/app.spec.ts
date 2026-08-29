@@ -32,6 +32,36 @@ async function mockSupabase(page: Page) {
   }))
 }
 
+async function mockBugReportWidget(page: Page) {
+  await page.route('https://hidustin-bug-intake.dusteallen.workers.dev/widget.js**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/javascript',
+    body: `
+      const host = document.createElement('div')
+      host.id = 'hidustin-bug-widget'
+      document.body.appendChild(host)
+      const root = host.attachShadow({ mode: 'open' })
+      root.innerHTML = \`
+        <style>
+          .trigger { display: block; }
+          .dialog { display: none; }
+          .dialog.open { display: block; }
+          input { font-size: 13px; }
+        </style>
+        <button class="trigger" type="button">Report a bug</button>
+        <div class="dialog" role="dialog" aria-label="Report a bug">
+          <label>What happened?<input type="text"></label>
+        </div>
+      \`
+      const open = __name(() => {
+        root.querySelector('.dialog').classList.add('open')
+        root.querySelector('input').focus()
+      }, 'open')
+      root.querySelector('.trigger').addEventListener('click', open)
+    `,
+  }))
+}
+
 test('landing page reaches the Sage conversation', async ({ page }) => {
   await mockSupabase(page)
   await page.goto('/')
@@ -164,6 +194,7 @@ test('header login opens as a full-page modal above the Sage interface', async (
 
 test('mobile Sage chat stays at the device width and does not trigger iOS focus zoom', async ({ page }) => {
   await mockSupabase(page)
+  await mockBugReportWidget(page)
   await page.setViewportSize({ width: 390, height: 664 })
   await page.goto('/chat')
 
@@ -188,6 +219,7 @@ test('mobile Sage chat stays at the device width and does not trigger iOS focus 
 
 test('mobile bug reporting lives in Profile and its form does not trigger iOS focus zoom', async ({ page }) => {
   await mockSupabase(page)
+  await mockBugReportWidget(page)
   await page.setViewportSize({ width: 390, height: 664 })
   await page.goto('/profile')
 
