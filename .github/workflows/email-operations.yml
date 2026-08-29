@@ -28,3 +28,16 @@ jobs:
           curl --fail-with-body --silent --show-error \
             --header "Authorization: Bearer $MONITOR_TOKEN" \
             "$HEALTH_URL"
+
+  report-failure:
+    needs: [health]
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create issue ticket
+        env:
+          BUG_REPORT_TOKEN: ${{ secrets.BUG_REPORT_TOKEN }}
+          WORKFLOW_NEEDS: ${{ toJSON(needs) }}
+        run: node .github/scripts/report-ci-failure.mjs

@@ -36,3 +36,16 @@ jobs:
           bundle="$(grep -oE '/assets/index-[^" ]+\.js' <<<"$landing" | head -1)"
           test -n "$bundle"
           curl --fail --silent --show-error --location --output /dev/null "$APP_URL$bundle"
+
+  report-failure:
+    needs: [smoke]
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create issue ticket
+        env:
+          BUG_REPORT_TOKEN: ${{ secrets.BUG_REPORT_TOKEN }}
+          WORKFLOW_NEEDS: ${{ toJSON(needs) }}
+        run: node .github/scripts/report-ci-failure.mjs

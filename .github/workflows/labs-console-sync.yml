@@ -31,3 +31,16 @@ jobs:
             https://hidustin-labs-console.dusteallen.chatgpt.site/api/internal/sync
 
           node -e "const fs=require('node:fs'); const result=JSON.parse(fs.readFileSync('labs-console-response.json','utf8')); if (!result.ok || result.succeeded !== result.total) { console.error(JSON.stringify(result)); process.exit(1); } console.log('Labs Console refreshed '+result.succeeded+'/'+result.total+' products.');"
+
+  report-failure:
+    needs: [refresh]
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create issue ticket
+        env:
+          BUG_REPORT_TOKEN: ${{ secrets.BUG_REPORT_TOKEN }}
+          WORKFLOW_NEEDS: ${{ toJSON(needs) }}
+        run: node .github/scripts/report-ci-failure.mjs
