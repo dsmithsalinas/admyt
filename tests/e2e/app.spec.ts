@@ -162,6 +162,45 @@ test('header login opens as a full-page modal above the Sage interface', async (
   expect(await panel.evaluate(element => element.scrollTop)).toBe(0)
 })
 
+test('mobile Sage chat stays at the device width and does not trigger iOS focus zoom', async ({ page }) => {
+  await mockSupabase(page)
+  await page.setViewportSize({ width: 390, height: 664 })
+  await page.goto('/chat')
+
+  const composer = page.getByRole('textbox', { name: 'Message Sage' })
+  await expect(composer).toBeVisible()
+  expect(await composer.evaluate(element => Number.parseFloat(getComputedStyle(element).fontSize)))
+    .toBeGreaterThanOrEqual(16)
+
+  const viewportMetrics = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    documentWidth: document.documentElement.scrollWidth,
+    bodyWidth: document.body.scrollWidth,
+  }))
+  expect(viewportMetrics.documentWidth).toBeLessThanOrEqual(viewportMetrics.clientWidth)
+  expect(viewportMetrics.bodyWidth).toBeLessThanOrEqual(viewportMetrics.clientWidth)
+
+  await composer.focus()
+  await expect(composer).toBeFocused()
+  await expect(page.locator('.mobile-tab-bar')).toBeInViewport()
+  await expect(page.locator('#hidustin-bug-widget .trigger')).toBeHidden()
+})
+
+test('mobile bug reporting lives in Profile and its form does not trigger iOS focus zoom', async ({ page }) => {
+  await mockSupabase(page)
+  await page.setViewportSize({ width: 390, height: 664 })
+  await page.goto('/profile')
+
+  await page.getByRole('button', { name: 'Report a bug' }).click()
+  const dialog = page.locator('#hidustin-bug-widget').getByRole('dialog')
+  await expect(dialog).toBeVisible()
+
+  const summary = dialog.getByRole('textbox', { name: 'What happened?' })
+  await expect(summary).toBeFocused()
+  expect(await summary.evaluate(element => Number.parseFloat(getComputedStyle(element).fontSize)))
+    .toBeGreaterThanOrEqual(16)
+})
+
 test('signed-in students control each optional email program independently', async ({ page }) => {
   await mockSupabase(page)
   const userId = '11111111-1111-4111-8111-111111111111'

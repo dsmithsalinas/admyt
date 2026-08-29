@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import Layout from '@/components/layout/Layout'
 import SageOrb from '@/components/sage/SageOrb'
 import { SageTransitionProvider } from '@/context/SageTransitionContext'
+import BugReportWidget from '@/components/ui/BugReportWidget'
 
 const Home = lazy(() => import('@/pages/Home'))
 const Landing = lazy(() => import('@/pages/Landing'))
@@ -105,6 +106,7 @@ export default function App() {
           <CollegeProvider>
             <ChatProvider>
               <SageTransitionProvider>
+                <BugReportWidget />
                 <RouteAccessibility />
                 <Suspense fallback={<LoadingOrb />}>
                   <Routes>

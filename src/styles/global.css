@@ -5242,7 +5242,8 @@
   }
 
   .sage-composer textarea {
-    font-size: 13px;
+    /* iOS Safari zooms the page when a focused form control is below 16px. */
+    font-size: 16px;
   }
 
   .sage-composer > button {
@@ -5262,5 +5263,14 @@
   .mobile-tab-link svg {
     width: 20px;
     height: 20px;
+  }
+
+  .profile-help-card .school-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-help-card .btn {
+    width: 100%;
   }
 }

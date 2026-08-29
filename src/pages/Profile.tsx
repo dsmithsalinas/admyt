@@ -11,6 +11,7 @@ import { scoreCollege } from '@/lib/matchScore'
 import { REGION_TO_STATES } from '@/lib/regions'
 import AuthModal from '@/components/ui/AuthModal'
 import Modal from '@/components/ui/Modal'
+import { openBugReportWidget } from '@/components/ui/BugReportWidget'
 import { buildAccountExport, clearAdmytBrowserData, deleteAdmytAccount, downloadJson } from '@/lib/accountData'
 import {
   getNotificationPreferences,
@@ -989,6 +990,18 @@ export default function Profile() {
                 {accountMessage && <p role="status" className="match-note account-message">{accountMessage}</p>}
               </div>
             )}
+          </section>
+
+          <section className="mock-card section-pad profile-help-card">
+            <div className="school-head">
+              <div>
+                <h2 className="mini-title">Help & feedback</h2>
+                <p className="match-note" style={{ marginTop: 8 }}>
+                  Something feel off? Send a quick report. Page and browser details are included automatically.
+                </p>
+              </div>
+              <button className="btn secondary" onClick={openBugReportWidget}>Report a bug</button>
+            </div>
           </section>
         </div>
 
