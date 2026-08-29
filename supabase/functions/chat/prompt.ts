@@ -248,7 +248,9 @@ export function buildDeadlinePrompt(college: College, today: string): { system: 
   const system = 'You research U.S. college undergraduate first-year application deadlines using web search of the school\'s official admissions website. You respond with ONLY a JSON object — no preamble, no explanation, no markdown code fences.'
   const userMessage = `Today's date is ${today}. Find the undergraduate first-year application deadlines for ${college.name} in ${college.location} for the UPCOMING admissions cycle — the next cycle whose deadlines have not yet passed as of today. Search the school's official admissions website.
 
-Critical: every date you return MUST be in the future relative to ${today}. Admissions sites often still show a past cycle's archived dates — do not use those. Find the current/upcoming cycle's dates. If you can only find dates that have already passed, treat that as "not found."
+Critical: every date you return MUST be today or in the future relative to ${today}. Admissions sites often still show a past cycle's archived dates — do not use those. Find the current/upcoming cycle's dates. If you can only find dates that have already passed, treat that as "not found."
+
+Official admissions pages often publish recurring month-and-day deadlines without a year. When a clearly current, non-archived official page gives a deadline without a year, assign it to its next calendar occurrence relative to ${today}: use the current year when that month and day is today or has not yet occurred this year, otherwise use the next year. Apply this rule to each deadline independently because one admissions cycle commonly crosses a calendar-year boundary. For example, if today is 2026-08-25, "November 1" becomes 2026-11-01 and "January 5" becomes 2027-01-05. This permitted calendar-year resolution is not guessing. Do not apply it to an archived page or override a year or cycle explicitly stated by the school.
 
 Respond with ONLY this JSON object:
 {
@@ -261,7 +263,7 @@ Respond with ONLY this JSON object:
 }
 
 Rules:
-- Only include rounds with an actual future-dated deadline from an official source. Do not guess or infer dates.
+- Only include rounds with an actual deadline from an official source that is today or later. Do not guess dates beyond the month-and-day calendar-year rule above.
 - If the school uses rolling admission with no fixed deadline, set "rolling": true and "rounds": [].
 - "cycle" is the admissions cycle these dates apply to (e.g. "2026-2027").
 - If you cannot find reliable upcoming official deadlines, return {"rounds": [], "rolling": false, "cycle": "", "source_url": ""}.`
