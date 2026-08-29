@@ -119,6 +119,8 @@ supabase/
 ├── email-operations/index.ts # Admin-only previews, self-test sends, and operations data
 
 └── resend-webhook/index.ts # Signed Resend delivery events and suppressions
+The read-only `product-health` Edge Function provides the private Product Health Agent's schema-v1 endpoint using the dedicated `ADMYT_HEALTH_TOKEN`. It exposes only operational checks/counters and job timestamps, never student data. See `supabase/functions/product-health/README.md`; existing monitoring workflows and `email-health` remain unchanged.
+
 ## Supabase tables
 | Table | Purpose |
 |---|---|

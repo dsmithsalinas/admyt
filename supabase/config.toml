@@ -469,6 +469,12 @@ verify_jwt = false
 import_map = "./functions/email-health/deno.json"
 entrypoint = "./functions/email-health/index.ts"
 
+# Dedicated bearer authentication is enforced inside the handler, before any I/O.
+[functions.product-health]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/product-health/index.ts"
+
 [functions.email-operations]
 enabled = true
 verify_jwt = true
